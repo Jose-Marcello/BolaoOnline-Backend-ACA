@@ -1,0 +1,77 @@
+.pagina-inicial {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Alinha os itens no topo */
+    height: 100vh;
+    background-image: url('/images/fundo_bolao.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center bottom; /* Posiciona a imagem na parte inferior */
+    background-size: cover; /* Garante que a imagem preencha toda a tela */
+}
+
+/* Estilos para telas pequenas */
+@media (max-width: 768px) {
+    .pagina-inicial {
+        width: 95% !important;
+        max-width: 480px !important;
+        margin: 0 auto;
+    }
+
+    h1 {
+        font-size: 2.5em !important;
+    }
+
+    .botao-registro,
+    .botao-login {
+        padding: 12px 25px !important;
+        font-size: 0.9em !important;
+    }
+}
+
+/* Estilos para telas grandes */
+@media (min-width: 769px) {
+    h1 {
+        color: white; /* Cor do título */
+        margin-top: 100px; /* Ajuste o valor conforme necessário */
+    }
+
+    .botoes-login {
+        margin-top: 50px; /* Ajuste o valor conforme necessário */
+    }
+
+        .botoes-login a {
+            background-color: transparent; /* Remove a cor de fundo dos botões */
+            color: black; /* Cor do texto dos botões */
+            border: 1px solid white; /* Borda dos botões */
+            font-weight: bold; /* Negrito */
+        }
+
+            .botoes-login a:hover {
+                background-color: rgba(255, 255, 255, 0.2); /* Cor de fundo dos botões ao passar o mouse */
+            }
+}
+
+h1 {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 3em;
+    color: white;
+    margin-bottom: 50px;
+}
+
+.botoes-login a {
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 16px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+    .botoes-login a:hover {
+        background-color: #e0e0e0;
+    }

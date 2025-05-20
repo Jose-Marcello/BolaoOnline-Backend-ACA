@@ -1,0 +1,37 @@
+﻿@model ApostasApp.Core.Presentation.ViewModels.JogoViewModel
+
+@{
+    ViewData["Title"] = "Detalhes do Jogo";
+}
+
+<head>
+
+    <link rel="stylesheet" href="~/css/card-jogos.css" />
+
+</head>
+
+<h4>@ViewData["Title"]</h4>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">
+            @Model.EquipeCasa.Equipe.Nome <img src="/images/@Model.EquipeCasa.Equipe.Escudo" style="height: 30px; width: 30px; vertical-align: middle;" />
+            <span>x</span>
+            <img src="/images/@Model.EquipeVisitante.Equipe.Escudo" style="height: 30px; width: 30px; vertical-align: middle;" /> @Model.EquipeVisitante.Equipe.Nome
+        </h5>
+        <p class="card-text">
+            <strong>Rodada:</strong> @Model.Rodada.NumeroRodada do @Model.Rodada.Campeonato.Nome
+        </p>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">Data:</dt>
+            <dd class="col-sm-8">@Html.Raw(String.Format("{0:dd MMM}", Model.DataJogo))</dd>
+            <dt class="col-sm-4">Hora:</dt>
+            <dd class="col-sm-8">@Html.Raw(Model.HoraJogo.ToString(@"hh\:mm"))</dd>
+            <dt class="col-sm-4">Estádio:</dt>
+            <dd class="col-sm-8">@Model.Estadio.Nome</dd>
+        </dl>
+        <button onclick="window.history.back();" class="btn btn-secondary">Voltar</button>alguns moment
+    </div>
+</div>

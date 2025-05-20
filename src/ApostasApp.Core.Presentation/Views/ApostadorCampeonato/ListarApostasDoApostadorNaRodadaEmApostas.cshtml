@@ -1,0 +1,355 @@
+﻿@model ApostasApp.Core.Presentation.ViewModels.ApostadorCampeonatoViewModel
+
+<head>
+
+    <link rel="stylesheet" href="~/css/telaApostasEResultados.css" />
+    <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
+
+</head>
+
+
+
+<div class="container-fluid">
+
+    <div class="info-apostador">
+        Apostador: @($"{TempData["Apostador"]} | {TempData["Campeonato"]} | Rod: {TempData["Rodada"]}")
+    </div>
+
+    <div class="status-aposta">
+        <input type="hidden" id="IdApostadorCampeonato" value="@Model.Id" />
+    </div>
+
+
+    <div id="detalheJogoRapido" class="card" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; width: 80%; max-width: 500px;">
+        <div class="card-header">
+            Detalhes do Jogo
+        </div>
+        <div class="card-body">
+            <h5 class="card-title jogo-titulo">
+                <span class="equipe-casa"></span> <img src="" class="escudo-casa" "  />
+                <span>x</span>
+                <img src="" class="escudo-visitante" /> <span class="equipe-visitante"></span>
+            </h5>
+            <div class="status-jogo-container" style="text-align: center; margin-top: 10px;">
+                <p class="card-text status-jogo" style="font-weight: bold; color: limegreen; font-size: 1.2em;"></p>
+            </div>
+            <p class="card-text rodada-info">
+                <strong>Rodada:</strong> <span class="numero-rodada"></span> do <span class="nome-campeonato"></span>
+            </p>
+            <dl class="row">
+                <dt class="col-sm-4">Data:</dt>
+                <dd class="col-sm-8"><span class="data-jogo"></span></dd>
+                <dt class="col-sm-4">Hora:</dt>
+                <dd class="col-sm-8"><span class="hora-jogo"></span></dd>
+                <dt class="col-sm-4">Estádio:</dt>
+                <dd class="col-sm-8"><span class="estadio-nome"></span></dd>
+
+            </dl>
+            <button id="btnFecharDetalheJogo" class="btn btn-secondary">Fechar</button>
+        </div>
+    </div>
+
+
+    <table class="display tabela-consulta dataTable stripe row-border" id="tb_apostas">
+
+        <thead>
+
+            <tr>
+
+                <th>Id</th>
+
+                <th>Mandante</th>
+
+                <th>Gols Mand</th>
+
+                <th>Gols Visit</th>
+
+                <th>Visitante</th>
+
+                <th>Detalhes</th>
+
+            </tr>
+
+        </thead>
+
+    </table>
+
+
+    <div class="barra-inferior">
+        <div class="status-aposta-envio">
+            <span>Status: </span><strong><span id="statusEnvio" style="color: black;">ENVIADA</span> <span id="dataHoraAposta" style="color: black;">08/05/2025 - 18:33:57</span></strong>
+        </div>
+        <button id="btnSalvarAposta">
+            <i class="fas fa-save"></i> Salvar Apostas
+        </button>
+        <button id="btnRetornar">
+            <i class="fas fa-stop"></i> Retornar
+        </button>
+    </div>
+</div>
+
+                @section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            var table = $("#tb_apostas").DataTable({
+                "ajax": {
+                    "url": '@Url.Action("BuscarApostasDoApostadorNaRodadaEmApostas", "ApostadorCampeonato", new { Id = @Model.Id })',
+                    "type": "POST",
+                    "dataSrc": "data.$values",
+                    "datatype": "json"
+                },
+                paging: false,
+                searching: false,
+                responsive: {
+                    details: {
+                        renderer: function (api, rowIdx, columns) {
+                            var data = $.map(columns, function (col, i) {
+                                if (col.hidden && (col.title === 'Gols Mand' || col.title === 'Gols Vis')) {
+                                    return '<div class="detalhe-linha">' +
+                                        '<strong class="detalhe-titulo">' + col.title + ':</strong>' +
+                                        '<span class="detalhe-dados">' + col.data + '</span>' +
+                                        '</div>';
+                                }
+                                return '';
+                            }).join('');
+
+                            return data ?
+                                $('<div class="detalhes-container"/>').append(data) :
+                                false;
+                        }
+                    },
+                    breakpoints: [
+                        { name: 'desktop', width: Infinity },
+                        { name: 'tablet-l', width: 1024 },
+                        { name: 'tablet-p', width: 768 },
+                        { name: 'mobile-l', width: 480 },
+                        { name: 'mobile-p', width: 320 }
+                    ]
+                },
+                "columnDefs": [
+                    { "className": 'dtr-control', "orderable": false, "targets": [0], "visible": false },
+                    { "targets": [1], "responsivePriority": 1 },
+                    { "targets": [2], "responsivePriority": 3 },
+                    { "targets": [3], "responsivePriority": 2 },
+                    { "targets": [4], "responsivePriority": 5 },
+                    { "targets": [5], "responsivePriority": 1 },
+                    { "targets": [6], "visible": false },
+                    { "targets": [7], "visible": false }
+                ],
+
+                "columns": [
+                    { "data": "id" },
+                    {
+                        "data": "escudoMandante",
+                        render: function (data, type, row) {
+                            if (type === 'display') {
+                                var caminhoCompleto = "/images/" + data;
+                                return `
+                                    <div class="equipe">
+                                        <img src="${caminhoCompleto}" alt="Escudo da Equipe ${row.siglaMandante}">
+                                        <p class="sigla-equipe"><strong>${row.siglaMandante}</strong></p>
+                                    </div>
+                                `;
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        data: "placarMandante",
+                        render: function (data, type, row) {
+                            if (data === null || data === "") {
+                                data = "";
+                            }
+                            return '<input type="number" min="0" value="' + data + '" class="placar-input" id="placarMandante-' + row.id + '" name="placarMandante-' + row.id + '">';
+                        }
+                    },
+                    {
+                        data: "placarVisitante",
+                        render: function (data, type, row) {
+                            if (data === null || data === "") {
+                                data = "";
+                            }
+                            return '<input type="number" min="0" value="' + data + '" class="placar-input" id="placarVisitante-' + row.id + '" name="placarVisitante-' + row.id + '">';
+                        }
+                    },
+                    {
+                        "data": "escudoVisitante",
+                        render: function (data, type, row) {
+                            if (type === 'display') {
+                                var caminhoCompleto = "/images/" + data;
+                                return `
+                                    <div class="equipe">
+                                        <img src="${caminhoCompleto}" alt="Escudo da Equipe ${row.siglaVisitante}">
+                                        <p class="sigla-equipe"><strong>${row.siglaVisitante}</strong></p>
+                                    </div>
+                                `;
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data, type, row) {
+                            return '<a href="javascript:void(0);" class="btn-detalhes" data-idjogo="' + row.idJogo + '" title="Ver detalhes do jogo"><i class="fas fa-search"></i></a>';
+                        },
+                        "className": "text-center"
+                    },
+                    { "data": "dataJogo" }, // Referencia a propriedade formatada
+                    { "data": "horaJogo" }  // Referencia a propriedade formatada
+                ],
+                "order": [[6, 'asc'], [7, 'asc']], // Ordena por dataJogo e depois por horaJogo
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+                },
+                autoWidth: true,
+                info: false
+            });
+
+            // Chamada AJAX separada para atualizar o status e a data
+            $.ajax({
+                url: '@Url.Action("BuscarStatusEDataHoraApostaDaRodada", "ApostadorCampeonato", new { Id = @Model.Id })',
+                type: "POST",
+                dataType: "json",
+                success: function (response) {
+                    if (response && response.aposta) {
+                        if (response.aposta.enviada) {
+                            $("#statusEnvio").text("ENVIADA");
+                            if (response.aposta.dataHoraAposta) {
+                                var dataHora = new Date(response.aposta.dataHoraAposta);
+                                $("#dataHoraAposta").text(dataHora.toLocaleDateString() + ' - ' + dataHora.toLocaleTimeString());
+                            }
+                        } else {
+                            $("#statusEnvio").text("NÃO ENVIADA");
+                            $("#dataHoraAposta").text("");
+                        }
+                    } else {
+                        $("#statusEnvio").text("NÃO ENVIADA");
+                        $("#dataHoraAposta").text("");
+                    }
+                },
+                error: function (error) {
+                    console.error("Erro ao buscar status da aposta:", error);
+                    $("#statusEnvio").text("ERRO");
+                    $("#dataHoraAposta").text("");
+                }
+            });
+
+
+            $("#btnSalvarAposta").click(function () {
+                var apostas = [];
+                table.rows().every(function (rowIdx, tableData, rowLoop) {
+                    var data = table.row(rowIdx).data();
+                    var linha = $(this.node());
+                    var placarMandante = $(this.node()).find("td:eq(1) input").val();
+                    var placarVisitante = $(this.node()).find("td:eq(2) input").val();
+
+                    console.log("id:", data.id);
+                    console.log("placarMandante:", placarMandante);
+                    console.log("placarVisitante:", placarVisitante);
+
+                    apostas.push({
+                        id: data.id,
+                        PlacarApostaCasa: placarMandante,
+                        PlacarApostaVisita: placarVisitante
+                    });
+                });
+                if (apostas.length === 0) {
+                    return;
+                }
+
+                console.log("Iniciando chamada AJAX para SalvarApostas.");
+                console.log("Dados enviados (SalvarApostas):", apostas);
+
+                $.ajax({
+                    url: "/ApostadorCampeonato/SalvarApostas",
+                    type: "POST",
+                    data: JSON.stringify(apostas),
+                    contentType: "application/json",
+                    success: function (response) {
+                        console.log("Chamada AJAX bem-sucedida (SalvarApostas). Resposta:", response);
+
+                        if (response && response.success === true) {
+                            alert("Apostas salvas com sucesso!");
+                            $("#statusEnvio").text("ENVIADA"); // Atualiza o status para ENVIADA
+                            var agora = new Date();
+                            var dataHoraFormatada = agora.toLocaleDateString() + ' - ' + agora.toLocaleTimeString();
+                            $("#dataHoraAposta").text(dataHoraFormatada); // Exibe a data e hora
+                            table.ajax.reload(); // Opcional: Recarrega a tabela para refletir outras possíveis mudanças
+                        } else if (response && response.success === false) {
+                            alert("Erro ao salvar as apostas: " + response.message);
+                        } else {
+                            alert("Erro desconhecido ao salvar as apostas.");
+                        }
+                    },
+                    error: function (error) {
+                        console.error("Erro na chamada AJAX (SalvarApostas):", error);
+                        alert("Erro ao salvar as apostas: " + error.message);
+                    }
+                });
+                console.log("Chamada AJAX para SalvarApostas concluída.");
+            });
+
+            document.getElementById('btnRetornar').addEventListener('click', function () {
+                window.location.href = '/PainelUsuario';
+            });
+
+            $('#tb_apostas').on('click', '.btn-detalhes', function () {
+                console.log("Botão Detalhes clicado!");
+                event.preventDefault();
+                $('#detalheJogoRapido').fadeIn();
+                var idJogo = $(this).data('idjogo');
+                $.ajax({
+                    url: '/Jogo/dados-do-jogo/' + idJogo,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        try {
+                            var dataJogo = new Date(data.dataJogo);
+                            var diaSemana = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(dataJogo);
+                            var dataFormatada = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(dataJogo);
+                            var horaFormatada = data.horaJogo.substring(0, 5);
+
+                            $('#detalheJogoRapido .jogo-titulo .equipe-casa').text(data.equipeCasa.equipe.nome);
+                            $('#detalheJogoRapido .jogo-titulo .escudo-casa').attr('src', '/images/' + data.equipeCasa.equipe.escudo);
+                            $('#detalheJogoRapido .jogo-titulo .equipe-visitante').text(data.equipeVisitante.equipe.nome);
+                            $('#detalheJogoRapido .jogo-titulo .escudo-visitante').attr('src', '/images/' + data.equipeVisitante.equipe.escudo);
+                            $('#detalheJogoRapido .rodada-info .numero-rodada').text(data.rodada.numeroRodada);
+                            $('#detalheJogoRapido .rodada-info .nome-campeonato').text(data.rodada.campeonato.nome);
+                            $('#detalheJogoRapido .data-jogo').text(diaSemana + ', ' + dataFormatada);
+                            $('#detalheJogoRapido .hora-jogo').text(horaFormatada);
+                            $('#detalheJogoRapido .estadio-nome').text(data.estadio.nome);
+
+                            var statusDescricao = "";
+                            switch (data.status) {
+                                case 0:
+                                    statusDescricao = "Não Iniciado";
+                                    break;
+                                case 1:
+                                    statusDescricao = "Em Andamento";
+                                    break;
+                                case 2:
+                                    statusDescricao = "Finalizado";
+                                    break;
+                                default:
+                                    statusDescricao = "Desconhecido";
+                                    break;
+                            }
+                            $('#detalheJogoRapido .status-jogo').text(statusDescricao).css('color', 'lightblue');
+                        } catch (error) {
+                            console.error("Erro ao preencher o detalhe do jogo:", error);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Erro ao obter detalhes do jogo:', error);
+                        alert('Erro ao carregar os detalhes do jogo.');
+                    }
+                });
+            });
+        });
+
+        $('#btnFecharDetalheJogo').click(function () {
+            $('#detalheJogoRapido').fadeOut();
+        });
+    </script>
+}

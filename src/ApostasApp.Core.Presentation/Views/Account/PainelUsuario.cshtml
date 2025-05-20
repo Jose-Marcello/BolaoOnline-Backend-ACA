@@ -1,0 +1,85 @@
+﻿@{
+    Layout = null;
+}
+
+@using ApostasApp.Core.Presentation.ViewModels
+@model PainelUsuarioViewModel
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/css/painelUsuario.css" />
+    <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/barraSuperior.css" /> 
+</head>
+
+<body>
+    <div class="barra-superior">
+        <span class="nome-usuario">Olá, @ViewBag.NomeUsuario</span>
+        <form asp-controller="Account" asp-action="Logout" method="post" class="form-logout">
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+
+    <div class="menu-toggle">
+        <img src="~/images/menu-icon.png" alt="Menu" id="menu-icon">
+    </div>
+
+    <ul class="menu-vertical">
+        <li class="menu-item">
+            <a href="@Url.Action("ExibirInterfaceDaRodadaEmApostas", "ApostadorCampeonato", new { apostadorCampeonatoId = Model.ApostadorCampeonatoId })">
+                <i class="fas fa-trophy"></i> <span> Rodada em Apostas</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="@Url.Action("ExibirInterfaceDaRodadaCorrente", "ApostadorCampeonato", new { apostadorCampeonatoId = Model.ApostadorCampeonatoId })">
+                <i class="fas fa-futbol"></i> <span> Última Rodada Corrente</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="@Url.Action("ListarRodadasComRanking", "RankingRodada")">
+                <i class="fas fa-chart-line"></i> <span> Consulta Rodadas</span>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="@Url.Action("ListarCampeonatos", "Campeonato")">
+                <i class="fas fa-chart-bar"></i> <span> Consulta Campeonatos</span>
+            </a>
+        </li>
+
+
+        <li class="menu-item">
+            <a href="#">
+                <i class="fas fa-book"></i> <span> Regras do Campeonato</span>
+            </a>
+        </li>
+    </ul>
+    <div class="conteudo-principal">
+
+
+        @if (TempData["Notificacao"] != null)
+        {
+            <div class="alert-message">
+                @TempData["Notificacao"]
+            </div>
+
+        }
+
+        <div class="aviso-bolao">
+            <p>BOLÃO ONLINE ficará ABERTO até SÁBADO, às 14h!</p>
+        </div>
+    </div>
+
+    <script>
+        const menuToggle = document.querySelector('.menu-toggle');
+        const menuVertical = document.querySelector('.menu-vertical');
+
+        menuToggle.addEventListener('click', () => {
+            menuVertical.classList.toggle('show');
+        });
+    </script>
+</body>

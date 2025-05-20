@@ -1,0 +1,196 @@
+﻿@model ApostasApp.Core.Presentation.ViewModels.ApostadorCampeonatoViewModel
+
+<link rel="stylesheet" href="~/css/telaApostasEResultados.css" />
+
+<div class="container-fluid">
+
+    <div class="info-apostador">
+        Apostador: @($"{TempData["Apostador"]} | {TempData["Campeonato"]} | Rod: {TempData["Rodada"]}")
+    </div>
+
+    <div class="status-aposta">
+        <input type="hidden" id="IdApostadorCampeonato" value="@Model.Id" />
+        <input type="hidden" id="IdRodada" value="@TempData["IdRodada"]" />
+    </div>
+
+    <table id="tb_apostas" class="display tabela-consulta dataTable stripe row-border">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Man</th>
+                <th>Plc</th>
+                <th>Vis</th>
+                <th>Apt</th>
+                <th>Pts</th>
+            </tr>
+        </thead>
+    </table>
+
+    <div class="barra-inferior">
+        <div class="status-aposta">
+            @* <div class="data-hora-aposta"> *@
+            @($"{TempData["ENVIADA"]} {TempData["DATA_APOSTA"]} - {TempData["HORA_APOSTA"]}")
+        </div>  
+        
+        <button id="btnVerRanking">
+            <i class="fas fa-list-ol"></i> Ver Ranking
+        </button>
+
+        <button id="btnRetornar">
+            <i class="fas fa-stop"></i> Retornar
+        </button>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            var table = $("#tb_apostas").DataTable({
+                "ajax": {
+                    "url": '@Url.Action("BuscarApostasDoApostadorNaRodadaCorrente", "ApostadorCampeonato", new { Id = @Model.Id })',
+                    "type": "POST",
+                    "dataSrc": "data.$values",
+                    "datatype": "json"
+                },
+                paging: false,
+                searching: false,
+                //responsive: true,
+                 responsive: {
+                        details: {
+                            renderer: function (api, rowIdx, columns) {
+                                var data = $.map(columns, function (col, i) {
+                                    if (col.hidden && (col.title === 'Placar do Jogo' || col.title === 'Placar Apostado' || col.title === 'Pontos')) {
+                                        return '<div class="detalhe-linha">' +
+                                            '<strong class="detalhe-titulo">' + col.title + ':</strong>' +
+                                            '<span class="detalhe-dados">' + col.data + '</span>' +
+                                            '</div>';
+                                    }
+                                    return '';
+                                }).join('');
+
+                                return data ?
+                                    $('<div class="detalhes-container"/>').append(data) :
+                                    false;
+                            }
+                        },  breakpoints: [
+                            { name: 'desktop', width: Infinity },
+                            { name: 'tablet-l', width: 1024 },
+                            { name: 'tablet-p', width: 768 },
+                            { name: 'mobile-l', width: 480 },
+                            { name: 'mobile-p', width: 320 }
+                        ]
+                          },
+                            "columnDefs": [
+                               { "className": 'dtr-control', "orderable": false, "targets": [0], "visible": false },
+                               { "targets": [1], "responsivePriority": 1 },
+                               { "targets": [2], "responsivePriority": 3 },
+                               { "targets": [3], "responsivePriority": 2 },
+                               { "targets": [4], "responsivePriority": 4 },
+                               { "targets": [5], "responsivePriority": 1 }
+                            ],
+                            "columns": [
+                               { "data": "id",  "width": "0px" },
+
+                               { "data": "escudoMandante",  "width": "80px",
+
+                                     render: function (data, type, row)
+                                     {
+                                       if (type === 'display') {
+                                          // Construir o caminho completo para a imagem
+                                          var caminhoCompleto = "/images/" + data;
+                                          return `<div class="equipe">
+                                                  <img src="${caminhoCompleto}" alt="Escudo da Equipe ${row.escudoMandante}">
+                                                  <p class="sigla-equipe"><strong>${row.siglaMandante}</strong></p>
+                                                  </div>`;
+                                       }
+                                         return data;
+                                     }
+                               },
+
+                                           { "data": null,  "width": "80px",
+                                                render: function (data, type, row) {
+                                                 let placarText;
+                                                if (row.statusJogo != 0) {
+                                                 placarText = `<strong>${row.placarRealCasa} x ${row.placarRealVisitante}</strong>`;
+                                                } else {
+                                                 placarText = "Jogo não iniciado";
+                                                }
+                                                  if (type === 'td') {
+                                                          $(data).addClass('destaque-placar');
+                                                  }
+                                                return placarText;
+                                            }
+                                  
+                               },
+
+                               { "data": "escudoVisitante",  "width": "80px",
+
+                                    render: function (data, type, row)
+                                    {
+                                      if (type === 'display')
+                                      {
+                                         // Construir o caminho completo para a imagem
+                                         var caminhoCompleto = "/images/" + data;
+                                         return `<div class="equipe">
+                                                   <img src="${caminhoCompleto}" alt="Escudo da Equipe ${row.escudoVisitante}">
+                                                   <p class="sigla-equipe"><strong>${row.siglaVisitante}</strong></p>
+                                                 </div>`;
+                                      }
+                                      return data;
+                                    }
+
+                               },
+
+                                 {data: null,  "width": "80px", // Usamos null para acessar os dados originais
+
+                                       render: function (data, type, row) {
+                                          //console.log(row);
+                                          //console.log(typeof row.placarApostaCasa);
+                                          //console.log(typeof row.placarApostaVisitante)
+                                          return row.placarApostaCasa + " x " + row.placarApostaVisitante;
+
+
+                                    }
+                               },
+
+                               { data: "pontuacao",  "width": "60px",
+                                    render: function (data, type, row) {
+                                    return `<strong style="color: blue; font-size: 1.2em;">${data}</strong>`;
+            }
+        }
+
+            ],
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+                },
+                autoWidth: true,
+                info: false
+            });
+
+            document.getElementById('btnVerRanking').addEventListener('click', function() {
+            var idRodada = $('#IdRodada').val();
+            var apostadorCampeonatoId = $('#IdApostadorCampeonato').val(); // Pegue o ID do ApostadorCampeonato
+            var returnUrl = '/ApostadorCampeonato/ExibirInterfaceDaRodadaEmApostas/' + apostadorCampeonatoId; // Construa a URL de retorno
+
+            window.location.href = '/RankingRodada/ExibirRanking/' + idRodada + '?returnUrl=' + encodeURIComponent(returnUrl);
+            });
+
+
+            // document.getElementById('btnVerRanking').addEventListener('click', function() {
+            //        var idRodada = $('#IdRodada').val();
+             //       window.location.href = '/RankingRodada/ExibirRanking/' + idRodada; // <--- ALTERE AQUI
+            //});
+            
+            document.getElementById('btnRetornar').addEventListener('click', function() {
+            // Redirecionar para o painel principal sem salvar as apostas
+            window.location.href = '/PainelUsuario'; // Substitua '/PainelUsuario' pela URL correta do painel
+        });
+
+           // $('#tb_apostas img').each(function () {
+           //     $(this).tooltip();
+           // });
+            //console.log("Tooltip initialization executed (alternative)!");
+        });
+    </script>
+}

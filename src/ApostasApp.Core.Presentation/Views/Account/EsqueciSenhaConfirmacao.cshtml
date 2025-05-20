@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = "Link de recuperação enviado";
+}
+
+<h1>Link de recuperação enviado</h1>
+<p>
+    Por favor, verifique seu e-mail para redefinir sua senha.
+</p>
+
+@if (!string.IsNullOrEmpty(ViewBag.ResetLink))
+{
+    <h3>Link de redefinição (para teste - em um e-mail real):</h3>
+    <p><code>@ViewBag.ResetLink</code></p>
+}

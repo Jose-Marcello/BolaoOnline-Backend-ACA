@@ -1,0 +1,121 @@
+﻿@{
+    ViewData["Title"] = "Confirmação de E-mail Pendente - Bolão OnLine";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="email-confirmation-card">
+    <h1>Bolão OnLine</h1>
+    <h2 class="subtitle">Confirmação de E-mail Pendente</h2>
+
+    <p>
+        Um e-mail de confirmação foi enviado para o seu endereço de e-mail.
+        Por favor, verifique sua caixa de entrada (e também a pasta de spam/lixo eletrônico)
+        e clique no link fornecido para ativar sua conta.
+    </p>
+
+    <p>
+        Se você não receber o e-mail em alguns minutos, por favor, verifique sua pasta de spam ou
+        <button id="resendConfirmationButton" class="resend-button">Reenviar e-mail de confirmação</button>
+    </p>
+
+</div>
+
+
+<style>
+    body {
+        background-color: #34495e; /* Cor de fundo da página (mais escura) */
+        font-family: sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+    }
+
+    .email-confirmation-card {
+        background-color: #f8f9fa; /* Cor de fundo do card (branco ou um tom claro) */
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 80%;
+        max-width: 500px;
+    }
+
+        .email-confirmation-card h1 {
+            color: #2c3e50;
+            font-size: 2.0em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .email-confirmation-card p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+    .resend-link {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+        .resend-link:hover {
+            text-decoration: underline;
+        }
+
+
+    /* Estilos para o botão de reenvio */
+    .resend-button {
+        background-color: #007bff; /* Cor primária para o botão (azul) */
+        color: #fff; /* Texto branco */
+        border: none;
+        padding: 12px 25px; /* Aumentei um pouco o padding para torná-lo maior */
+        border-radius: 8px; /* Arredondamento um pouco maior */
+        cursor: pointer;
+        font-size: 1.1em; /* Fonte um pouco maior */
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Adicionei uma leve sombra */
+    }
+  </style>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+       const resendButton = document.getElementById('resendConfirmationButton');
+
+    if (resendButton) {
+        resendButton.addEventListener('click', function() {
+            const userEmail = '@ViewContext.ViewBag.Email'; // Assumindo que você passou o e-mail para a ViewBag
+
+            if (!userEmail) {
+                alert('Erro: Endereço de e-mail não encontrado.');
+                return;
+            }
+
+            fetch('/Account/ResendConfirmationEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: 'email=' + encodeURIComponent(userEmail)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    // Opcional: Atualizar a mensagem na tela para indicar o reenvio
+                }
+            })
+            .catch((error) => {
+                console.error('Erro ao reenviar e-mail:', error);
+                alert('Ocorreu um erro ao tentar reenviar o e-mail.');
+            });
+         });
+      }
+   });
+
+</script>

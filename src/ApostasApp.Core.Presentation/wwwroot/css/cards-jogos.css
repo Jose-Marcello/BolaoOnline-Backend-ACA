@@ -1,0 +1,214 @@
+
+.barra-titulo, .barra-inferior-cards-jogos {
+    background-color: #333; /* Fundo cinza escuro */
+    color: #fff; /* Letras brancas */
+    width: 100%; /* Ocupar a largura total da tela */
+    padding: 10px 15px; /* Espaçamento interno */
+    text-align: center; /* Centralizar o texto */
+    box-sizing: border-box; /* Incluir padding na largura */
+}
+
+
+    .barra-titulo h1 {
+        font-size: 1.5em; /* Tamanho da letra um pouco menor */
+        margin: 0; /* Remover margens padrão do h1 */
+    }
+
+/* Ajuste o tamanho da fonte para telas menores se necessário */
+@media (max-width: 768px) {
+    .barra-titulo h1 {
+        font-size: 1.2em;
+    }
+}
+
+/* Estilo para o container de cada card */
+.card-jogo {
+    border: 1px solid #ccc; /* Adiciona um contorno cinza claro */
+    margin-bottom: 10px; /* Espaçamento entre os cards */
+    background-color: #000; /* Fundo preto */
+    color: #fff; /* Texto branco para contrastar com o fundo */
+    padding: 15px; /* Espaçamento interno do card */
+    border-radius: 5px; /* Bordas arredondadas (opcional) */
+}
+
+/* Ajustes para elementos dentro do card (se necessário) */
+.info-jogo {
+    /* Se precisar de um estilo diferente para a info do jogo */
+}
+
+.times {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+
+.escudo-pequeno {
+    height: 60px;
+    width: 60px;
+    vertical-align: middle;
+}
+.mandante, .visitante {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+    .mandante img, .visitante img {
+        height: 30px;
+        width: 30px;
+        vertical-align: middle;
+        margin: 5px;
+    }
+
+.versus {
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+.placar {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.data-hora-andamento {
+    text-align: center;
+    font-size: 0.9em;
+    color: #ddd; /* Cor clara para o texto */
+}
+
+.estadio {
+    text-align: center;
+    font-size: 0.9em;
+    color: #ddd; /* Cor clara para o texto */
+}
+
+.status-jogo {
+    text-align: center;
+    font-style: italic;
+    color:chartreuse;
+}
+
+/* Estilos para telas maiores que 768px */
+@media (min-width: 769px) {
+.container-jogos
+{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Cria colunas com largura mínima de 400px */
+    gap: 10px; /* Espaçamento entre os cards */
+    width: 90%; /* Largura do container */
+    margin: 0 auto; /* Centralizar o container */
+}
+
+.card-jogo {
+    width: auto; /* Deixar os cards ocuparem a largura da célula do grid */
+    max-width: none; /* Remover largura máxima */
+}
+
+}
+
+
+
+
+
+/* Adicione mais estilos conforme necessário */
+
+#detalheJogoRapido {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;    
+    border: 1px solid #ff0000; /* Opcional: cor da borda se precisar */
+    background-color:black; /* Ou outra cor escura de sua preferência */
+    color:aliceblue; /* Branco para o texto */
+    border: 1px solid #555; /* Cor da borda, se necessário */
+    /* Outros estilos */
+}
+
+
+    #detalheJogoRapido .card-title.jogo-titulo {
+        text-align: center; /* Centralizar o texto */
+        font-size: 1.3em; /* Ajuste o tamanho do título se necessário */
+        display: flex; /* Usar flexbox para alinhar os elementos */
+        align-items: center; /* Alinhar verticalmente ao centro */
+        justify-content: center; /* Alinhar horizontalmente ao centro */
+        gap: 10px; /* Espaço entre os elementos (times e "x") */
+    }
+        #detalheJogoRapido .card-title.jogo-titulo img.escudo-casa,
+        #detalheJogoRapido .card-title.jogo-titulo img.escudo-visitante {
+            height: 40px !important;
+            width: 40px !important;
+            vertical-align: middle !important; /* Adicionando !important aqui também */
+            display: inline-block; /* Garante que as dimensões sejam respeitadas */
+        }
+
+        #detalheJogoRapido .card-title.jogo-titulo span.equipe-casa,
+        #detalheJogoRapido .card-title.jogo-titulo span.equipe-visitante {
+            font-size: 0.8em; /* Diminuir a fonte dos times */
+        }
+
+
+
+/* Estilos para telas menores (até 768px de largura, geralmente tablets e celulares) */
+@media (max-width: 768px) {
+    #detalheJogoRapido {
+        width: 95%; /* Ocupar quase toda a largura da tela */
+        max-width: none; /* Remover a largura máxima */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0; /* Resetar margens */
+    }
+
+        #detalheJogoRapido .card-body {
+            padding: 15px; /* Reduzir o padding interno */
+        }
+
+        #detalheJogoRapido .card-title.jogo-titulo {
+            font-size: 1.2em; /* Reduzir o tamanho da fonte do título */
+        }
+
+        #detalheJogoRapido .card-text.rodada-info strong {
+            display: block; /* Quebrar a linha do "Rodada:" */
+            margin-bottom: 5px;
+        }
+
+        #detalheJogoRapido dl.row dt {
+            width: 40%; /* Ajustar a largura das labels */
+        }
+
+        #detalheJogoRapido dl.row dd {
+            width: 60%; /* Ajustar a largura dos valores */
+        }
+
+        #detalheJogoRapido .btn.btn-secondary {
+            font-size: 0.9em; /* Reduzir o tamanho da fonte do botão */
+            padding: 8px 12px;
+        }
+}
+
+#detalheJogoRapido .status-jogo {
+    font-style: italic;
+    margin-bottom: 10px;
+    align-items: center;
+    color:chartreuse;
+}
+
+/* Estilos para telas ainda menores (celulares) - você pode ajustar os breakpoints conforme necessário */
+@media (max-width: 480px) {
+    #detalheJogoRapido .card-title.jogo-titulo {
+        font-size: 1em;
+    }
+
+    #detalheJogoRapido dl.row dt,
+    #detalheJogoRapido dl.row dd {
+        font-size: 0.9em;
+    }
+}

@@ -1,0 +1,135 @@
+body {
+    background-color: #3CB371; /* Substitua #3CB371 pelo código da sua cor verde */
+}
+
+.alert-message {
+    background-color: navajowhite; /* Fundo preto */
+    color: darkred; /* Cor das letras vermelhas */
+    border: 1px solid red; /* Borda vermelha (opcional, para dar um destaque extra) */
+    padding: 15px 20px; /* Aumenta o espaçamento interno (vertical e horizontal) */
+    margin: 20px auto; /* Adiciona margem acima e abaixo e centraliza horizontalmente */
+    border-radius: 5px; /* Arredonda as bordas (opcional) */
+    text-align: center; /* Centraliza o texto dentro da caixa */
+    font-size: 1.1em; /* Aumenta um pouco o tamanho da fonte */
+    max-width: 500px; /* Define uma largura máxima para a caixa */
+    width: 80%; /* Garante que a caixa não seja muito larga em telas menores */
+    box-shadow: 2px 2px 5px #888888; /* Adiciona uma sombra sutil (opcional) */
+}
+
+.menu-vertical {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 200px;
+    background-color: #f0f0f0;
+    display: none; /* Oculta o menu vertical por padrão */
+}
+
+    .menu-vertical.show {
+        display: block; /* Exibe o menu vertical quando a classe 'show' é adicionada */
+    }
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+    .menu-item img {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+    }
+
+    .menu-item span {
+        font-size: 16px;
+    }
+
+    .menu-item a {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: #333;
+        gap: 10px; /* Ajuste o valor conforme necessário */
+    }
+
+
+.menu-toggle {
+    cursor: pointer;
+    padding: 10px;
+}
+
+.aviso-bolao {
+    background-color: #1a237e; /* Azul escuro */
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+    color: yellow; /* Letras amarelas */
+    font-weight: bold; /* Negrito */
+    border: 5px solid #ffeb3b; /* Moldura amarela */
+    border-radius: 10px; /* Bordas arredondadas */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Sombra suave */
+}
+
+/* Estilos para telas grandes */
+@media (min-width: 769px) {
+    .menu-vertical {
+        display: block; /* Exibe o menu vertical em telas grandes */
+        width: 200px; /* Define a largura fixa do menu */
+        position: static; /* Remove o posicionamento absoluto */
+        height: auto; /* Ajusta a altura automaticamente */
+    }
+
+    .menu-toggle {
+        display: none; /* Oculta o ícone do menu em telas grandes */
+    }
+}
+
+
+.lista-rodadas tbody tr {
+    background-color: darkslategray; /* Cinza claro para as linhas de dados */
+    /*background-color: #cccccc;*/ /* Cinza médio */
+}
+
+/* Opcional: Para dar um contraste, você pode ter um fundo diferente para o thead */
+.lista-rodadas thead tr {
+    background-color: #343a40; /* Cor escura para o cabeçalho (preto do Bootstrap) */
+    color: white; /* Texto branco no cabeçalho */
+}
+
+/* Opcional: Para destacar as linhas ao passar o mouse */
+.lista-rodadas tbody tr:hover {   
+    background-color: #ddd; /* Um tom de cinza um pouco mais escuro ao passar o mouse */
+}
+
+.lista-rodadas {
+    background-color:darkslategray; /* Um tom de cinza claro */
+    /* Outros estilos como margem, borda, etc. */
+}
+
+.meu-botao-pequeno-azul, .meu-botao-pequeno-info {
+    padding: 0.2rem 0.5rem; /* Ajuste o padding para diminuir o tamanho */
+    font-size: 0.7rem; /* Ajuste o tamanho da fonte se necessário */
+}
+
+.barra-superior {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nome-usuario {
+    font-weight: bold;
+}
+
+.form-logout {
+    margin-bottom: 0;
+}
+
+.btn-logout {
+    /* Você pode adicionar estilos adicionais para o botão aqui, se desejar */
+}

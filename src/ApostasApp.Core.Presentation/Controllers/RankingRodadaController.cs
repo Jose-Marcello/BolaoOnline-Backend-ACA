@@ -1,0 +1,301 @@
+﻿using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
+using ApostasApp.Core.Domain.Models;
+using ApostasApp.Core.Domain.Models.Apostadores;
+using ApostasApp.Core.Domain.Models.Apostas;
+using ApostasApp.Core.Domain.Models.Campeonatos;
+using ApostasApp.Core.Domain.Models.Interfaces;
+using ApostasApp.Core.Domain.Models.Interfaces.Usuarios;
+using ApostasApp.Core.Domain.Models.Jogos;
+using ApostasApp.Core.Domain.Models.Rodadas;
+using ApostasApp.Core.Infrastructure.Data.Repository;
+using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
+using ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos;
+using ApostasApp.Core.Presentation.ViewModels;
+using ApostasApp.Infrastructure.Data.Repository;
+using AutoMapper;
+using DApostasApp.Core.Domain.Models.RankingRodadas;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+
+namespace ApostasApp.Core.Presentation.Controllers
+{
+    [Route("RankingRodada")]
+    public class RankingRodadaController : BaseController
+    {
+        private readonly IMapper _mapper;
+        private readonly IUsuarioService _usuarioService;
+        private readonly IUnitOfWork _uow;
+        private readonly ILogger<ApostadorCampeonatoController> _logger;
+
+
+        public RankingRodadaController(IMapper mapper,
+                                   IUsuarioService usuarioService,
+                                   IUnitOfWork uow,
+                                   ILogger<ApostadorCampeonatoController> logger,
+                                   INotificador notificador) : base(notificador)
+                             
+        {
+            _mapper = mapper;
+            _usuarioService = usuarioService;
+            _uow = uow;
+            _logger = logger;
+
+        }
+
+        [HttpGet("ListarRodadas")]
+        public async Task<IActionResult> ListarRodadasComRanking()
+        {
+            try
+            {
+                var campeonatoRepository = _uow.GetRepository<Campeonato>() as CampeonatoRepository;
+                var campeonato = await campeonatoRepository.ObterCampeonatoAtivo();
+
+                if (campeonato == null)
+                {
+                    // Lógica para lidar com o caso em que o campeonato não foi encontrado
+                    return View("CampeonatoNaoEncontrado"); // Ou outra view apropriada
+                }
+
+                TempData["Campeonato"] = campeonato.Nome;
+
+                var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+                return View(_mapper.Map<IEnumerable<RodadaViewModel>>
+                            (await rodadaRepository.ObterRodadasComRanking(campeonato.Id)));
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Erro ao atualizar o banco de dados.");
+                return View("ErroBancoDeDados");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar rodadas com ranking.");
+                return View("ErroGenerico");
+            }
+        }
+
+
+        [Route("ExibirRanking/{id:guid}")]
+        public async Task<IActionResult> ExibirRanking(Guid Id, string returnUrl)
+        {
+            var rodada = await ObterRodada(Id);
+
+            if (rodada == null)
+            {
+                return NotFound();
+            }
+
+            IEnumerable<RankingRodada> enumRanking = null;
+            var userIdLogado = _usuarioService.GetLoggedInUserId();
+
+            if (userIdLogado != null)
+            {
+                var apostadorRepository = _uow.GetRepository<Apostador>() as ApostadorRepository;
+                var apostadorLogado = _mapper.Map<Apostador>(await apostadorRepository.ObterApostadorPorUsuarioId(userIdLogado));
+
+                var apelidoUsuarioLogado = apostadorLogado.Usuario.Apelido;
+
+                var rankingRodadaRepository = _uow.GetRepository<RankingRodada>() as RankingRodadaRepository;
+
+                enumRanking = await rankingRodadaRepository.ObterRankingDaRodada(Id);
+
+                var listaRanking = enumRanking.ToList();
+
+                int? posicaoApostador = null;
+                int? pontuacaoPrimeiro = listaRanking.FirstOrDefault()?.Pontuacao;
+                string diferencaParaPrimeiro = "";
+
+                for (int i = 0; i < listaRanking.Count; i++)
+                {
+                    if (listaRanking[i].ApostadorCampeonato.Apostador.Usuario.Apelido == apelidoUsuarioLogado)
+                    {
+                        posicaoApostador = i + 1;
+                        if (pontuacaoPrimeiro.HasValue)
+                        {
+                            int diferencaPontos = pontuacaoPrimeiro.Value - listaRanking[i].Pontuacao;
+                            diferencaParaPrimeiro = $" {i} posições / ({diferencaPontos}) pontos";
+                        }
+                        break;
+                    }
+                }
+
+                ViewBag.PosicaoDoApostador = posicaoApostador;
+                ViewBag.DiferencaParaPrimeiro = diferencaParaPrimeiro;
+                ViewBag.TotalDeApostadores = listaRanking.Count;
+            }
+            else
+            {
+                ViewBag.PosicaoDoApostador = null;
+                ViewBag.DiferencaParaPrimeiro = "Usuário não encontrado.";
+            }
+
+            TempData["Campeonato"] = rodada.Campeonato.Nome;
+            TempData["Rodada"] = rodada.NumeroRodada;
+            TempData["IdRodada"] = rodada.Id;
+
+            // Passe a returnUrl para a ViewBag
+            ViewBag.ReturnUrl = returnUrl;
+
+            var rankingRodadaViewModel = _mapper.Map<IEnumerable<RankingRodadaViewModel>>(enumRanking);
+
+            return View(rankingRodadaViewModel);
+        }
+
+
+        [HttpGet("/ListarApostasDoApostadorNaRodada/{id}")]
+        public async Task<IActionResult> ListarApostasDoApostadorNaRodada(Guid id)
+        {
+
+            var usuario = await _usuarioService.GetLoggedInUser();
+
+            var apostadorRepository = _uow.GetRepository<Apostador>() as ApostadorRepository;
+            var apostador = await apostadorRepository.ObterApostadorPorUsuarioId(usuario.Id);
+
+            var apostadorCampeonato = await ObterApostadorCampeonato(apostador.Id);
+
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = await rodadaRepository.ObterRodada(id);
+
+            if (apostadorCampeonato != null)
+            {
+                TempData["Campeonato"] = rodada.Campeonato.Nome;
+                TempData["Rodada"] = rodada.NumeroRodada;
+                TempData["IdRodada"] = rodada.Id;
+                TempData["Apostador"] = usuario.Apelido;
+                TempData["IdApostadorCampeonato"] = apostadorCampeonato.Id;
+
+               // ViewBag["IdRodada"] = rodada.Id;                
+               // ViewBag["IdApostadorCampeonato"] = apostadorCampeonato.Id;
+
+                //Isso aqui deverá ser substituído por uma consulta em ApostasDaRodada, uma tabela
+                //que deverá conter apenas DATAHORAAPOSTA, ID da RODADA, ID do APOSTADOR, ENVIADA, PONTOS
+                var apostaRepository = _uow.GetRepository<Aposta>() as ApostaRepository;
+                var verifApostasNaRodada = await apostaRepository.ObterApostaSalvaDoApostadorNaRodada(rodada.Id, apostadorCampeonato.Id);
+
+                if (verifApostasNaRodada.Enviada)
+                {
+                    TempData["DATA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortDateString();
+                    TempData["HORA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortTimeString();
+                    TempData["ENVIADA"] = "ENVIADA";
+                }
+                else
+                {
+                    TempData["DATAHORA_APOSTA"] = "";
+                    TempData["ENVIADA"] = "AINDA NÃO ENVIADA";
+                }
+
+            }
+
+            // Instancie e passe o ViewModel para a View
+            var viewModel = new RankingRodadaViewModel
+            {
+                ApostadorCampeonatoId = apostadorCampeonato.Id,
+                RodadaId = rodada.Id
+
+            };
+
+            return View(viewModel);  
+        }
+
+        [HttpPost("/RankingRodada/BuscarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}")]
+        public async Task<IActionResult> BuscarApostasDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId)  
+        {
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = await rodadaRepository.ObterRodada(rodadaId);
+
+            var apostaRepository = _uow.GetRepository<Aposta>() as ApostaRepository;
+            var listaApostas = await apostaRepository.ObterApostasDoApostadorNaRodada(rodada.Id, apostadorCampeonatoId);
+
+            var data = listaApostas.Select(aposta => new
+            {
+
+                Id = aposta.Id,
+                IdJogo = aposta.Jogo.Id,
+                SiglaMandante = aposta.Jogo.EquipeCasa.Equipe.Sigla,
+                EscudoMandante = aposta.Jogo.EquipeCasa.Equipe.Escudo,
+                SiglaVisitante = aposta.Jogo.EquipeVisitante.Equipe.Sigla,
+                EscudoVisitante = aposta.Jogo.EquipeVisitante.Equipe.Escudo,
+                PlacarRealCasa = aposta.Jogo.PlacarCasa,
+                PlacarRealVisitante = aposta.Jogo.PlacarVisita,
+                PlacarApostaCasa = aposta.PlacarApostaCasa,
+                PlacarApostaVisitante = aposta.PlacarApostaVisita,
+                StatusJogo = aposta.Jogo.Status,
+
+                Pontuacao = aposta.Pontos
+
+            }).ToList();
+
+            return Json(new { data });
+        }
+
+        [HttpGet("RankingRodada/ListarJogosDaRodada/{id:guid}")]
+        //[Route("ListarJogosDaRodada/{id:guid}")]
+        public async Task<IActionResult> ListarJogosDaRodada(Guid id)
+        {
+            //aqui pensar numa alteração: Permitir o gerenciamento de todas as RODADAS NÃO INICIADAS ...
+
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = _mapper.Map<RodadaViewModel>(await rodadaRepository.ObterRodada(id));
+
+            if (rodada == null)
+            {
+                return NotFound();
+            }
+
+            TempData["Campeonato"] = rodada.Campeonato.Nome;
+            TempData["Rodada"] = rodada.NumeroRodada;
+            TempData["NumJogos"] = rodada.NumJogos;
+
+            var jogoRepository = _uow.GetRepository<Jogo>() as JogoRepository;
+            var jogoViewModel = _mapper.Map<IEnumerable<JogoViewModel>>(await jogoRepository.ObterJogosDaRodada(id));
+
+            //TempData["Lancados"] = jogoViewModel.Count();
+
+            return View(jogoViewModel);
+        }
+
+
+        private async Task<RodadaViewModel> ObterRodada(Guid id)
+        {
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = _mapper.Map<RodadaViewModel>(await rodadaRepository.ObterRodadaCampeonato(id));
+
+            var campeonatoRepository = _uow.GetRepository<Campeonato>() as CampeonatoRepository;
+            rodada.Campeonatos = _mapper.Map<IEnumerable<CampeonatoViewModel>>(await campeonatoRepository.ObterTodos());
+            return rodada;
+        }
+
+        [HttpGet("BuscarRankingRodada/{id}")]
+        public async Task<JsonResult> BuscarRankingDaRodada(Guid Id)
+        {
+            var rankingRodadaRepository = _uow.GetRepository<RankingRodada>() as RankingRodadaRepository;
+            var listaRanking = await rankingRodadaRepository.ObterRankingDaRodada(Id);
+
+            var data = listaRanking.Select(ranking => new
+            {
+                Id = ranking.Id,
+
+                Posicao = ranking.Posicao,
+                Apelido = ranking.ApostadorCampeonato.Apostador.Usuario.Apelido,
+                Pontuacao = ranking.Pontuacao,
+
+
+            }).ToList();
+
+            return Json(new { data });
+        }
+
+
+        private async Task<ApostadorCampeonatoViewModel> ObterApostadorCampeonato(Guid Id)
+        {
+            var apostadorCampeonatoRepository = _uow.GetRepository<ApostadorCampeonato>() as ApostadorCampeonatoRepository;
+            var apostadorCampeonato = _mapper.Map<ApostadorCampeonatoViewModel>
+                (await apostadorCampeonatoRepository.ObterApostadorCampeonatoDoApostador(Id));
+
+            return apostadorCampeonato;
+
+        }
+
+    }
+}

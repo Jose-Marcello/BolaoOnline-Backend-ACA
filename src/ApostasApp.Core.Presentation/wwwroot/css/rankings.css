@@ -1,0 +1,142 @@
+/* Estilos padrão para telas maiores */
+div.dt-length label,
+div.dt-search label,
+div.dt-search input {
+    font-size: 0.7em; /* Tamanho de fonte padrão */
+}
+
+/* Media query para telas menores (ex: até 768px de largura) */
+@media (max-width: 768px) {
+    div.dt-length label,
+    div.dt-search label,
+    div.dt-search input {
+        font-size: 0.6em; /* Tamanho de fonte menor */
+    }
+}
+
+/* Media query para telas ainda menores (ex: até 480px de largura) */
+@media (max-width: 480px) {
+    div.dt-length label,
+    div.dt-search label,
+    div.dt-search input {
+        font-size: 0.5em; /* Tamanho de fonte ainda menor */
+    }
+}
+
+/* Oculta a barra de ferramentas do DataTables inicialmente */
+div.dt-length,
+div.dt-search {
+    display: none;
+}
+
+body {
+    background-color: #333;
+    color: #eee;
+}
+
+.container-fluid {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+/* Estilos para telas menores (ex: até 768px de largura) */
+@media (max-width: 768px) {
+    .ranking-aviso {
+        padding: 10px;
+        margin: 5px;
+        max-width: 95%; /* Ou outra largura desejada */
+    }
+}
+
+/* Estilos para o quadro de aviso como um container Flexbox */
+.ranking-aviso {
+    background-color: #333;
+    border: 2px solid #add8e6;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex; /* Tornar um container Flexbox */
+    flex-direction: column; /* Alinhar os itens verticalmente (os <p>) */
+}
+
+    /* Estilos para os parágrafos dentro do aviso para alinhar título à esquerda e resultado à direita */
+    .ranking-aviso p {
+        margin-bottom: 5px; /* Reduzindo a margem inferior */
+        color: white;
+        font-size: 0.8em;
+        display: flex; /* Tornar os parágrafos também containers Flexbox */
+        align-items: baseline; /* Alinhar pela linha de base */
+    }
+
+        .ranking-aviso p strong {
+            flex-shrink: 0; /* Evitar que o título encolha */
+            width: 150px; /* Largura fixa para os títulos (ajuste conforme necessário) */
+            text-align: left;
+            margin-right: 10px; /* Espaço entre o título e o valor */
+        }
+
+/* Estilos para destacar os números */
+.destaque-numero {
+    font-size: 1.0em; /* Números maiores */
+    color: coral; /* Cor coral para destaque */
+    font-weight: bold; /* Deixar os números em negrito */
+}
+
+#tb_ranking {
+    width: 70%;
+    margin: 20px auto 30px;
+    border-collapse: collapse;
+    color: #eee;
+    font-size: 0.9em;
+}
+
+    #tb_ranking th,
+    #tb_ranking td {
+        padding: 6px;
+        text-align: left;
+        border-bottom: 1px solid #555;
+    }
+
+    #tb_ranking th {
+        background-color: #444;
+    }
+
+.posicao-destacada {
+    font-size: 1em;
+    font-weight: bold;
+    color: #ffcc00;
+    text-align: center;
+}
+
+/* Estilizando a coluna de Pontuação */
+#tb_ranking td:nth-child(3), /* Terceira coluna (Pontuação) */
+#tb_ranking th:nth-child(3) {
+    color: #00ff99; /* Cor da fonte (verde claro - ajuste se desejar) */
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.1em; /* Aumentando um pouco o tamanho da fonte */
+}
+
+#toggleRankingOptions {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.6rem;
+}
+
+.barra-inferior {
+    background-color: #444;
+    padding: 10px;
+    text-align: center;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+    .barra-inferior button {
+        /* Estilos para o botão (se necessário) */
+    }
+
+/* Oculta a barra de ferramentas do DataTables inicialmente */
+div.dataTables_wrapper div.dataTables_length,
+div.dataTables_wrapper div.dataTables_filter {
+    display: none;
+}

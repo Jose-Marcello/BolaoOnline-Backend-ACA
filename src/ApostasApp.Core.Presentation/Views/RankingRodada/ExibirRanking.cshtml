@@ -1,0 +1,138 @@
+﻿@model IEnumerable<ApostasApp.Core.Presentation.ViewModels.RankingRodadaViewModel>
+
+
+@{
+    ViewData["Title"] = "Ranking da Rodada : " + TempData["Rodada"] + " do(a) : " + TempData["Campeonato"];
+
+    var idRodada = TempData["IdRodada"];
+}
+ @* <html> *@
+  
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> *@
+    <link rel="stylesheet" href="~/css/responsivo.css" />
+    <link rel="stylesheet" href="~/css/rankings.css" />
+    <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
+  </head>
+
+ @*  <body> *@
+
+    <div class="container-fluid">
+
+      <div class="info-apostador">
+        Ranking da Rodada @TempData["Rodada"] - @TempData["Campeonato"]
+      </div>
+
+      <div class="ranking-aviso">
+        @if (ViewBag.PosicaoDoApostador != null)
+        {
+                    <p><strong>Sua Posição:</strong> <span class="destaque-numero">@ViewBag.PosicaoDoApostador</span></p>
+            <p><strong>Relação com o Líder:</strong>  <span class="destaque-numero">  @Html.Raw(ViewBag.DiferencaParaPrimeiro)</span></p>
+        }
+        else
+        {
+                    <p>Você ainda não está no ranking desta rodada.</p>
+        }
+        <p><strong>Total de Apostadores:</strong> <span class="destaque-numero">@ViewBag.TotalDeApostadores</span></p>
+      </div>
+    
+      <table id="tb_ranking" class="display responsive nowrap" style="width:100%">
+        <thead>
+            <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Pontuação</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+     
+     <div class="barra-inferior">
+       <button id="toggleRankingOptions" class="btn btn-sm btn-outline-secondary ms-2" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+        <i class="fas fa-sliders-h"></i> <span class="ms-1 d-none d-sm-inline">Opções</span>
+       </button>
+
+        <button id="btnRetornar" onclick="window.location.href='/PainelUsuario'">
+            <i class="fas fa-stop"></i> Retornar
+        </button>
+     </div>
+
+    </div>
+
+@section Scripts{
+
+    <script>
+          //$(document).ready(function () {
+          //    alert('DOM está pronto!');
+          //    console.log('DOM está pronto.');
+          //});
+            var table = $('#tb_ranking').DataTable({
+
+            dom: 'lfrt',
+            //dom: "<'row'<'col-sm-12 col-md-6 d-flex align-items-center justify-content-start'li><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end'fp>>t<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            
+            "ajax": {
+                "url": '@Url.Action("BuscarRankingDaRodada", "RankingRodada", new { Id = idRodada })',
+                "type": "GET",
+                  "dataSrc": "data.$values",
+                "datatype": "json"
+            },
+
+            paging: true,
+            searching: true,
+            responsive: true,
+            //info:false;
+            //lenght: false;
+
+            "columnDefs": [
+                { "targets": 0, "visible": false }, // Oculta o ID
+                { "targets": 1, "className": "posicao-destacada" }
+
+            ],
+            "columns": [
+                { "data": "id", "visible": false },
+                { "data": "posicao", "title": "Posição" },
+                { "data": "apelido", "title": "Nome" },
+                { "data": "pontuacao", "title": "Pontuação" }
+            ],
+            "order": [[ 1, "asc" ]],
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json"
+            }
+        }); // Fechamento do DataTable
+
+         
+      
+          var botaoOpcoes = $('#toggleRankingOptions');
+       if (botaoOpcoes.length > 0) {
+         console.log('Botão Opções encontrado.');
+         botaoOpcoes.on('click', function() {
+                 $('div#tb_ranking_wrapper div.dt-length, div#tb_ranking_wrapper div.dt-search').slideToggle(); /* Para Bootstrap 5 */
+               //$('div#tb_ranking_wrapper div.row.mt-2.justify-content-between div.dt-length, div#tb_ranking_wrapper div.row.mt-2.justify-content-between div.dt-search').slideToggle();
+         });
+         console.log('Listener de clique adicionado ao botão Opções.');
+      } else {
+         console.log('Botão Opções NÃO encontrado!');
+       }
+
+
+        document.getElementById('btnRetornar').addEventListener('click', function() {
+            var returnUrl = '@ViewBag.ReturnUrl';
+            if (returnUrl) {
+                window.location.href = returnUrl;
+            } else {
+                // Se não houver returnUrl (acesso direto ao Ranking), volte para a lista de rodadas
+                window.location.href = '/RankingRodada/ListarRodadas';
+            }
+        });
+
+      //  document.getElementById('btnRetornar').addEventListener('click', function() {
+      //         window.location.href = '/RankingRodada/ListarRodadas'; // Alterado para a lista de rodadas
+      //     });
+
+    </script>
+
+
+}
