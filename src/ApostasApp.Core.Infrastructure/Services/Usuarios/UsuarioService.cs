@@ -14,6 +14,7 @@ using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using ApostasApp.Core.Domain.Models.Notificacoes;
+using ApostasApp.Core.Domain.Models;
 
 namespace ApostasApp.Core.InfraStructure.Services.Usuarios
 {
@@ -26,24 +27,26 @@ namespace ApostasApp.Core.InfraStructure.Services.Usuarios
         private readonly ISendGridClient _sendGridClient;
         //private readonly IUrlHelper _urlHelper;
         private readonly ILogger<UsuarioService> _logger;
-        private MeuDbContext _context;
-        private DbContextOptions<MeuDbContext> _options;
+        //private MeuDbContext _context;
+        //private DbContextOptions<MeuDbContext> _options;
         private readonly IOptions<SendGridSettings> _sendGridSettings;
         private readonly INotificador _notificador;
+        private readonly IUnitOfWork _uow;
 
 
         public UsuarioService(UserManager<Usuario> userManager,
                            SignInManager<Usuario> signInManager,
                            INotificador notificador,
                            LinkGenerator linkGenerator,
-                           MeuDbContext context,
-                           DbContextOptions<MeuDbContext> options,
+                           //MeuDbContext context,
+                           //DbContextOptions<MeuDbContext> options,
                            ISendGridClient sendGridClient,
                            IOptions<SendGridSettings> sendGridSettings,
                            ILogger<UsuarioService> logger,
+                           IUnitOfWork uow,
                            IHttpContextAccessor httpContextAccessor) : base(notificador)
                            //IUrlHelper urlHelper) : base(notificador)
-                            //ILogger logger,
+                           //ILogger logger,
         
         {
 
@@ -55,9 +58,10 @@ namespace ApostasApp.Core.InfraStructure.Services.Usuarios
             _sendGridSettings = sendGridSettings;
             //_urlHelper = urlHelper;
             _logger = logger;
-             _context = context;
-            _options = options;
+            //_context = context;
+            //_options = options;
             _notificador = _notificador;
+            _uow = uow;
         }
 
         //public async Task<IdentityResult> RegisterUserAsync(string email, string password)
@@ -325,7 +329,8 @@ namespace ApostasApp.Core.InfraStructure.Services.Usuarios
             if (result.Succeeded)
             {
 
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();
+                await _uow.SaveChanges();
 
                 // REVERIFICAR SE O PASSWORDHASH MUDOU APÓS A OPERAÇÃO (CONTORNANDO POSSÍVEL BUG INTERNO)
                 var updatedUser = await _userManager.FindByIdAsync(user.Id);
@@ -378,42 +383,24 @@ namespace ApostasApp.Core.InfraStructure.Services.Usuarios
             return await _userManager.FindByIdAsync(id);
         }
 
-       
 
-        //public async Task<string> GetLoggedInUserId()
-        public string GetLoggedInUserId()
-        {
-            using (var context = new MeuDbContext(_options))
-            {
-                var user =   _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User).Result;
-
-                if (user != null)
-                {
-                    return user.Id.ToString();
-                }
-
-                return null;
-            }
-        }
-
-        public async Task<Usuario> GetLoggedInUser()
+        // Método GetLoggedInUserId() atualizado para ser assíncrono e sem DbContext manual
+        public async Task<string> GetLoggedInUserId()
         {
             var user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-
             if (user != null)
             {
-                // O usuário não está autenticado
-                return user;
+                return user.Id.ToString();
             }
-
             return null;
-
-
         }
 
-        
-
-        // Outras implementações...
+        // Método GetLoggedInUser() simplificado
+        public async Task<Usuario> GetLoggedInUser()
+        {
+            return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+        }
+                
     }
 
 }

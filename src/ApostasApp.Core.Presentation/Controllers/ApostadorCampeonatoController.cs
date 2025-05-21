@@ -180,6 +180,87 @@ namespace ApostasApp.Core.Presentation.Controllers
         }
 
 
+        [HttpGet("ListarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}")]
+        public async Task<IActionResult> ListarApostasDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId)
+        {
+            var apostadorCampeonato = await ObterApostadorCampeonato(apostadorCampeonatoId); // Assumindo que ObterApostadorCampeonato está definido
+            var usuario = await _usuarioService.GetLoggedInUser(); // Assumindo que _usuarioService está injetado
+
+            // Verificações de nulidade para apostadorCampeonato e usuario
+            if (apostadorCampeonato == null || usuario == null)
+            {
+                TempData["Notificacao"] = "Dados do apostador ou usuário não encontrados.";
+                return RedirectToAction("PainelUsuario", "Account");
+            }
+
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = await rodadaRepository.ObterRodadaCampeonato(rodadaId); // Assumindo que ObterRodadaCampeonato existe e obtém a rodada completa com campeonato
+
+            if (rodada == null)
+            {
+                TempData["Notificacao"] = "Rodada não encontrada.";
+                return RedirectToAction("PainelUsuario", "Account");
+            }
+
+            // Consulta a aposta salva para verificar o status
+            var apostaRepository = _uow.GetRepository<Aposta>() as ApostaRepository;
+            var verifApostasNaRodada = await apostaRepository.ObterApostaSalvaDoApostadorNaRodada(rodada.Id, apostadorCampeonato.Id);
+                        
+
+            
+            // Cria e popula a nova ViewModel
+            var viewModel = new ApostasPorRodadaViewModel
+            {
+                ApostadorCampeonatoId = apostadorCampeonato.Id, // Já vem preenchido da URL
+                RodadaId = rodadaId, // Já vem preenchido da URL
+                ApostadorApelido = usuario.Apelido,
+                CampeonatoNome = rodada.Campeonato?.Nome ?? "N/A", // Verifique se Campeonato não é null
+                NumeroRodada = rodada.NumeroRodada,
+                DataAposta = verifApostasNaRodada?.DataHoraAposta.ToShortDateString() ?? "",
+                HoraAposta = verifApostasNaRodada?.DataHoraAposta.ToShortTimeString() ?? "",
+                StatusEnvioAposta = verifApostasNaRodada?.Enviada == true ? "ENVIADA" : "AINDA NÃO ENVIADA"
+            };
+
+            // OPCIONAL: Mantenha TempData para notificações pontuais ou mensagens que desaparecem após uma requisição
+            // TempData["Notificacao"] = "Alguma mensagem aqui";
+
+            // Agora, retorne a View com a nova ViewModel
+            return View(viewModel);
+
+            //return View(apostadorCampeonato);
+        }
+
+        [HttpPost("BuscarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}")]
+        public async Task<IActionResult> BuscarApostasDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId)
+        {
+            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+            var rodada = await rodadaRepository.ObterRodada(rodadaId);
+
+            var apostaRepository = _uow.GetRepository<Aposta>() as ApostaRepository;
+            var listaApostas = await apostaRepository.ObterApostasDoApostadorNaRodada(rodadaId, apostadorCampeonatoId);
+
+            var data = listaApostas.Select(aposta => new
+            {
+
+                Id = aposta.Id,
+                IdJogo = aposta.Jogo.Id,
+                SiglaMandante = aposta.Jogo.EquipeCasa.Equipe.Sigla,
+                EscudoMandante = aposta.Jogo.EquipeCasa.Equipe.Escudo,
+                SiglaVisitante = aposta.Jogo.EquipeVisitante.Equipe.Sigla,
+                EscudoVisitante = aposta.Jogo.EquipeVisitante.Equipe.Escudo,
+                PlacarRealCasa = aposta.Jogo.PlacarCasa,
+                PlacarRealVisitante = aposta.Jogo.PlacarVisita,
+                PlacarApostaCasa = aposta.PlacarApostaCasa,
+                PlacarApostaVisitante = aposta.PlacarApostaVisita,
+                StatusJogo = aposta.Jogo.Status,
+
+                Pontuacao = aposta.Pontos
+
+            }).ToList();
+
+            return Json(new { data });
+        }
+        
         [HttpPost("BuscarStatusEDataHoraApostaDaRodada/{id}")]
         public async Task<JsonResult> BuscarStatusEDataHoraApostaDaRodada(Guid Id)
         {
@@ -392,13 +473,14 @@ namespace ApostasApp.Core.Presentation.Controllers
                     return Json(new { success = false, message = "Aposta INVÁLIDA - Uma APOSTA tem que ter pelo menos 3 resultados EMPATE ou VISITANTE VENCENDO" });
                 }
 
-                _uow.Commit();
+                //_uow.Commit();
+                await _uow.SaveChanges();
 
                 return Json(new { success = true });
             }
             catch (Exception ex)
             {
-                _uow.Rollback(); // Desfaz a transação em caso de erro
+                //_uow.Rollback(); // Desfaz a transação em caso de erro
                 return Json(new { success = false, message = ex.Message });
             }
         }

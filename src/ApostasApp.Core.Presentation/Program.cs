@@ -175,15 +175,20 @@ namespace ApostasApp.Core.Presentation
                 defaults: new { controller = "ApostadorCampeonato", action = "ExibirInterfaceDaRodadaCorrente" });
 
                 endpoints.MapControllerRoute(
+                name: "ListarApostasDoApostadorNaRodada",
+                pattern: "ApostadorCampeonato/ListarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}", // Adicione o parâmetro {id} se necessário
+                defaults: new { controller = "ApostadorCampeonato", action = "ListarApostasDoApostadorNaRodada" });
+
+                endpoints.MapControllerRoute(
                 name: "ListarApostasDoApostadorNaRodadaEmApostas",
                 pattern: "ApostadorCampeonato/ListarApostasDoApostadorNaRodadaEmApostas/{id}", // Adicione o parâmetro {id} se necessário
                 defaults: new { controller = "ApostadorCampeonato", action = "ListarApostasDoApostadorNaRodadaEmApostas" });
-
-                app.MapControllerRoute(
+               
+                /*app.MapControllerRoute(
                 name: "BuscarApostasDoApostadorNaRodada",
-                pattern: "RankingRodada/BuscarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}",
-                defaults: new { controller = "RankingRodada", action = "BuscarApostasDoApostadorNaRodada" });
-
+                pattern: "BuscarApostasDoApostadorNaRodada/{apostadorCampeonatoId}/{rodadaId}",
+                defaults: new { controller = "ApostadorController", action = "BuscarApostasDoApostadorNaRodadaSelecionada" });
+*/
                 app.MapControllerRoute(
                 name: "Apostar",
                 pattern: "ApostadorCampeonato/Apostar", // <-- Rota especfica para Apostar

@@ -106,7 +106,9 @@ namespace ApostasApp.Presentation.Controllers
 
             await _rodadaService.Atualizar(_mapper.Map<Rodada>(rodada));
 
-            _uow.Commit();
+            //_uow.Commit();
+            await _uow.SaveChanges();
+            
 
 
             //var apostaViewModel = _mapper.Map<IEnumerable<ApostaViewModel>>(await _apostaRepository.ObterApostasDaRodada(rodada.Id));
@@ -166,8 +168,9 @@ namespace ApostasApp.Presentation.Controllers
             }
 
             //salva a operação
-            _uow.Commit();
-            
+            //_uow.Commit(); await
+            _uow.SaveChanges(); 
+
             TempData["Campeonato"] = rodada.Campeonato.Nome;
             TempData["Rodada"] = rodada.NumeroRodada;            
 

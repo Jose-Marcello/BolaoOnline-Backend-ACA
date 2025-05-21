@@ -48,20 +48,53 @@ namespace ApostasApp.Core.Presentation.Controllers
         {
             try
             {
+                // 1. Obter o ID do usuário logado
+                var userId = await _usuarioService.GetLoggedInUserId();
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    TempData["Notificacao"] = "Usuário não logado.";
+                    return RedirectToAction("Login", "Account");
+                }
+
                 var campeonatoRepository = _uow.GetRepository<Campeonato>() as CampeonatoRepository;
                 var campeonato = await campeonatoRepository.ObterCampeonatoAtivo();
 
                 if (campeonato == null)
                 {
-                    // Lógica para lidar com o caso em que o campeonato não foi encontrado
-                    return View("CampeonatoNaoEncontrado"); // Ou outra view apropriada
+                    TempData["Notificacao"] = "Nenhum campeonato ativo encontrado.";
+                    return View("CampeonatoNaoEncontrado");
                 }
 
+                // 2. Obter o ApostadorCampeonato para o usuário logado e o campeonato ativo
+                var apostadorCampeonatoRepository = _uow.GetRepository<ApostadorCampeonato>() as ApostadorCampeonatoRepository;
+                var apostadorCampeonato = await apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(userId, campeonato.Id);
+
+                if (apostadorCampeonato == null)
+                {
+                    TempData["Notificacao"] = "Apostador não associado a um campeonato ativo.";
+                    return RedirectToAction("PainelUsuario", "Account"); // Ou outra página apropriada
+                }
+
+                // 3. Obter as rodadas com ranking
+                var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
+                var rodadas = await rodadaRepository.ObterRodadasComRanking(campeonato.Id);
+
+                // 4. Mapear para o ViewModel da Rodada (se necessário)
+                var rodadasViewModel = _mapper.Map<IEnumerable<RodadaViewModel>>(rodadas);
+
+                // 5. Criar o ViewModel principal para a View e passar para ela
+                var model = new RodadasComApostadorViewModel
+                {
+                    Rodadas = rodadasViewModel,
+                    ApostadorCampeonatoId = apostadorCampeonato.Id, // <--- AGORA O ID ESTÁ AQUI!
+                    CampeonatoNome = campeonato.Nome // Para o título da View
+                };
+
+                // Você pode remover esta linha se o CampeonatoNome estiver no Model
                 TempData["Campeonato"] = campeonato.Nome;
 
-                var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
-                return View(_mapper.Map<IEnumerable<RodadaViewModel>>
-                            (await rodadaRepository.ObterRodadasComRanking(campeonato.Id)));
+                return View(model);
             }
             catch (DbUpdateException ex)
             {
@@ -87,7 +120,7 @@ namespace ApostasApp.Core.Presentation.Controllers
             }
 
             IEnumerable<RankingRodada> enumRanking = null;
-            var userIdLogado = _usuarioService.GetLoggedInUserId();
+            var userIdLogado = await _usuarioService.GetLoggedInUserId();
 
             if (userIdLogado != null)
             {
@@ -143,7 +176,7 @@ namespace ApostasApp.Core.Presentation.Controllers
         }
 
 
-        [HttpGet("/ListarApostasDoApostadorNaRodada/{id}")]
+        /*[HttpGet("/ListarApostasDoApostadorNaRodada/{id}")]
         public async Task<IActionResult> ListarApostasDoApostadorNaRodada(Guid id)
         {
 
@@ -228,6 +261,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 
             return Json(new { data });
         }
+        */
 
         [HttpGet("RankingRodada/ListarJogosDaRodada/{id:guid}")]
         //[Route("ListarJogosDaRodada/{id:guid}")]

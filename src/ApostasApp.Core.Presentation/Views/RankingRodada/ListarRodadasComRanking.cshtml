@@ -1,10 +1,9 @@
-﻿
-@model IEnumerable<ApostasApp.Core.Presentation.ViewModels.RodadaViewModel>
+﻿@model ApostasApp.Core.Presentation.ViewModels.RodadasComApostadorViewModel // @* <-- Mude o tipo do Model *@
 
 @using System.Globalization;
 
 @{
-    ViewData["Title"] = "Consultas à Rodadas - " + TempData["Campeonato"];
+    ViewData["Title"] = "Consultas à Rodadas - " + Model.CampeonatoNome; @* Usando o nome do campeonato do Model *@
 }
 
 <head>
@@ -16,45 +15,48 @@
 </head>
 
 <div class="container">
-        
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mt-4">@ViewData["Title"]</h4>
         <a href="@Url.Action("PainelUsuario", "Account")" class="btn btn-sm btn-secondary">Retornar ao Menu</a>
 
-       
+
     </div>
-        
+
     <hr />
 
-    @if (Model.Any())
+    @if (Model.Rodadas != null && Model.Rodadas.Any()) @* Verifique se a coleção de Rodadas não é nula e tem itens *@
     {
-      <table id="#tb_rodadas"  class="lista-rodadas table table-striped table-hover">
-        <thead class="thead-dark">             
-
-            <tr>
-                <th> Num Rod</th>
-                <th>Período </th>
-                @*  <th>Jogos</th> *@
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
+        <table id="#tb_rodadas" class="lista-rodadas table table-striped table-hover">
+            <thead class="thead-dark">
                 <tr>
-                    <td>@item.NumeroRodada</td>
+                    <th>Num Rod</th>
+                    <th>Período </th>
+                    @* <th>Jogos</th> *@
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Rodadas) @* <-- Iterando sobre Model.Rodadas *@
+                {
+                    <tr>
+                        <td>@item.NumeroRodada</td>
 
-                        <td> @item.DataInic.ToString("ddd", new CultureInfo("pt-BR")) (@item.DataInic.ToString("dd/MM/yy")) 
-                            - @item.DataFim.ToString("ddd", new CultureInfo("pt-BR")) (@item.DataFim.ToString("dd/MM/yy")) </td>
-                         
-                    <td>@item.Status</td>
+                        <td>
+                            @item.DataInic.ToString("ddd", new CultureInfo("pt-BR")) (@item.DataInic.ToString("dd/MM/yy"))
+                            - @item.DataFim.ToString("ddd", new CultureInfo("pt-BR")) (@item.DataFim.ToString("dd/MM/yy"))
+                        </td>
+
+                        <td>@item.Status</td>
 
                         <td class="text-right">
-                            <a class="btn btn-sm btn-primary meu-botao-pequeno-azul" data-toggle="tooltip" data-placement="top" title="Apostas do Apostador na Rodada" asp-controller="RankingRodada" asp-action="ListarApostasDoApostadorNaRodada" asp-route-id="@item.Id">
-                                <i class="fas fa-address-card"></i>
+                            <a class="btn btn-sm btn-primary meu-botao-pequeno-azul" data-toggle="tooltip" data-placement="top" title="Apostas do Apostador na Rodada" asp-controller="ApostadorCampeonato"
+                               asp-action="ListarApostasDoApostadorNaRodada" 
+                               asp-route-apostadorCampeonatoId="@Model.ApostadorCampeonatoId"
+                               asp-route-rodadaId="@item.Id"> <i class="fas fa-address-card"></i>
                             </a>
-                          
+
                             <a class="btn btn-sm btn-info meu-botao-pequeno-info" data-toggle="tooltip" data-placement="top" title="Ranking da Rodada" asp-controller="RankingRodada" asp-action="ExibirRanking" asp-route-id="@item.Id">
                                 <i class="fas fa-chart-line"></i>
                             </a>
@@ -62,15 +64,15 @@
                             <a class="btn btn-sm btn-secondary meu-botao-pequeno-azul" data-toggle="tooltip" data-placement="top" title="Jogos da Rodada" asp-controller="RankingRodada" asp-action="ListarJogosDaRodada" asp-route-id="@item.Id">
                                 <i class="fas fa-book-open "></i>
                             </a>
-                          
+
                             <a class="btn btn-sm btn-danger meu-botao-pequeno-info" data-toggle="tooltip" data-placement="top" title="Conferência de Apostas da Rodada" asp-controller="RankingRodada" asp-action="ConfereApostasRodada" asp-route-id="@item.Id">
                                 <i class="fas fa-barcode"></i>
                             </a>
                         </td>
-                </tr>
-            }
-           </tbody>
-      </table>
+                    </tr>
+                }
+            </tbody>
+        </table>
     }
     else
     {
@@ -84,5 +86,3 @@
         $('[data-toggle="tooltip"]').tooltip()
     })
 </script>
-
-

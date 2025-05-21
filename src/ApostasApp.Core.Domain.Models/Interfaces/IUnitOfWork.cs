@@ -7,7 +7,7 @@ namespace ApostasApp.Core.Domain.Models
     {
         //IDbContextTransaction BeginTransaction();
         void BeginTransaction();
-        void Commit();
+        //void Commit();
         void Rollback();
         // Adicione métodos para acessar os repositórios
         Task<int> SaveChanges();

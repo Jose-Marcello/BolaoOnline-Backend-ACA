@@ -40,7 +40,7 @@ namespace ApostasApp.Core.InfraStructure.Services.Apostadores
                 Console.WriteLine(ex);
                 // Verifique se há erros de validação de dados ou problemas de integridade referencial
                 // Notifique o usuário sobre o problema
-                _uow.Rollback();
+                //_uow.Rollback();
             }
             catch (ObjectDisposedException ex)
             {
@@ -49,7 +49,7 @@ namespace ApostasApp.Core.InfraStructure.Services.Apostadores
                 Console.WriteLine(ex);
                 // Verifique se o DbContext ou a UnitOfWork foram descartados prematuramente
                 // Notifique o usuário sobre o problema
-                _uow.Rollback();
+                //_uow.Rollback();
             }
             catch (Exception ex)
             {
@@ -57,7 +57,7 @@ namespace ApostasApp.Core.InfraStructure.Services.Apostadores
                 // Registre a exceção completa para depuração
                 Console.WriteLine(ex);
                 // Notifique o usuário sobre o problema
-                _uow.Rollback();
+                //_uow.Rollback();
 
 
             }

@@ -39,7 +39,7 @@ namespace ApostasApp.Core.Domain.Models.Interfaces.Usuarios
 
         Task<Usuario> GetLoggedInUser();
 
-        string GetLoggedInUserId();
+        Task<string> GetLoggedInUserId();
 
         Task ResendEmailConfirmationAsync(string email);
 

@@ -76,8 +76,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 		[AllowAnonymous]
 		[ActionName("Register")]
 		public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
-		{
-			_uow.BeginTransaction();
+		{		
 
 			try
 			{
@@ -181,25 +180,25 @@ namespace ApostasApp.Core.Presentation.Controllers
 									{
 										Console.WriteLine($"Erro ao adicionar aposta (DbUpdateException): {ex.Message}");
 										Console.WriteLine(ex);
-										_uow.Rollback();
+										//_uow.Rollback();
 									}
 									catch (ObjectDisposedException ex)
 									{
 										Console.WriteLine($"Erro ao adicionar aposta (ObjectDisposedException): {ex.Message}");
 										Console.WriteLine(ex);
-										_uow.Rollback();
+										//_uow.Rollback();
 									}
 									catch (System.IO.IOException ex)
 									{
 										Console.WriteLine($"Erro ao adicionar aposta (IOException): {ex.Message}");
 										Console.WriteLine(ex);
-										_uow.Rollback();
+										//_uow.Rollback();
 									}
 									catch (Exception ex)
 									{
 										Console.WriteLine($"Erro ao adicionar aposta: {ex.Message}");
 										Console.WriteLine(ex);
-										_uow.Rollback();
+										//_uow.Rollback();
 									}
 								}
 
@@ -220,9 +219,11 @@ namespace ApostasApp.Core.Presentation.Controllers
 
 						System.Diagnostics.Debug.WriteLine($"Transaction antes do COMMIT: {_uow.GetTransactionHashCode()}");
 
-						_uow.Commit();
+						//_uow.Commit();
+						await _uow.SaveChanges();
 
-						var code = await _usuarioService.GenerateEmailConfirmationTokenAsync(user);
+
+                        var code = await _usuarioService.GenerateEmailConfirmationTokenAsync(user);
 						var codeEncoded = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(code));
 						var callbackUrl = Url.Action("ConfirmEmail", "Account",
 							new { userId = user.Id, code = codeEncoded }, Request.Scheme);
@@ -244,19 +245,19 @@ namespace ApostasApp.Core.Presentation.Controllers
 			}
 			catch (DbUpdateException ex)
 			{
-				_uow.Rollback();
+				//_uow.Rollback();
 				_logger.LogError(ex, "Erro ao salvar dados no banco de dados.");
 				return BadRequest(new { error = "Erro ao salvar dados." });
 			}
 			catch (ArgumentException ex)
 			{
-				_uow.Rollback();
+				//_uow.Rollback();
 				_logger.LogError(ex, "Argumento inválido.");
 				return BadRequest(new { error = "Argumento inválido." });
 			}
 			catch (Exception ex)
 			{
-				_uow.Rollback();
+				//_uow.Rollback();
 				_logger.LogError(ex, "Erro ao registrar o usuário.");
 				return BadRequest(new { error = ex.Message });
 			}
@@ -293,11 +294,12 @@ namespace ApostasApp.Core.Presentation.Controllers
 
 			if (result.Succeeded)
 			{
-				_uow.Commit(); // Use a sua instância do Unit of Work aqui
+				//_uow.Commit(); // Use a sua instância do Unit of Work aqui
+				await _uow.SaveChanges();
 
-				// E-mail confirmado com sucesso! Agora, redirecione PARA LOGIN
+                // E-mail confirmado com sucesso! Agora, redirecione PARA LOGIN
 
-				return RedirectToAction("Login", "Account"); // Assumindo que sua Action de login se chama "Login" e está no "AccountController"
+                return RedirectToAction("Login", "Account"); // Assumindo que sua Action de login se chama "Login" e está no "AccountController"
 			}
 			else
 			{
@@ -306,7 +308,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 					_logger.LogError($"Erro na confirmação de e-mail: {error.Code} - {error.Description}");
 				}
 
-				_uow.Rollback();
+				//_uow.Rollback();
 
 				return View("Error");
 
@@ -367,7 +369,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 							else
 							{
 
-								_uow.Rollback(); // Opcional: rollback em caso de falha
+								//_uow.Rollback(); // Opcional: rollback em caso de falha
 
 								return View("Error"); // Ou uma página de erro de confirmação
 							}
@@ -599,9 +601,10 @@ namespace ApostasApp.Core.Presentation.Controllers
 								if (result.Succeeded)
 								{
                         
-                                    _uow.Commit(); // Adicione o CommitAsync AQUI
-                                    
-					            	_logger.LogInformation($"Senha redefinida com sucesso para o usuário com ID: {user.Id}");
+                                    //_uow.Commit(); // Adicione o CommitAsync AQUI
+                                    await _uow.SaveChanges(); 
+
+                                    _logger.LogInformation($"Senha redefinida com sucesso para o usuário com ID: {user.Id}");
 									await _signInManager.SignOutAsync();
 									return RedirectToAction("Login");
 
@@ -651,17 +654,17 @@ namespace ApostasApp.Core.Presentation.Controllers
 
 
 					[HttpGet("PainelUsuario")]
-					public IActionResult PainelUsuario()
+					public async Task<IActionResult> PainelUsuario()
 					{
 						// Lógica para obter dados do painel do usuário...
 
-						var campeonato = ObterCampeonatoAtivo().Result;
+						var campeonato = await ObterCampeonatoAtivo();
 
 						if (campeonato != null)
 						{
-							var userId = _usuarioService.GetLoggedInUserId();
+							var userId = await _usuarioService.GetLoggedInUserId();
 
-							var apostadorCampeonato = ObterApostadorCampeonato(userId, campeonato.Id).Result;
+							var apostadorCampeonato = await ObterApostadorCampeonato(userId, campeonato.Id);
 
 							var painelUsuarioViewModel = new PainelUsuarioViewModel
 							{
@@ -669,7 +672,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 							};
 
 							// Obter o nome do usuário (adapte conforme sua implementação)
-							var usuario = _usuarioService.ObterUsuarioPorId(userId).Result; // Supondo que você tenha um método para buscar o usuário pelo ID
+							var usuario = await _usuarioService.ObterUsuarioPorId(userId); // Supondo que você tenha um método para buscar o usuário pelo ID
 
 							if (usuario != null)
 							{
@@ -709,7 +712,7 @@ namespace ApostasApp.Core.Presentation.Controllers
 	}
 
 
-		private async Task<Domain.Models.Campeonatos.ApostadorCampeonato> ObterApostadorCampeonato(string usuarioId, Guid campeonatoId)
+		private async Task<ApostadorCampeonato> ObterApostadorCampeonato(string usuarioId, Guid campeonatoId)
 		{
 			var apostadorCampeonatoRepository = _uow.GetRepository<ApostadorCampeonato>() as ApostadorCampeonatoRepository;
 			var apostadorCampeonato = await apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(usuarioId, campeonatoId);
