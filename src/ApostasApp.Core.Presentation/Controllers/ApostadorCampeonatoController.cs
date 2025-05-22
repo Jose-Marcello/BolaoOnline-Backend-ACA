@@ -116,17 +116,24 @@ namespace ApostasApp.Core.Presentation.Controllers
                 var apostaRepository = _uow.GetRepository<Aposta>() as ApostaRepository;
                 var verifApostasNaRodada = await apostaRepository.ObterApostaSalvaDoApostadorNaRodada(rodada.Id, apostadorCampeonato.Id);
 
-                if (verifApostasNaRodada.Enviada)
+
+                // Verifica se DataHoraAposta tem um valor antes de tentar formatar
+                if (verifApostasNaRodada.DataHoraAposta.HasValue)
                 {
-                    TempData["DATA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortDateString();
-                    TempData["HORA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortTimeString();
+                    TempData["DATA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.Value.ToShortDateString();
+                    TempData["HORA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.Value.ToShortTimeString();
                     TempData["ENVIADA"] = "ENVIADA";
                 }
                 else
                 {
+                    // Caso seja enviada mas a data seja nula (situação que deve ser evitada na lógica de negócio)
+                    TempData["DATA_APOSTA"] = "Data Indisponível";
+                    TempData["HORA_APOSTA"] = "Hora Indisponível";
                     TempData["DATAHORA_APOSTA"] = "";
                     TempData["ENVIADA"] = "AINDA NÃO ENVIADA";
                 }
+
+                
 
             }
 
@@ -164,13 +171,27 @@ namespace ApostasApp.Core.Presentation.Controllers
 
                 if (verifApostasNaRodada.Enviada)
                 {
-                    TempData["DATA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortDateString();
-                    TempData["HORA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.ToShortTimeString();
+                    // Verifica se DataHoraAposta tem um valor antes de tentar formatar
+                    if (verifApostasNaRodada.DataHoraAposta.HasValue)
+                    {
+                        TempData["DATA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.Value.ToShortDateString();
+                        TempData["HORA_APOSTA"] = verifApostasNaRodada.DataHoraAposta.Value.ToShortTimeString();
+                        TempData["ENVIADA"] = "ENVIADA";
+                    }
+                    else
+                    {
+                        // Caso seja enviada mas a data seja nula (situação que deve ser evitada na lógica de negócio)
+                        TempData["DATA_APOSTA"] = "Data Indisponível";
+                        TempData["HORA_APOSTA"] = "Hora Indisponível";
+                        TempData["DATAHORA_APOSTA"] = "";
+                        TempData["ENVIADA"] = "AINDA NÃO ENVIADA";
+                    }
                     TempData["ENVIADA"] = "ENVIADA";
                 }
                 else
                 {
-                    TempData["DATAHORA_APOSTA"] = "";
+                    // Para apostas não enviadas, a DataHoraAposta será null, então não há o que formatar
+                    TempData["DATAHORA_APOSTA"] = ""; // Ou "Não Aplicável", "Aguardando Envio"
                     TempData["ENVIADA"] = "AINDA NÃO ENVIADA";
                 }
 
@@ -216,8 +237,20 @@ namespace ApostasApp.Core.Presentation.Controllers
                 ApostadorApelido = usuario.Apelido,
                 CampeonatoNome = rodada.Campeonato?.Nome ?? "N/A", // Verifique se Campeonato não é null
                 NumeroRodada = rodada.NumeroRodada,
-                DataAposta = verifApostasNaRodada?.DataHoraAposta.ToShortDateString() ?? "",
-                HoraAposta = verifApostasNaRodada?.DataHoraAposta.ToShortTimeString() ?? "",
+
+                // Correção para DataAposta e HoraAposta:
+                // Usamos o operador ?. (null-conditional operator) para verificar se verifApostasNaRodada não é null
+                // E depois o .HasValue para verificar se DataHoraAposta tem um valor.
+                // Se tiver valor, usamos .Value para acessar o DateTime real e formatá-lo.
+                // Se não tiver valor, usamos ?? para definir uma string vazia ou um texto padrão.
+                DataAposta = verifApostasNaRodada?.DataHoraAposta.HasValue == true
+                             ? verifApostasNaRodada.DataHoraAposta.Value.ToShortDateString()
+                             : "", // Ou "N/A", "Não Enviada"
+                HoraAposta = verifApostasNaRodada?.DataHoraAposta.HasValue == true
+                             ? verifApostasNaRodada.DataHoraAposta.Value.ToShortTimeString()
+                             : "", // Ou "N/A", "Não Enviada"
+
+
                 StatusEnvioAposta = verifApostasNaRodada?.Enviada == true ? "ENVIADA" : "AINDA NÃO ENVIADA"
             };
 
@@ -528,17 +561,23 @@ namespace ApostasApp.Core.Presentation.Controllers
 */
         private void DefinirDadosApostaEnviada(Domain.Models.Apostas.Aposta aposta)
         {
+
+            // Verifica se DataHoraAposta tem um valor antes de tentar formatar
             if (aposta.Enviada)
             {
-                TempData["DATA_APOSTA"] = aposta.DataHoraAposta.ToShortDateString();
-                TempData["HORA_APOSTA"] = aposta.DataHoraAposta.ToShortTimeString();
+                TempData["DATA_APOSTA"] = aposta.DataHoraAposta.Value.ToShortDateString();
+                TempData["HORA_APOSTA"] = aposta.DataHoraAposta.Value.ToShortTimeString();
                 TempData["ENVIADA"] = "ENVIADA";
             }
             else
             {
+                // Caso seja enviada mas a data seja nula (situação que deve ser evitada na lógica de negócio)
+                TempData["DATA_APOSTA"] = "Data Indisponível";
+                TempData["HORA_APOSTA"] = "Hora Indisponível";
                 TempData["DATAHORA_APOSTA"] = "";
                 TempData["ENVIADA"] = "AINDA NÃO ENVIADA";
             }
+                        
         }
 
         private string ObterPlacarAposta(int placar, bool enviada)

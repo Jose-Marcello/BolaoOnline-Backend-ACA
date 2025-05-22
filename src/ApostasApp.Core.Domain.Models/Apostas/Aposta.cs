@@ -10,7 +10,7 @@ namespace ApostasApp.Core.Domain.Models.Apostas{
         public Guid JogoId { get; set; }
         public Guid ApostadorCampeonatoId { get; set; }
 
-        public DateTime DataHoraAposta { get; set; }
+        public DateTime? DataHoraAposta { get; set; }
         public int PlacarApostaCasa { get; set; }
         public int PlacarApostaVisita { get; set; }
 
