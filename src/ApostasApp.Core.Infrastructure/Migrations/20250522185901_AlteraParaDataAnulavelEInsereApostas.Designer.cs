@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ApostasApp.Core.InfraStructure.Migrations
 {
     [DbContext(typeof(MeuDbContext))]
-    [Migration("20250522150915_InseriApostas")]
-    partial class InseriApostas
+    [Migration("20250522185901_AlteraParaDataAnulavelEInsereApostas")]
+    partial class AlteraParaDataAnulavelEInsereApostas
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,7 +55,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Property<Guid>("ApostadorCampeonatoId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("DataHoraAposta")
+                    b.Property<DateTime?>("DataHoraAposta")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("Enviada")

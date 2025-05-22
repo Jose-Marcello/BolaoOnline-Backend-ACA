@@ -1,16 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace ApostasApp.Core.InfraStructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InserirApostas : Migration
+    public partial class AlteraParaDataAnulavelEInsereApostas : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Inserir dados na tabela Apostas
+            // PASSO 1: Tornar DataHoraAposta anulável
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "DataHoraAposta",
+                table: "Apostas",
+                type: "datetime2",
+                nullable: true, // Agora permite NULL
+                oldClrType: typeof(DateTime),
+                oldType: "datetime2");
+
+            // PASSO 2: Inserir dados na tabela Apostas
+            // Certifique-se de que os NULLs estão corretos para as apostas não enviadas
             migrationBuilder.Sql(@"
                 INSERT INTO Apostas (Id, JogoId, ApostadorCampeonatoId, DataHoraAposta, PlacarApostaCasa, PlacarApostaVisita, Enviada, Pontos) VALUES
                 ('D990BA1F-1FC3-4F91-B0B2-0080C0FC98AB', 'F2DDA750-7A82-48C8-1C13-08DD923C97F5', '6B62054D-0849-4337-AF9D-005FEAE6C7EE', NULL, 0, 0, 0, 0);
@@ -411,15 +422,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 INSERT INTO Apostas (Id, JogoId, ApostadorCampeonatoId, DataHoraAposta, PlacarApostaCasa, PlacarApostaVisita, Enviada, Pontos) VALUES
                 ('8DCE9CAC-4A6B-4906-ACBB-CC8EF17B9D7C', '4AA7EBC4-3F83-4EE5-714A-08DD8CD6453F', '0C6F2CBB-1CDF-42A8-8414-D2C8B04EBAD6', '2025-05-11 14:32:00.6706740', 2, 0, 1, 0);
             ");
-            // ... continue adicionando todos os 120 registros aqui
-            // Lembre-se de ajustar o formato da data se a coluna DataHoraAposta não aceitar NULL e 0001-01-01 não for válido.
-            // Para datas como '2025-05-11 14:32:42.1825314', o formato string está correto.
+            // ... (TODOS os seus 120 INSERTs com NULL ou datas válidas) ...
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remover dados da tabela Apostas
+            // PASSO 1: Remover dados da tabela Apostas
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = 'D990BA1F-1FC3-4F91-B0B2-0080C0FC98AB';");
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = 'D2336047-25F0-4B3B-9121-0243577C8BA5';");
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = '7D0A23F0-0E05-4B66-8109-043D4B12B2BA';");
@@ -520,7 +529,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = '28625292-38CD-4622-A3FB-C1FDE8B17CC6';");
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = 'BA365FE1-7044-4896-AB38-C356485F8FD7';");
             migrationBuilder.Sql(@"DELETE FROM Apostas WHERE Id = '8DCE9CAC-4A6B-4906-ACBB-CC8EF17B9D7C';");
-            // ... continue adicionando os DELETEs para todos os 120 registros aqui
+            // ... (TODOS os seus 120 DELETEs) ...
         }
     }
 }
