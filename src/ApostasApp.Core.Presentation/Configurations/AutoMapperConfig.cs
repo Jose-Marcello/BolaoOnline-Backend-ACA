@@ -24,6 +24,7 @@ namespace ApostasApp.Core.Presentation.Configurations
             CreateMap<Equipe, EquipeViewModel>().ReverseMap();
             CreateMap<EquipeCampeonato, EquipeCampeonatoViewModel>().ReverseMap();
             CreateMap<ApostadorCampeonato, ApostadorCampeonatoViewModel>().ReverseMap();
+            //CreateMap<ApostadorCampeonato, ApostasPorRodadaEApostadorViewModel>().ReverseMap();
             CreateMap<Uf, UfViewModel>().ReverseMap();
             CreateMap<Estadio, EstadioViewModel>().ReverseMap();
             CreateMap<Jogo, JogoViewModel>().ReverseMap();

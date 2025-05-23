@@ -6,7 +6,9 @@ namespace ApostasApp.Core.Domain.Models
     public interface IUnitOfWork : IDisposable
     {
         //IDbContextTransaction BeginTransaction();
-        void BeginTransaction();
+        /// <summary>
+        /// void BeginTransaction();
+        /// </summary>
         //void Commit();
         void Rollback();
         // Adicione métodos para acessar os repositórios

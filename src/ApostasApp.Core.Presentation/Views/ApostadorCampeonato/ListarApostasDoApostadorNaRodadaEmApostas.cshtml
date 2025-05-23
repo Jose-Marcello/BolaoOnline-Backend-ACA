@@ -1,4 +1,4 @@
-﻿@model ApostasApp.Core.Presentation.ViewModels.ApostadorCampeonatoViewModel
+﻿@model ApostasApp.Core.Presentation.ViewModels.ApostasPorRodadaEApostadorViewModel
 
 <head>
 
@@ -8,15 +8,15 @@
 </head>
 
 
-
 <div class="container-fluid">
 
     <div class="info-apostador">
-        Apostador: @($"{TempData["Apostador"]} | {TempData["Campeonato"]} | Rod: {TempData["Rodada"]}")
+        @* Apostador: @($"{TempData["Apostador"]} | {TempData["Campeonato"]} | Rod: {TempData["Rodada"]}") *@
+        Apostador: @Model.ApostadorApelido | Rodada:@Model.NumeroRodada | @Model.CampeonatoNome
     </div>
 
     <div class="status-aposta">
-        <input type="hidden" id="IdApostadorCampeonato" value="@Model.Id" />
+        <input type="hidden" id="IdApostadorCampeonato" value="@Model.ApostadorCampeonatoId" />
     </div>
 
 
@@ -26,7 +26,7 @@
         </div>
         <div class="card-body">
             <h5 class="card-title jogo-titulo">
-                <span class="equipe-casa"></span> <img src="" class="escudo-casa" "  />
+                <span class="equipe-casa"></span> <img src="" class="escudo-casa" "   />
                 <span>x</span>
                 <img src="" class="escudo-visitante" /> <span class="equipe-visitante"></span>
             </h5>
@@ -88,13 +88,13 @@
     </div>
 </div>
 
-                @section Scripts
+@section Scripts
 {
     <script>
         $(document).ready(function () {
             var table = $("#tb_apostas").DataTable({
                 "ajax": {
-                    "url": '@Url.Action("BuscarApostasDoApostadorNaRodadaEmApostas", "ApostadorCampeonato", new { Id = @Model.Id })',
+                    "url": '@Url.Action("BuscarApostasDoApostadorNaRodadaEmApostas", "ApostadorCampeonato", new { Id = @Model.ApostadorCampeonatoId })',
                     "type": "POST",
                     "dataSrc": "data.$values",
                     "datatype": "json"
@@ -208,7 +208,7 @@
 
             // Chamada AJAX separada para atualizar o status e a data
             $.ajax({
-                url: '@Url.Action("BuscarStatusEDataHoraApostaDaRodada", "ApostadorCampeonato", new { Id = @Model.Id })',
+                url: '@Url.Action("BuscarStatusEDataHoraApostaDaRodada", "ApostadorCampeonato", new { Id = @Model.ApostadorCampeonatoId })',
                 type: "POST",
                 dataType: "json",
                 success: function (response) {
@@ -353,3 +353,4 @@
         });
     </script>
 }
+

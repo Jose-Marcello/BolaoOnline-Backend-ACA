@@ -1,4 +1,4 @@
-﻿@model ApostasApp.Core.Presentation.ViewModels.ApostasPorRodadaViewModel 
+﻿@model ApostasApp.Core.Presentation.ViewModels.ApostasPorRodadaEApostadorViewModel
 
 <link rel="stylesheet" href="~/css/telaApostasEResultados.css" />
 
@@ -30,7 +30,7 @@
         <div class="status-aposta">
             @($"{Model.StatusEnvioAposta} {Model.DataAposta} - {Model.HoraAposta}") @* <-- USANDO PROPRIEDADES DO NOVO MODEL *@
         </div>
-        
+
         <button id="btnVerRanking">
             <i class="fas fa-list-ol"></i> Ver Ranking
         </button>
@@ -47,16 +47,14 @@
         $(document).ready(function () {
             // Captura os valores dos inputs hidden
             var apostadorCampeonatoId = $('#IdApostadorCampeonato').val();
-            var rodadaId = $('#IdRodada').val();
+            var rodadaId = $('#IdRodada').val(); // Embora não usado na URL AJAX, é bom ter para outros fins se necessário
 
             // Adicione logs para confirmar os valores ANTES da chamada AJAX
-            console.log("ApostadorCampeonatoId (JS para AJAX):", apostadorCampeonatoId); // Lembre-se da correção do nome da variável aqui
-            console.log("RodadaId (JS para AJAX):", rodadaId);
+            console.log("ApostadorCampeonatoId (JS para AJAX):", apostadorCampeonatoId);
 
             var table = $("#tb_apostas").DataTable({
                 "ajax": {
-                    // CONSTRUÇÃO DA URL PARA A ACTION POST DO DATATABLES (JÁ CORRIGIDA)
-                    "url": '/ApostadorCampeonato/BuscarApostasDoApostadorNaRodada/' + apostadorCampeonatoId + '/' + rodadaId,
+                    "url": '/ApostadorCampeonato/BuscarApostasDoApostadorNaRodadaSelecionada/' + apostadorCampeonatoId + '/' + rodadaId,    
                     "type": "POST",
                     "dataSrc": "data.$values",
                     "datatype": "json"
@@ -116,8 +114,9 @@
                         "data": null, "width": "80px",
                         render: function (data, type, row) {
                             let placarText;
-                            if (row.statusJogo != 0) {
-                                placarText = `<strong>${row.placarRealCasa} x ${row.placarRealVisitante}</strong>`;
+                            // A tela "Corrente" exibe o placar real do jogo
+                            if (row.statusJogo != 0) { // Assumindo 0 significa "não iniciado"
+                                placarText = `<strong>${row.placarRealCasa} x ${row.placarRealVisita}</strong>`;
                             } else {
                                 placarText = "Jogo não iniciado";
                             }
@@ -143,7 +142,8 @@
                     {
                         data: null, "width": "80px",
                         render: function (data, type, row) {
-                            return row.placarApostaCasa + " x " + row.placarApostaVisitante;
+                            // A tela "Corrente" exibe o placar apostado
+                            return row.placarApostaCasa + " x " + row.placarApostaVisita;
                         }
                     },
                     {
@@ -162,15 +162,17 @@
 
             document.getElementById('btnVerRanking').addEventListener('click', function() {
                 var idRodada = $('#IdRodada').val();
-                var apostadorCampeonatoId = $('#IdApostadorCampeonato').val(); 
-                var returnUrl = '/ApostadorCampeonato/ListarApostasDoApostadorNaRodada/' + apostadorCampeonatoId + '/' + idRodada; // URL de retorno construída com os IDs corretos
+                var apostadorCampeonatoId = $('#IdApostadorCampeonato').val();
+                // A URL de retorno agora inclui o ID do ApostadorCampeonato para voltar à tela correta da rodada corrente
+                var returnUrl = '/ApostadorCampeonato/ListarApostasDoApostadorNaRodadaCorrente/' + apostadorCampeonatoId;
 
                 window.location.href = '/RankingRodada/ExibirRanking/' + idRodada + '?returnUrl=' + encodeURIComponent(returnUrl);
             });
-            
+
             document.getElementById('btnRetornar').addEventListener('click', function() {
-                window.location.href = '/PainelUsuario'; 
+                window.location.href = '/PainelUsuario';
             });
         });
     </script>
 }
+
