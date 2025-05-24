@@ -9,6 +9,7 @@ using SendGrid;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace ApostasApp.Core.Presentation
 {
@@ -17,6 +18,11 @@ namespace ApostasApp.Core.Presentation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddDataProtection()
+            .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["AzureBlobStorage:DataProtectionBlobUri"]))
+            .SetApplicationName("ApostasApp"); // Use um nome exclusivo para sua aplicação
+
 
             builder.Services.AddDbContext<MeuDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

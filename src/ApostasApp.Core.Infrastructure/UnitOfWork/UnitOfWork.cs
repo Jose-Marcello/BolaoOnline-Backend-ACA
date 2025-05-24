@@ -43,11 +43,11 @@ namespace ApostasApp.Core.Infrastructure
         // Implemente a propriedade DbContext
         //public MeuDbContext DbContext => _context;
 
-        public void BeginTransaction()
+        /*public void BeginTransaction()
         {
             // Transação já iniciada no construtor
             Debug.WriteLine($"Transaction iniciada (já estava ativa): {_transaction?.GetHashCode() ?? 0}");
-        }
+        }*/
 
         public int GetTransactionHashCode()
         {
