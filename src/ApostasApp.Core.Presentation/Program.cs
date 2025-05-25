@@ -3,13 +3,16 @@ using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using ApostasApp.Core.Presentation.Configurations;
 using ApostasApp.Core.Presentation.Services;
+//using Azure.Extensions.AspNetCore.DataProtection.Keys;
+//using Azure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Serialization;
 using SendGrid;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Newtonsoft.Json.Serialization;
-using Microsoft.AspNetCore.DataProtection;
+
+
 
 namespace ApostasApp.Core.Presentation
 {
@@ -19,10 +22,14 @@ namespace ApostasApp.Core.Presentation
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDataProtection()
-            .PersistKeysToAzureBlobStorage(new Uri(builder.Configuration["AzureBlobStorage:DataProtectionBlobUri"]))
-            .SetApplicationName("ApostasApp"); // Use um nome exclusivo para sua aplicação
-
+            /*var keyVaultUri = builder.Configuration["DataProtection:AzureKeyVault:SecretUri"]
+                  ?? throw new InvalidOperationException("Configuração 'DataProtection:AzureKeyVault:SecretUri' não encontrada ou nula em appsettings.json.");
+            */
+            builder.Services.AddDataProtection();
+            /*
+                .PersistKeysToAzureKeyVault(new Uri(keyVaultUri), new DefaultAzureCredential())
+                .SetApplicationName("ApostasApp"); // Use um nome exclusivo para sua aplicação*/
+                       
 
             builder.Services.AddDbContext<MeuDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
