@@ -1,5 +1,6 @@
-﻿using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.Domain.Models.Interfaces.Campeonatos;
+﻿using ApostasApp.Core.Domain.Interfaces.Campeonatos;
+using ApostasApp.Core.Domain.Models.Campeonatos;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using ApostasApp.Core.InfraStructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;

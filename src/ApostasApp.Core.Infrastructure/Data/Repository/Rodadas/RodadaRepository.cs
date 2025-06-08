@@ -1,122 +1,92 @@
-﻿using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
-using ApostasApp.Core.Domain.Models.Rodadas;
-using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository;
+﻿using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
+using ApostasApp.Core.Domain.Models.Jogos; // Para Jogo
+using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
+using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using ApostasApp.Core.Infrastructure.Data.Repository; // PARA HERDAR DE Repository<T>
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ApostasApp.Core.Infrastructure.Data.Repository
+namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
 {
+    // RodadaRepository herda de Repository<Rodada> e implementa IRodadaRepository
+    // Ele NÃO precisa re-implementar Adicionar, ObterPorId, etc., pois Repository<Rodada> já faz isso.
     public class RodadaRepository : Repository<Rodada>, IRodadaRepository
     {
         private readonly ILogger<RodadaRepository> _logger;
-        public RodadaRepository(MeuDbContext context,
-                                ILogger<RodadaRepository> logger) : base(context)
-        {
 
+        public RodadaRepository(MeuDbContext context, ILogger<RodadaRepository> logger) : base(context)
+        {
             _logger = logger;
         }
 
-        public async Task<Rodada> ObterRodada(Guid id)
+        // Métodos ESPECÍFICOS de IRodadaRepository (além dos que já vêm de IRepository<T>)
+        public async Task<Rodada> ObterRodadaEmApostasPorCampeonato(Guid campeonatoId)
         {
-            return await Db.Rodadas.AsNoTracking()
-                .Include(c => c.Campeonato)
-               .FirstOrDefaultAsync(r => r.Id == id);
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas);
         }
 
-       /* public async Task<Rodada> ObterRodadaAtiva()
-
+        public async Task<Rodada> ObterRodadaCorrentePorCampeonato(Guid campeonatoId)
         {
-            //Provisório - deste modo, só permitiria manter os jogos de uma rodada ATIVA
-            //substituir por controle MASTERDETAIL
-
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)
-                         .FirstOrDefaultAsync(r => (r.Status == StatusRodada.Corrente || r.Status == StatusRodada.EmApostas) && r.Ativa);
-
-        }*/
-
-        public async Task<Rodada> ObterRodadaEmApostas()
-        {
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)
-                         .FirstOrDefaultAsync(r => r.Status == StatusRodada.EmApostas);
-
-        }
-        public async Task<Rodada> ObterRodadaEmConstrucao()
-        {
-            //Provisório - deste modo, só permitiria manter os jogos de uma rodada ATIVA
-            //substituir por controle MASTERDETAIL
-
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)
-                         //.Where(r => r.Ativa)
-                         .Where(r => r.Status == StatusRodada.EmConstrucao)
-                         .FirstOrDefaultAsync(r => r.Status == StatusRodada.EmConstrucao);
-            //.ToListAsync();
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.Corrente);
         }
 
-        public async Task<Rodada> ObterRodadaCorrente()
+        public async Task<Rodada> ObterRodadaComJogosEEquipes(Guid rodadaId)
         {
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)
-                         .FirstOrDefaultAsync(r => r.Status == StatusRodada.Corrente);
+            return await Db.Rodadas
+                           .Include(r => r.JogosRodada)
+                               .ThenInclude(jr => jr.EquipeCasa)
+                                   .ThenInclude(ec => ec.Equipe)
+                           .Include(r => r.JogosRodada)
+                               .ThenInclude(jr => jr.EquipeVisitante)
+                                   .ThenInclude(ev => ev.Equipe)
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(r => r.Id == rodadaId);
         }
 
-        public async Task<IEnumerable<Rodada>> ObterListaComRodadaCorrente()
-
+        public async Task<IEnumerable<Jogo>> ObterJogosDaRodadaComPlacaresEEquipes(Guid rodadaId)
         {
-            //Provisório - deste modo, só permitiria manter os jogos de uma rodada ATIVA
-            //substituir por controle MASTERDETAIL
-
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)
-                         //.Where(r => r.Ativa == true)
-                         .Where(r => r.Status == StatusRodada.Corrente)
-                         //.FirstOrDefaultAsync(r => r.Ativa == true);
-                         .ToListAsync();
-
+            return await Db.Jogos
+                           .Include(j => j.EquipeCasa)
+                               .ThenInclude(ec => ec.Equipe)
+                           .Include(j => j.EquipeVisitante)
+                               .ThenInclude(ev => ev.Equipe)
+                           .AsNoTracking()
+                           .Where(j => j.RodadaId == rodadaId)
+                           .ToListAsync();
         }
 
-        public async Task<IEnumerable<Rodada>> ObterRodadasComRanking(Guid idCampeonato)
-        {          
-
-            return await Db.Rodadas.AsNoTracking()
-                         .Include(r => r.Campeonato)                         
-                         .Where(r => (r.Status == StatusRodada.Corrente || r.Status == StatusRodada.Finalizada)
-                                && r.CampeonatoId == idCampeonato )
-                         .OrderByDescending(r => r.Status == StatusRodada.Corrente)
-                         .ToListAsync();
-
-        }
-
-        public async Task<IEnumerable<Rodada>> ObterRodadasCampeonato()
+        public async Task<IEnumerable<Rodada>> ObterRodadasFinalizadasPorCampeonato(Guid campeonatoId)
         {
-
-            return await Db.Rodadas.AsNoTracking().Include(c => c.Campeonato)
-                                   .OrderBy(r => r.NumeroRodada).ToListAsync();
-
-
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .AsNoTracking()
+                           .Where(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.Finalizada)
+                           .ToListAsync();
         }
 
-        public async Task<Rodada> ObterRodadaCampeonato(Guid id)
+        public async Task<IEnumerable<Rodada>> ObterRodadasComRankingPorCampeonato(Guid campeonatoId)
         {
-            return await Db.Rodadas.AsNoTracking().Include(c => c.Campeonato)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .Where(r => r.CampeonatoId == campeonatoId
+                            && (r.Status == StatusRodada.Corrente || r.Status == StatusRodada.Finalizada))
+                           .AsNoTracking()
+                           .ToListAsync();
         }
 
-
-        //Lista Todas as Rodadas de um Campeonato selecionado
-        public async Task<IEnumerable<Rodada>> ObterRodadasDoCampeonato(Guid campeonatoId)
+        public async Task<IEnumerable<Rodada>> ObterTodasAsRodadasDoCampeonato(Guid campeonatoId)
         {
-            {
-                return await Db.Rodadas.AsNoTracking().Include(c => c.Campeonato)
-                                   .Where(r => r.CampeonatoId == campeonatoId)
-                                   .OrderBy(r => r.NumeroRodada).ToListAsync();
-
-            }
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .Where(r => r.CampeonatoId == campeonatoId)
+                           .AsNoTracking()
+                           .ToListAsync();
         }
-
     }
-
 }

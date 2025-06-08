@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 
-namespace ApostasApp.Core.Presentation.Extensions
+namespace ApostasApp.Web.Extensions
 {
     [AttributeUsage(AttributeTargets.Property)]
     public class UnlikeAttribute : ValidationAttribute, IClientModelValidator

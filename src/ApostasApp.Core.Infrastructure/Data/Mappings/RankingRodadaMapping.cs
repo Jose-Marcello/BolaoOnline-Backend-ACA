@@ -1,4 +1,4 @@
-﻿using DApostasApp.Core.Domain.Models.RankingRodadas;
+﻿using ApostasApp.Core.Domain.Models.RankingRodadas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

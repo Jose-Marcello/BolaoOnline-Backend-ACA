@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ApostasApp.Core.Presentation.Extensions
+namespace ApostasApp.Web.Extensions
 {
     public class DateLessThanAttribute : ValidationAttribute
     {

@@ -1,603 +1,262 @@
-using ApostasApp.Core.Domain.Interfaces.Campeonatos;
-using ApostasApp.Core.Domain.Interfaces.Jogos;
-using ApostasApp.Core.Domain.Models;
-using ApostasApp.Core.Domain.Models.Apostadores;
-using ApostasApp.Core.Domain.Models.Apostas;
-using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.Domain.Models.Interfaces;
-using ApostasApp.Core.Domain.Models.Interfaces.Usuarios;
-using ApostasApp.Core.Domain.Models.Jogos;
-using ApostasApp.Core.Domain.Models.Notificacoes;
-using ApostasApp.Core.Domain.Models.Rodadas;
-using ApostasApp.Core.Domain.Models.Usuarios;
-using ApostasApp.Core.Domain.Services.Apostadores;
-using ApostasApp.Core.Domain.Services.Apostas;
-using ApostasApp.Core.Domain.Services.RankingRodadas;
-using ApostasApp.Core.Infrastructure;
-using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
-using ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos;
-using ApostasApp.Core.Presentation.ViewModels;
-using ApostasApp.Infrastructure.Data.Repository;
-using DApostasApp.Core.Domain.Models.RankingRodadas; // Verifique se o namespace está correto. Se DApostadorApp, corrija.
-using Microsoft.AspNetCore.Authentication;
+using ApostasApp.Core.Application.DTOs.Usuarios;
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Interfaces.Usuarios;
+using ApostasApp.Core.Domain.Models.Configuracoes;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging; // <<<--- ADICIONE ESTE USING
+using System;
+using System.Threading.Tasks;
 
-namespace ApostasApp.Core.Presentation.Controllers
+namespace ApostasApp.Web.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class AccountController : BaseController
     {
-        private readonly UserManager<Usuario> _userManager;
-        private readonly SignInManager<Usuario> _signInManager;
-        private readonly ILogger<AccountController> _logger;
-        private readonly IUnitOfWork _uow;
         private readonly IUsuarioService _usuarioService;
-        private readonly IApostadorService _apostadorService;
-        private readonly IApostaService _apostaService;
-        private readonly IRankingRodadaService _rankingRodadaService;
-        private readonly IApostadorCampeonatoService _apostadorCampeonatoService;
-        private readonly INotificador _notificador;
+        private readonly IMapper _mapper;
+        private readonly FrontendUrlsSettings _frontendUrls;
+        private readonly ILogger<AccountController> _logger; // <<<--- NOVA PROPRIEDADE PARA LOGGING
 
-
-        public AccountController(
-                UserManager<Usuario> userManager,
-                SignInManager<Usuario> signInManager,
-                ILogger<AccountController> logger,
-                IUnitOfWork uow,
-                IUsuarioService usuarioService,
-                IApostaService apostaService,
-                IRankingRodadaService rankingRodadaService,
-                IApostadorCampeonatoService apostadorCampeonatoService,
-                IApostadorService apostadorService,
-                INotificador notificador) : base(notificador)
+        public AccountController(IUsuarioService usuarioService,
+                                 INotificador notificador,
+                                 IMapper mapper,
+                                 IOptions<FrontendUrlsSettings> frontendUrlsOptions,
+                                 ILogger<AccountController> logger) : base(notificador) // <<<--- NOVO PARÂMETRO PARA LOGGING
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _logger = logger;
-            _uow = uow;
             _usuarioService = usuarioService;
-            _apostaService = apostaService;
-            _rankingRodadaService = rankingRodadaService;
-            _apostadorService = apostadorService;
-            _apostadorCampeonatoService = apostadorCampeonatoService;
-            _notificador = notificador;
+            _mapper = mapper;
+            _frontendUrls = frontendUrlsOptions.Value;
+            _logger = logger; // <<<--- ATRIBUINDO O LOGGER
         }
 
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
+        /// <summary>
+        /// Registra um novo usuário no sistema.
+        /// </summary>
+        /// <param name="request">Os dados de registro do usuário.</param>
+        /// <returns>Um status HTTP indicando sucesso ou falha, com notificações.</returns>
+        [HttpPost("register")]
         [AllowAnonymous]
-        [ActionName("Register")]
-        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            try
+            _logger.LogInformation($"Requisição de Registro recebida para: {request.Email}"); // Log de entrada
+            if (!ModelState.IsValid)
             {
-                var user = new Usuario
-                {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    CPF = model.CPF.Replace(".", "").Replace("-", ""),
-                    Celular = model.Celular,
-                    Apelido = model.Apelido,
-                    RegistrationDate = DateTime.Now,
-                    LastLoginDate = null
-                };
-
-                ViewData["ReturnUrl"] = returnUrl;
-
-                if (ModelState.IsValid)
-                {
-                    //Usuario
-                    if (await _usuarioService.ApelidoExiste(model.Apelido))
-                    {
-                        ModelState.AddModelError("Apelido", "Já existe um USUÁRIO registrado com este APELIDO.");
-                        return View(model);
-                    }
-
-                    var result = await _usuarioService.RegisterUserAsync(user, model.Password);
-
-                    if (result.Succeeded)
-                    {
-                        user = await _usuarioService.FindByEmailAsync(model.Email);
-
-                        var campeonatoRepository = _uow.GetRepository<Campeonato>() as CampeonatoRepository;
-                        var campeonato = await campeonatoRepository.ObterCampeonatoAtivo();
-
-                        //Apostador
-                        var statusApostador = StatusApostador.AguardandoAssociacao;
-
-                        if (campeonato != null)
-                        {
-                            statusApostador = StatusApostador.AssociadoACampeonato;
-                        }
-
-                        var apostador = new Apostador
-                        {
-                            UsuarioId = user.Id,
-                            Status = statusApostador
-                        };
-
-                        await _apostadorService.Adicionar(apostador);
-
-                        //ApostadorCampeonato
-                        if (campeonato != null)
-                        {
-                            var apostadorCampeonato = new ApostadorCampeonato
-                            {
-                                ApostadorId = apostador.Id,
-                                CampeonatoId = campeonato.Id
-                            };
-
-                            await _apostadorCampeonatoService.Adicionar(apostadorCampeonato);
-
-                            var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
-                            var rodadaEmApostas = await rodadaRepository.ObterRodadaEmApostas();
-
-                            // Se não houver rodada em apostas, tenta obter a rodada corrente
-                            Rodada rodadaCorrente = null;
-                            if (rodadaEmApostas == null)
-                            {
-                                rodadaCorrente = await rodadaRepository.ObterRodadaCorrente();
-                            }
-
-                            if (rodadaEmApostas != null && rodadaEmApostas.Status == StatusRodada.EmApostas)
-                            {
-                                // Lógica de criação de apostas e ranking para a rodada EmApostas
-                                var jogodorRepository = _uow.GetRepository<Jogo>() as IJogoRepository;
-                                var listaJogos = await jogodorRepository.ObterJogosDaRodada(rodadaEmApostas.Id);
-
-                                foreach (var jogo in listaJogos)
-                                {
-                                    try
-                                    {
-                                        var aposta = new Aposta
-                                        {
-                                            JogoId = jogo.Id,
-                                            ApostadorCampeonatoId = apostadorCampeonato.Id,
-                                            Enviada = false
-                                        };
-                                        System.Diagnostics.Debug.WriteLine($" Aposta : {aposta.Id}");
-                                        System.Diagnostics.Debug.WriteLine($" JogoId: {aposta.JogoId}");
-                                        System.Diagnostics.Debug.WriteLine($" ApostadorCampeonatoId: {aposta.ApostadorCampeonatoId}");
-                                        System.Diagnostics.Debug.WriteLine($" Enviada : {aposta.Enviada}");
-
-                                        await _apostaService.Adicionar(aposta);
-                                    }
-                                    catch (DbUpdateException ex)
-                                    {
-                                        Console.WriteLine($"Erro ao adicionar aposta (DbUpdateException): {ex.Message}");
-                                        Console.WriteLine(ex);
-                                        throw;
-                                    }
-                                    catch (ObjectDisposedException ex)
-                                    {
-                                        Console.WriteLine($"Erro ao adicionar aposta (ObjectDisposedException): {ex.Message}");
-                                        Console.WriteLine(ex);
-                                        throw;
-                                    }
-                                    catch (System.IO.IOException ex)
-                                    {
-                                        Console.WriteLine($"Erro ao adicionar aposta (IOException): {ex.Message}");
-                                        Console.WriteLine(ex);
-                                        throw;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"Erro ao adicionar aposta: {ex.Message}");
-                                        Console.WriteLine(ex);
-                                        throw;
-                                    }
-                                }
-
-                                var ranking = new RankingRodada
-                                {
-                                    ApostadorCampeonatoId = apostadorCampeonato.Id,
-                                    RodadaId = rodadaEmApostas.Id,
-                                    DataAtualizacao = DateTime.Now,
-                                    Posicao = 0,
-                                    Pontuacao = 0
-                                };
-
-                                await _rankingRodadaService.Adicionar(ranking);
-                            }
-                        }
-
-                        await _uow.SaveChanges();
-
-                        var code = await _usuarioService.GenerateEmailConfirmationTokenAsync(user);
-                        var codeEncoded = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(code));
-                        var callbackUrl = Url.Action("ConfirmEmail", "Account",
-                            new { userId = user.Id, code = codeEncoded }, Request.Scheme);
-
-                        await _usuarioService.SendConfirmationEmailAsync(user, callbackUrl);
-
-                        ViewBag.Email = model.Email;
-
-                        return View("EmailConfirmationPending"); // Continua para a tela de confirmação de e-mail
-                    }
-                    else
-                    {
-                        foreach (var error in result.Errors)
-                        {
-                            ModelState.AddModelError(string.Empty, error.Description);
-                        }
-                    }
-                }
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, "Erro ao salvar dados no banco de dados.");
-                return BadRequest(new { error = "Erro ao salvar dados." });
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogError(ex, "Argumento inválido.");
-                return BadRequest(new { error = "Argumento inválido." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao registrar o usuário.");
-                return BadRequest(new { error = ex.Message });
+                return CustomResponse(ModelState);
             }
 
-            return View(model);
+            var registrationSucceeded = await _usuarioService.RegistrarNovoUsuario(
+                request.Email,
+                request.Password,
+                request.Apelido,
+                request.CPF.Replace(".", "").Replace("-", ""),
+                request.Celular,
+                Request.Scheme,
+                Request.Host.ToString()
+            );
+
+            if (TemNotificacao())
+            {
+                _logger.LogWarning($"Registro de {request.Email} falhou com notificações."); // Log de falha
+                return CustomResponse();
+            }
+
+            Notificar("Sucesso", "Registro realizado com sucesso. Verifique seu e-mail para confirmação.");
+            _logger.LogInformation($"Registro de {request.Email} realizado com sucesso."); // Log de sucesso
+            return CustomResponse();
         }
 
-
-        [HttpGet]
+        /// <summary>
+        /// Confirma o e-mail de um usuário.
+        /// </summary>
+        /// <param name="userId">O ID do usuário.</param>
+        /// <param name="code">O código de confirmação.</param>
+        /// <returns>Status HTTP indicando sucesso ou falha.</returns>
+        [HttpGet("confirm-email")]
         [AllowAnonymous]
-        public IActionResult RegisterConfirmation()
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string code)
         {
-            return View();
+            _logger.LogInformation($"Requisição de Confirmação de E-mail recebida. UserId: {userId}, Code: {code}"); // <<<--- LOG AQUI!
+            // Definir um breakpoint AQUI (na linha abaixo)!
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
+            {
+                Notificar("Erro", "Parâmetros de confirmação inválidos.");
+                _logger.LogError($"Parâmetros de confirmação inválidos. UserId: {userId}, Code: {code}"); // Log de erro
+                return Redirect($"{_frontendUrls.BaseUrl}/error");
+            }
+
+            var confirmed = await _usuarioService.ConfirmEmail(userId, code);
+
+            if (TemNotificacao())
+            {
+                _logger.LogError($"Confirmação de e-mail para UserId {userId} falhou com notificações."); // Log de erro
+                return Redirect($"{_frontendUrls.BaseUrl}/error");
+            }
+
+            Notificar("Sucesso", "E-mail confirmado com sucesso.");
+            _logger.LogInformation($"E-mail para UserId {userId} confirmado com sucesso."); // Log de sucesso
+            return Redirect($"{_frontendUrls.BaseUrl}/login");
         }
 
-        [HttpGet]
+        // ... (restante do código do seu AccountController.cs) ...
+        /// <summary>
+        /// Tenta realizar o login de um usuário.
+        /// </summary>
+        /// <param name="request">Credenciais de login.</param>
+        /// <returns>Um status HTTP indicando sucesso ou falha no login, e talvez um token JWT.</returns>
+        [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> ConfirmEmail(string userId, string code)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            if (userId == null || code == null)
+            _logger.LogInformation($"Requisição de Login recebida para: {request.Email}");
+            if (!ModelState.IsValid)
             {
-                return View("Error");
+                return CustomResponse(ModelState);
             }
 
-            var user = await _usuarioService.FindByIdAsync(userId);
+            var loginResult = await _usuarioService.Login(
+                request.Email,
+                request.Password,
+                request.IsPersistent
+            );
 
-            if (user == null)
+            if (TemNotificacao() || !loginResult.Success)
             {
-                return View("Error");
+                _logger.LogWarning($"Login de {request.Email} falhou.");
+                return CustomResponse();
             }
 
-            code = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(code));
-            var result = await _usuarioService.ConfirmEmailAsync(user, code);
-
-            if (result.Succeeded)
-            {
-                await _uow.SaveChanges();
-                // E-mail confirmado com sucesso! Agora, redirecione PARA LOGIN
-                return RedirectToAction("Login", "Account");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    _logger.LogError($"Erro na confirmação de e-mail: {error.Code} - {error.Description}");
-                }
-                return View("Error");
-            }
+            Notificar("Sucesso", "Login realizado com sucesso.");
+            _logger.LogInformation($"Login de {request.Email} realizado com sucesso.");
+            return CustomResponse();
         }
 
-        public IActionResult ConfirmEmailConfirmation()
-        {
-            return View();
-        }
-
-
-        [HttpGet]
-        public IActionResult Login(string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
-        }
-
-
-        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
-        {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            if (ModelState.IsValid)
-            {
-                var user = await _usuarioService.FindByEmailAsync(model.Email);
-
-                if (user != null)
-                {
-                    if (!user.EmailConfirmed)
-                    {
-                        ViewBag.EmailNaoConfirmado = "Seu e-mail ainda não foi confirmado. Por favor, verifique sua caixa de entrada (e spam) ou solicite um novo e-mail abaixo.";
-                        ViewBag.EmailParaReenvio = model.Email;
-                        return View(model);
-                    }
-
-                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false);
-
-                    if (result.Succeeded)
-                    {
-                        var apostadorRepository = _uow.GetRepository<Apostador>() as ApostadorRepository;
-                        var apostador = await apostadorRepository.ObterApostadorPorUsuarioId(user.Id);
-
-                        var rodadaRepository = _uow.GetRepository<Rodada>() as RodadaRepository;
-                        var rodadaEmApostas = await rodadaRepository.ObterRodadaEmApostas(); // Tenta obter a rodada "Em Apostas"
-                        Rodada rodadaCorrente = null;
-
-                        if (rodadaEmApostas == null) // Se não encontrou rodada em apostas, tenta a rodada corrente
-                        {
-                            rodadaCorrente = await rodadaRepository.ObterRodadaCorrente();
-                        }
-
-                        // O campeonato é pego da rodada que foi encontrada primeiro (EmApostas tem prioridade)
-                        var campeonato = (rodadaEmApostas ?? rodadaCorrente)?.Campeonato;
-
-                        if (apostador != null && campeonato != null)
-                        {
-                            var apostadorCampeonatoRepository = _uow.GetRepository<ApostadorCampeonato>() as ApostadorCampeonatoRepository;
-                            var apostadorCampeonato = await apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(user.Id, campeonato.Id);
-
-                            if (apostadorCampeonato != null)
-                            {
-                                if (rodadaEmApostas != null && rodadaEmApostas.Status == StatusRodada.EmApostas)
-                                {
-                                    // Redireciona para a Action de edição de apostas para a rodada "Em Apostas"
-                                    return RedirectToAction("ListarApostasDoApostadorNaRodadaEmApostas", "ApostadorCampeonato", new { id = apostadorCampeonato.Id });
-                                }
-                                else if (rodadaCorrente != null && rodadaCorrente.Status == StatusRodada.Corrente)
-                                {
-                                    // Redireciona para a Action de visualização para a rodada "Corrente"
-                                    // Esta Action deve aceitar o ID do ApostadorCampeonato. A rodada será buscada internamente.
-                                    return RedirectToAction("ListarApostasDoApostadorNaRodadaCorrente", "ApostadorCampeonato", new { id = apostadorCampeonato.Id });
-                                }
-                                else
-                                {
-                                    // Se não encontrou nenhuma rodada "Em Apostas" ou "Corrente", vai para o painel
-                                    return RedirectToAction("PainelUsuario", "Account");
-                                }
-                            }
-                            else
-                            {
-                                // Se não encontrou ApostadorCampeonato, redireciona para o PainelUsuario
-                                return RedirectToAction("PainelUsuario", "Account");
-                            }
-                        }
-                        else
-                        {
-                            // Se não encontrou apostador, campeonato ou nenhuma rodada ativa (EmApostas ou Corrente), 
-                            // redireciona para o PainelUsuario
-                            return RedirectToAction("PainelUsuario", "Account");
-                        }
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "Senha Inválida.");
-                        ViewBag.EmailNaoConfirmado ??= string.Empty;
-                        ViewBag.EmailParaReenvio ??= string.Empty;
-                        return View(model);
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Usuário Inválido.");
-                    ViewBag.EmailNaoConfirmado ??= string.Empty;
-                    ViewBag.EmailParaReenvio ??= string.Empty;
-                    return View(model);
-                }
-            }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "Dados de login inválidos.");
-                ViewBag.EmailNaoConfirmado ??= string.Empty;
-                ViewBag.EmailParaReenvio ??= string.Empty;
-                return View(model);
-            }
-
-            ViewBag.EmailNaoConfirmado ??= string.Empty;
-            ViewBag.EmailParaReenvio ??= string.Empty;
-            return View(model);
-        }
-
-        [HttpPost]
+        /// <summary>
+        /// Realiza o logout do usuário.
+        /// </summary>
+        /// <returns>Status HTTP de sucesso.</returns>
+        [HttpPost("logout")]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
-            await HttpContext.SignOutAsync();
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login", "Account");
-        }
-
-        [HttpGet("Account/EsqueciSenha")]
-        [Route("Account/EsqueciSenha")]
-        public IActionResult EsqueciSenha()
-        {
-            return View(new EsqueciSenhaViewModel());
-        }
-
-        [HttpPost("Account/EsqueciSenha")]
-        [Route("Account/EsqueciSenha")]
-        public async Task<IActionResult> EsqueciSenha(string email)
-        {
-            if (string.IsNullOrEmpty(email))
+            _logger.LogInformation($"Requisição de Logout recebida.");
+            await _usuarioService.RealizarLogout();
+            if (TemNotificacao())
             {
-                ViewBag.Message = "O e-mail é obrigatório.";
-                return View();
+                _logger.LogWarning($"Logout falhou com notificações.");
+                return CustomResponse();
             }
-
-            var user = await _userManager.FindByEmailAsync(email);
-            string callbackUrl = null;
-
-            if (user != null)
-            {
-                string tokenGerado = await _userManager.GeneratePasswordResetTokenAsync(user);
-                _logger.LogInformation($"Token de redefinição de senha gerado para o usuário {user.Id}: {tokenGerado}");
-
-                callbackUrl = Url.Action("RedefinirSenha", "Account", new { userId = user.Id, token = tokenGerado }, protocol: HttpContext.Request.Scheme);
-            }
-
-            await _usuarioService.EsqueciMinhaSenhaAsync(email, callbackUrl);
-
-            ViewBag.Message = "Um email com instruções para redefinir sua senha foi enviado para você (se o email estiver cadastrado).";
-            return View();
+            Notificar("Sucesso", "Logout realizado com sucesso.");
+            _logger.LogInformation($"Logout realizado com sucesso.");
+            return CustomResponse();
         }
 
-        [HttpGet("RedefinirSenha")]
+        /// <summary>
+        /// Inicia o processo de redefinição de senha.
+        /// </summary>
+        /// <param name="request">O email do usuário.</param>
+        /// <returns>Status HTTP indicando se o e-mail foi enviado (sem revelar se o usuário existe).</returns>
+        [HttpPost("forgot-password")]
         [AllowAnonymous]
-        public async Task<IActionResult> RedefinirSenha(string userId = null, string token = null)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
         {
-            _logger.LogInformation($"Token de redefinição de senha recebido para o usuário {userId}: {token}");
-            if (userId == null || token == null)
+            _logger.LogInformation($"Requisição de ForgotPassword recebida para: {request.Email}");
+            if (!ModelState.IsValid)
             {
-                ViewBag.ErrorMessage = "Link de redefinição de senha inválido.";
-                return View("RedefinirSenhaErro");
+                return CustomResponse(ModelState);
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, Request.Scheme, Request.Host.ToString());
+
+            Notificar("Sucesso", "Se o email estiver cadastrado, um link para redefinição de senha foi enviado.");
+            _logger.LogInformation($"Link de redefinição de senha para {request.Email} processado.");
+            return CustomResponse();
+        }
+
+        /// <summary>
+        /// Redefine a senha do usuário usando um token.
+        /// </summary>
+        /// <param name="request">Dados para redefinição de senha (userId, token, nova senha).</param>
+        /// <returns>Status HTTP indicando sucesso ou falha.</returns>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        {
+            _logger.LogInformation($"Requisição de ResetPassword recebida para UserId: {request.UserId}");
+            if (!ModelState.IsValid)
+            {
+                return CustomResponse(ModelState);
+            }
+
+            var resetSucceeded = await _usuarioService.RedefinirSenhaAsync(
+                request.UserId,
+                request.Token,
+                request.NewPassword
+            );
+
+            if (TemNotificacao())
+            {
+                _logger.LogError($"Redefinição de senha para UserId {request.UserId} falhou com notificações.");
+                return Redirect($"{_frontendUrls.BaseUrl}/error");
+            }
+
+            Notificar("Sucesso", "Senha redefinida com sucesso.");
+            _logger.LogInformation($"Senha redefinida com sucesso para UserId {request.UserId}.");
+            return Redirect($"{_frontendUrls.BaseUrl}/login");
+        }
+
+        /// <summary>
+        /// Reenvia o e-mail de confirmação.
+        /// </summary>
+        /// <param name="request">O email do usuário.</param>
+        /// <returns>Status HTTP indicando sucesso ou falha.</returns>
+        [HttpPost("resend-email-confirmation")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendEmailConfirmation([FromBody] ResendEmailConfirmationRequestDto request)
+        {
+            _logger.LogInformation($"Requisição de ResendEmailConfirmation recebida para: {request.Email}");
+            if (!ModelState.IsValid)
+            {
+                return CustomResponse(ModelState);
+            }
+
+            var resendSucceeded = await _usuarioService.ResendEmailConfirmationAsync(request.Email, Request.Scheme, Request.Host.ToString());
+
+            if (TemNotificacao())
+            {
+                _logger.LogError($"Reenvio de e-mail de confirmação para {request.Email} falhou com notificações.");
+                return CustomResponse();
+            }
+
+            Notificar("Sucesso", "E-mail de confirmação reenviado com sucesso.");
+            _logger.LogInformation($"E-mail de confirmação reenviado com sucesso para {request.Email}.");
+            return CustomResponse();
+        }
+
+        /// <summary>
+        /// Obtém informações do perfil do usuário logado.
+        /// </summary>
+        /// <returns>O DTO do usuário logado.</returns>
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            _logger.LogInformation($"Requisição de GetUserProfile recebida.");
+            var user = await _usuarioService.GetLoggedInUser();
+
             if (user == null)
             {
-                ViewBag.ErrorMessage = "Usuário inválido.";
-                return View("RedefinirSenhaErro");
+                Notificar("Erro", "Usuário não encontrado.");
+                _logger.LogError("Perfil do usuário não encontrado.");
+                return CustomResponse();
             }
 
-            var model = new RedefinirSenhaViewModel
-            {
-                UserId = userId,
-                Token = token,
-            };
-
-            return View(model);
-        }
-
-        [HttpPost("RedefinirSenha")]
-        [AllowAnonymous]
-        public async Task<IActionResult> RedefinirSenha(RedefinirSenhaViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var user = await _userManager.FindByIdAsync(model.UserId);
-
-                if (user != null)
-                {
-                    ViewBag.UserId = user.Id;
-                    ViewBag.Token = model.Token;
-
-                    _logger.LogInformation($"Tentando redefinir senha para o usuário com ID: {user.Id}");
-                    var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
-
-                    if (result.Succeeded)
-                    {
-                        await _uow.SaveChanges();
-
-                        _logger.LogInformation($"Senha redefinida com sucesso para o usuário com ID: {user.Id}");
-                        await _signInManager.SignOutAsync();
-                        return RedirectToAction("Login");
-                    }
-                    else
-                    {
-                        _logger.LogError($"Erro ao redefinir senha para o usuário com ID: {user.Id}. Falha em ResetPasswordAsync.");
-                        foreach (var error in result.Errors)
-                        {
-                            _logger.LogError($"Erro de redefinição de senha: Código = {error.Code}, Descrição = {error.Description}");
-                            ModelState.AddModelError(string.Empty, error.Description);
-                        }
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Usuário não encontrado.");
-                }
-            }
-            return View(model);
-        }
-
-        public async Task<IActionResult> ResendEmailConfirmation(string email)
-        {
-            if (string.IsNullOrEmpty(email))
-            {
-                ModelState.AddModelError(string.Empty, "O e-mail é obrigatório.");
-                return View("Login");
-            }
-
-            await _usuarioService.ResendEmailConfirmationAsync(email);
-
-            if (_notificador.TemNotificacao())
-            {
-                foreach (var notificacao in _notificador.ObterNotificacoes())
-                {
-                    ModelState.AddModelError(string.Empty, notificacao.Mensagem);
-                }
-            }
-            else
-            {
-                ViewBag.Message = "Um novo e-mail de confirmação foi enviado.";
-            }
-
-            return View("Login");
-        }
-
-        [HttpGet("PainelUsuario")]
-        public async Task<IActionResult> PainelUsuario()
-        {
-            var campeonato = await ObterCampeonatoAtivo();
-
-            if (campeonato != null)
-            {
-                var userId = await _usuarioService.GetLoggedInUserId();
-
-                var apostadorCampeonato = await ObterApostadorCampeonato(userId, campeonato.Id);
-
-                var painelUsuarioViewModel = new PainelUsuarioViewModel
-                {
-                    ApostadorCampeonatoId = apostadorCampeonato?.Id ?? Guid.Empty
-                };
-
-                var usuario = await _usuarioService.ObterUsuarioPorId(userId);
-
-                if (usuario != null)
-                {
-                    ViewBag.NomeUsuario = usuario.Apelido;
-                }
-                else
-                {
-                    ViewBag.NomeUsuario = "Usuário";
-                }
-
-                return View(painelUsuarioViewModel);
-            }
-            else
-            {
-                TempData["ApostadorCampeonatoId"] = null;
-                ViewBag.NomeUsuario = "Usuário";
-            }
-
-            return View();
-        }
-
-        private async Task<Campeonato> ObterCampeonatoAtivo()
-        {
-            var campeonatoRepository = _uow.GetRepository<Campeonato>() as CampeonatoRepository;
-            var campeonato = await campeonatoRepository.ObterCampeonatoAtivo();
-
-            return campeonato;
-        }
-
-        private async Task<Domain.Models.Campeonatos.ApostadorCampeonato> ObterApostadorCampeonato(string usuarioId, Guid campeonatoId)
-        {
-            var apostadorCampeonatoRepository = _uow.GetRepository<ApostadorCampeonato>() as ApostadorCampeonatoRepository;
-            var apostadorCampeonato = await apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(usuarioId, campeonatoId);
-
-            return apostadorCampeonato;
+            var userProfileDto = _mapper.Map<UsuarioProfileDto>(user);
+            _logger.LogInformation($"Perfil do usuário {user.Email} obtido com sucesso.");
+            return CustomResponse(userProfileDto);
         }
     }
 }

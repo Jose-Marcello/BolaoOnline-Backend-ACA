@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 
-namespace ApostasApp.Core.Presentation.Configuration
+namespace ApostasApp.Web.Configuration
 {
     public class MvcOptionsConfig
     {

@@ -1,5 +1,6 @@
 ﻿using ApostasApp.Core.Domain.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Models.Apostadores;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

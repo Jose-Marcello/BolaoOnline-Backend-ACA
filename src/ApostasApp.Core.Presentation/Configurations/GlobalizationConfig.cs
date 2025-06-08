@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 
-namespace ApostasApp.Core.Presentation.Configuration
+namespace ApostasApp.Web.Configuration
 {
 
     public static class GlobalizationConfig

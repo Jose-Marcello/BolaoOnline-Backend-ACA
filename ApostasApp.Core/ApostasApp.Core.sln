@@ -9,11 +9,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Domain", ".
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Application", "..\src\ApostasApp.Core.Application\ApostasApp.Core.Application.csproj", "{2836DDD6-C02A-4BAB-A16A-F0BA1F18913D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Domain.Models", "..\src\ApostasApp.Core.Domain.Models\ApostasApp.Core.Domain.Models.csproj", "{690EC2C7-79E3-442B-A595-073E98E399AE}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.InfraStructure", "..\src\ApostasApp.Core.Infrastructure\ApostasApp.Core.InfraStructure.csproj", "{691AFB5A-C56E-49C5-BBEE-102B56A7B193}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Presentation", "..\src\ApostasApp.Core.Presentation\ApostasApp.Core.Presentation.csproj", "{3EA1C546-A794-43E7-9620-9CCAD5167A0C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Web", "..\src\ApostasApp.Core.Presentation\ApostasApp.Web.csproj", "{3EA1C546-A794-43E7-9620-9CCAD5167A0C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deploy", "Deploy", "{AA8949E1-C745-4561-A622-5CF1FC564185}"
 EndProject
@@ -31,10 +29,6 @@ Global
 		{2836DDD6-C02A-4BAB-A16A-F0BA1F18913D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2836DDD6-C02A-4BAB-A16A-F0BA1F18913D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2836DDD6-C02A-4BAB-A16A-F0BA1F18913D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{690EC2C7-79E3-442B-A595-073E98E399AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{690EC2C7-79E3-442B-A595-073E98E399AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{690EC2C7-79E3-442B-A595-073E98E399AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{690EC2C7-79E3-442B-A595-073E98E399AE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{691AFB5A-C56E-49C5-BBEE-102B56A7B193}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{691AFB5A-C56E-49C5-BBEE-102B56A7B193}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{691AFB5A-C56E-49C5-BBEE-102B56A7B193}.Release|Any CPU.ActiveCfg = Release|Any CPU

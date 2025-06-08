@@ -1,9 +1,9 @@
 ﻿using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
 using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository;
-using DApostasApp.Core.Domain.Models.RankingRodadas;
+using ApostasApp.Core.Domain.Models.RankingRodadas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 
 namespace ApostasApp.Infrastructure.Data.Repository
 {

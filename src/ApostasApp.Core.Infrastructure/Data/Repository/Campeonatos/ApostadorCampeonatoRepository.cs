@@ -1,92 +1,95 @@
-﻿using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.Domain.Models.Interfaces.Campeonatos;
+﻿using ApostasApp.Core.Domain.Interfaces.Campeonatos;
+using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
 {
-    public class ApostadorCampeonatoRepository : Repository<ApostadorCampeonato>,
-                                                 IApostadorCampeonatoRepository
+    public class ApostadorCampeonatoRepository : Repository<ApostadorCampeonato>, IApostadorCampeonatoRepository
     {
         private readonly ILogger<ApostadorCampeonatoRepository> _logger;
-        public ApostadorCampeonatoRepository(MeuDbContext context,
-                                             ILogger<ApostadorCampeonatoRepository> logger) : base(context)
 
+        public ApostadorCampeonatoRepository(MeuDbContext context, ILogger<ApostadorCampeonatoRepository> logger) : base(context)
         {
             _logger = logger;
         }
 
         public async Task<ApostadorCampeonato> ObterApostadorCampeonato(Guid id)
         {
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                .Include(c => c.Apostador)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            return await Db.ApostadoresCampeonatos
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(ac => ac.Id == id);
         }
 
-
-        public async Task<ApostadorCampeonato> ObterApostadorCampeonatoDoApostador(Guid apostadorId)
+        public async Task<ApostadorCampeonato> ObterApostadorDoCampeonato(Guid idCampeonato, Guid idApostador)
         {
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.ApostadorId == apostadorId);
+            return await Db.ApostadoresCampeonatos
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(ac => ac.CampeonatoId == idCampeonato && ac.ApostadorId == idApostador);
         }
 
         public async Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresComRanking(Guid campeonatoId)
         {
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                    .Include(ac => ac.Apostador.Usuario)
-                    .Where(ac => ac.CampeonatoId == campeonatoId).ToListAsync();                             
-
+            return await Db.ApostadoresCampeonatos
+                           .Include(ac => ac.Apostador)
+                               .ThenInclude(a => a.Usuario) // Inclui o Usuario do Apostador
+                           .Include(ac => ac.Campeonato)
+                           .AsNoTracking()
+                           .Where(ac => ac.CampeonatoId == campeonatoId)
+                           .OrderByDescending(ac => ac.Pontuacao) // Assumindo que PontuacaoAtual existe na entidade
+                           .ToListAsync();
         }
 
-
-        public async Task<ApostadorCampeonato> ObterApostadorDoCampeonato(Guid campeonatoId, Guid apostadorId)
+        /// <summary>
+        /// Obtém uma coleção de associações ApostadorCampeonato para um campeonato,
+        /// incluindo as entidades Apostador e Usuario relacionadas.
+        /// </summary>
+        /// <param name="id">O ID do campeonato.</param>
+        /// <returns>Uma coleção de entidades ApostadorCampeonato.</returns>
+        public async Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresDoCampeonato(Guid id) // Implementação do método existente
         {
-
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                               .Where(ec => ec.CampeonatoId == campeonatoId && ec.ApostadorId == apostadorId)
-                               .FirstOrDefaultAsync(ec => ec.CampeonatoId == campeonatoId && ec.ApostadorId == apostadorId);
+            return await Db.ApostadoresCampeonatos
+                           .Include(ac => ac.Apostador)
+                               .ThenInclude(a => a.Usuario) // <--- CRUCIAL: Inclui o Usuario do Apostador
+                           .Include(ac => ac.Campeonato)
+                           .AsNoTracking()
+                           .Where(ac => ac.CampeonatoId == id)
+                           .ToListAsync();
         }
 
-        public async Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresDoCampeonato(Guid campeonatoId)
+        public async Task<ApostadorCampeonato> ObterApostadorCampeonatoDoApostador(Guid apostadorId)
         {
-            {
-                return await Db.ApostadoresCampeonatos.AsNoTracking()
-                                   .Include(c => c.Campeonato)
-                                   .Include(a => a.Apostador)
-                                   .Include(a => a.Apostador.Usuario)
-                                   .Where(ec => ec.CampeonatoId == campeonatoId)
-                                   .OrderBy(ec => ec.Apostador.Usuario.UserName).ToListAsync();
-            }
+            return await Db.ApostadoresCampeonatos
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(ac => ac.ApostadorId == apostadorId);
         }
 
         public async Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(string usuarioId, Guid campeonatoId)
         {
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                .FirstOrDefaultAsync(a => a.Apostador.Usuario.Id == usuarioId && a.CampeonatoId == campeonatoId);
+            return await Db.ApostadoresCampeonatos
+                           .Include(ac => ac.Apostador)
+                               .ThenInclude(a => a.Usuario) // Inclui o Usuario do Apostador
+                           .Include(ac => ac.Campeonato)
+                           .AsNoTracking()
+                           .FirstOrDefaultAsync(ac => ac.Apostador.UsuarioId == usuarioId && ac.CampeonatoId == campeonatoId);
         }
-
-        /*public async Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorERodada(string usuarioId, Guid rodadaId)
-        {
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                        //.Where(a => a == campeonatoId && ec.ApostadorId == apostadorId)
-                        .FirstOrDefaultAsync(a => a.Apostador.Usuario.Id == usuarioId && a.ApostadorId == apostadorId);
-
-
-        }*/
 
         public async Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId)
         {
-
-            return await Db.ApostadoresCampeonatos.AsNoTracking()
-                      .Include(ac => ac.Apostador.Usuario)
-                      .Where(ac => ac.CampeonatoId == campeonatoId)
-                      .OrderByDescending(ac => ac.Pontuacao)
-                      .ToListAsync();
-
+            return await Db.ApostadoresCampeonatos
+                           .Include(ac => ac.Apostador)
+                               .ThenInclude(a => a.Usuario) // Inclui o Usuario do Apostador
+                           .Include(ac => ac.Campeonato)
+                           .AsNoTracking()
+                           .Where(ac => ac.CampeonatoId == campeonatoId)
+                           .OrderByDescending(ac => ac.Pontuacao) // Assumindo que PontuacaoAtual existe na entidade
+                           .ToListAsync();
         }
-
     }
-
 }

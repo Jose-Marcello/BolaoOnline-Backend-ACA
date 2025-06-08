@@ -28,6 +28,14 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<string>("NomeCompleto")
+                        .IsRequired()
+                        .HasColumnType("varchar(250)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -43,7 +51,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.ToTable("Apostadores", (string)null);
                 });
 
-            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.Aposta", b =>
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,31 +60,67 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Property<Guid>("ApostadorCampeonatoId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("DataHoraAposta")
+                    b.Property<decimal?>("CustoPagoApostaRodada")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("DataHoraSubmissao")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("EhApostaCampeonato")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EhApostaIsolada")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("Enviada")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("JogoId")
+                    b.Property<string>("IdentificadorAposta")
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal>("PontuacaoTotalRodada")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("RodadaId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("PlacarApostaCasa")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PlacarApostaVisita")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Pontos")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApostadorCampeonatoId");
 
+                    b.HasIndex("RodadaId");
+
+                    b.ToTable("ApostasRodada", (string)null);
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.Palpite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApostaRodadaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("JogoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("PlacarApostaCasa")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PlacarApostaVisita")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Pontos")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApostaRodadaId");
+
                     b.HasIndex("JogoId");
 
-                    b.ToTable("Apostas", (string)null);
+                    b.ToTable("Palpites", (string)null);
                 });
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", b =>
@@ -90,6 +134,12 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.Property<Guid>("CampeonatoId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("CustoAdesaoPago")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("DataInscricao")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Pontuacao")
                         .HasColumnType("int");
@@ -114,6 +164,9 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.Property<bool>("Ativo")
                         .HasColumnType("bit");
+
+                    b.Property<decimal?>("CustoAdesao")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");
@@ -208,6 +261,67 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.ToTable("Estadios", (string)null);
                 });
 
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.Saldo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApostadorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DataUltimaAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Valor")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApostadorId")
+                        .IsUnique();
+
+                    b.ToTable("Saldos", (string)null);
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.TransacaoFinanceira", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CampeonatoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DataTransacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Descricao")
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<Guid?>("RodadaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SaldoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Valor")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampeonatoId");
+
+                    b.HasIndex("RodadaId");
+
+                    b.HasIndex("SaldoId");
+
+                    b.ToTable("TransacoesFinanceiras", (string)null);
+                });
+
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Jogos.Jogo", b =>
                 {
                     b.Property<Guid>("Id")
@@ -254,6 +368,36 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.ToTable("Jogos", (string)null);
                 });
 
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.RankingRodadas.RankingRodada", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApostadorCampeonatoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DataAtualizacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Pontuacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Posicao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RodadaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApostadorCampeonatoId");
+
+                    b.HasIndex("RodadaId");
+
+                    b.ToTable("RankingRodadas");
+                });
+
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Rodadas.Rodada", b =>
                 {
                     b.Property<Guid>("Id")
@@ -262,6 +406,9 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.Property<Guid>("CampeonatoId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("CustoApostaRodada")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");
@@ -388,36 +535,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("DApostasApp.Core.Domain.Models.RankingRodadas.RankingRodada", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ApostadorCampeonatoId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("DataAtualizacao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Pontuacao")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Posicao")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RodadaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApostadorCampeonatoId");
-
-                    b.HasIndex("RodadaId");
-
-                    b.ToTable("RankingRodadas");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -563,19 +680,36 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.Aposta", b =>
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", b =>
                 {
-                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", "ApostadorCampeonato")
-                        .WithMany("Apostas")
+                    b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "ApostadorCampeonato")
+                        .WithMany()
                         .HasForeignKey("ApostadorCampeonatoId")
                         .IsRequired();
 
-                    b.HasOne("ApostasApp.Core.Domain.Models.Jogos.Jogo", "Jogo")
-                        .WithMany("Apostas")
-                        .HasForeignKey("JogoId")
+                    b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
+                        .WithMany("ApostasRodada")
+                        .HasForeignKey("RodadaId")
                         .IsRequired();
 
                     b.Navigation("ApostadorCampeonato");
+
+                    b.Navigation("Rodada");
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.Palpite", b =>
+                {
+                    b.HasOne("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", "ApostaRodada")
+                        .WithMany("Palpites")
+                        .HasForeignKey("ApostaRodadaId")
+                        .IsRequired();
+
+                    b.HasOne("ApostasApp.Core.Domain.Models.Jogos.Jogo", "Jogo")
+                        .WithMany("Palpites")
+                        .HasForeignKey("JogoId")
+                        .IsRequired();
+
+                    b.Navigation("ApostaRodada");
 
                     b.Navigation("Jogo");
                 });
@@ -632,6 +766,38 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Navigation("Uf");
                 });
 
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.Saldo", b =>
+                {
+                    b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "Apostador")
+                        .WithOne("Saldo")
+                        .HasForeignKey("ApostasApp.Core.Domain.Models.Financeiro.Saldo", "ApostadorId")
+                        .IsRequired();
+
+                    b.Navigation("Apostador");
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.TransacaoFinanceira", b =>
+                {
+                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
+                        .WithMany()
+                        .HasForeignKey("CampeonatoId");
+
+                    b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
+                        .WithMany()
+                        .HasForeignKey("RodadaId");
+
+                    b.HasOne("ApostasApp.Core.Domain.Models.Financeiro.Saldo", "Saldo")
+                        .WithMany("Transacoes")
+                        .HasForeignKey("SaldoId")
+                        .IsRequired();
+
+                    b.Navigation("Campeonato");
+
+                    b.Navigation("Rodada");
+
+                    b.Navigation("Saldo");
+                });
+
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Jogos.Jogo", b =>
                 {
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.EquipeCampeonato", "EquipeCasa")
@@ -663,17 +829,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Navigation("Rodada");
                 });
 
-            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Rodadas.Rodada", b =>
-                {
-                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
-                        .WithMany("Rodadas")
-                        .HasForeignKey("CampeonatoId")
-                        .IsRequired();
-
-                    b.Navigation("Campeonato");
-                });
-
-            modelBuilder.Entity("DApostasApp.Core.Domain.Models.RankingRodadas.RankingRodada", b =>
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.RankingRodadas.RankingRodada", b =>
                 {
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", "ApostadorCampeonato")
                         .WithMany("RankingRodadas")
@@ -688,6 +844,16 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Navigation("ApostadorCampeonato");
 
                     b.Navigation("Rodada");
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Rodadas.Rodada", b =>
+                {
+                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
+                        .WithMany("Rodadas")
+                        .HasForeignKey("CampeonatoId")
+                        .IsRequired();
+
+                    b.Navigation("Campeonato");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -744,12 +910,18 @@ namespace ApostasApp.Core.InfraStructure.Migrations
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostadores.Apostador", b =>
                 {
                     b.Navigation("ApostadoresCampeonatos");
+
+                    b.Navigation("Saldo")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", b =>
+                {
+                    b.Navigation("Palpites");
                 });
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", b =>
                 {
-                    b.Navigation("Apostas");
-
                     b.Navigation("RankingRodadas");
                 });
 
@@ -774,13 +946,20 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Navigation("EquipesCampeonatos");
                 });
 
+            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.Saldo", b =>
+                {
+                    b.Navigation("Transacoes");
+                });
+
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Jogos.Jogo", b =>
                 {
-                    b.Navigation("Apostas");
+                    b.Navigation("Palpites");
                 });
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Rodadas.Rodada", b =>
                 {
+                    b.Navigation("ApostasRodada");
+
                     b.Navigation("JogosRodada");
 
                     b.Navigation("RankingRodadas");

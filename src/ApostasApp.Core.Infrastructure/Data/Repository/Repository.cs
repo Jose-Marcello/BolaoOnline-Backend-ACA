@@ -1,74 +1,70 @@
-﻿using ApostasApp.Core.Domain.Models.Base;
-using ApostasApp.Core.Domain.Models.Interfaces;
-using ApostasApp.Core.InfraStructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
+﻿using ApostasApp.Core.Domain.Interfaces; // Para IRepository
+using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using Microsoft.EntityFrameworkCore; // Para DbSet, AsNoTracking, Where, FirstOrDefaultAsync, ToListAsync, CountAsync
+using System;
+using System.Collections.Generic;
+using System.Linq; // Para IQueryable, Where
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
-namespace ApostasApp.Core.InfraStructure.Data.Repository
+namespace ApostasApp.Core.Infrastructure.Data.Repository
 {
-    public abstract class Repository<TEntity> : IRepository<TEntity> where TEntity : Entity, new()
+    // Classe abstrata que implementa a interface IRepository<TEntity>
+    public abstract class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     {
         protected readonly MeuDbContext Db;
         protected readonly DbSet<TEntity> DbSet;
 
-        protected Repository(MeuDbContext db)
+        protected Repository(MeuDbContext context)
         {
-            Db = db;
-            DbSet = db.Set<TEntity>();
+            Db = context;
+            DbSet = context.Set<TEntity>();
         }
 
-        public async Task<IEnumerable<TEntity>> Buscar(Expression<Func<TEntity, bool>> predicate)
+        // Implementação do método Buscar que retorna IQueryable para consultas flexíveis
+        public IQueryable<TEntity> Buscar(Expression<Func<TEntity, bool>> predicate)
         {
-            return await DbSet.AsNoTracking().Where(predicate).ToListAsync();
+            return DbSet.AsNoTracking().Where(predicate);
+        }
+
+        // Métodos CRUD básicos, marcados como virtual para permitir sobrescrita em repositórios específicos
+        public virtual async Task Adicionar(TEntity entity)
+        {
+            DbSet.Add(entity);
         }
 
         public virtual async Task<TEntity> ObterPorId(Guid id)
         {
+            // FindAsync é otimizado para buscar por chave primária
             return await DbSet.FindAsync(id);
         }
 
-        public virtual async Task<List<TEntity>> ObterTodos()
+        public virtual async Task<IEnumerable<TEntity>> ObterTodos()
         {
-            return await DbSet.ToListAsync();
-        }
-
-        public virtual async Task Adicionar(TEntity entity)
-        {
-                       
-            DbSet.Add(entity);
-            //await SaveChanges();
+            return await DbSet.AsNoTracking().ToListAsync();
         }
 
         public virtual async Task Atualizar(TEntity entity)
         {
-            Db.Entry(entity).State = EntityState.Modified;
-            //DbSet.Update(entity);
-            //await SaveChanges();
+            DbSet.Update(entity);
         }
 
-        public virtual async Task Remover(Guid id)
-        {
-            DbSet.Remove(new TEntity { Id = id });
-            //await SaveChanges();
-        }
-
-        //para os casos em que tiver uma chave composta
-        public virtual async Task RemoverEntity(TEntity entity)
+        public virtual async Task Remover(TEntity entity)
         {
             DbSet.Remove(entity);
-            //await SaveChanges();
         }
 
-        public async Task<int> SaveChanges()
+        // Implementação do método CountAsync
+        public async Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate)
         {
-            return await Db.SaveChangesAsync();
+            return await DbSet.CountAsync(predicate);
         }
 
+        // Implementação do método Dispose da interface IDisposable
         public void Dispose()
         {
             Db?.Dispose();
+            GC.SuppressFinalize(this); // Opcional: para GC não chamar finalizador se Dispose já foi chamado
         }
-
-
     }
 }

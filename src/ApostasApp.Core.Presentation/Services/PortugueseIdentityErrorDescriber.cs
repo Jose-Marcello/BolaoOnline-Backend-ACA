@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace ApostasApp.Core.Presentation.Services
+namespace ApostasApp.Web.Services
 {
     public class PortugueseIdentityErrorDescriber : IdentityErrorDescriber
     {
