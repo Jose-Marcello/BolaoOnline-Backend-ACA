@@ -1,36 +1,39 @@
-﻿using ApostasApp.Core.Domain.Models.Usuarios; // Este using traz Usuario, LoginResult, AuthResult
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao
-using System.Collections.Generic;
+﻿// Exemplo: ApostasApp.Core.Domain.Interfaces.Identity\IIdentityService.cs
+using ApostasApp.Core.Domain.Models; // Para LoginResult e AuthResult
+using ApostasApp.Core.Domain.Models.Usuarios; // Para Usuario
+using System.Security.Claims; // Para AuthResult (se AuthResult usa Claims)
 using System.Threading.Tasks;
-using System.Security.Claims;
+using System; // Para DateTime (se usado em LoginResult/AuthResult)
+using System.Collections.Generic; // Para List (se usado em LoginResult/AuthResult)
 
 namespace ApostasApp.Core.Domain.Interfaces.Identity
 {
     public interface IIdentityService
     {
+        // Métodos relacionados a usuário
         Task<Usuario> GetLoggedInUserAsync();
         Task<string> GetLoggedInUserIdAsync();
-        Task<bool> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular);
-
+        Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular); // Retorna AuthResult
         Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host);
-        Task<bool> ConfirmEmailAsync(Usuario user, string code);
-
-        Task<LoginResult> LoginAsync(string email, string password, bool rememberMe);
-        Task LogoutAsync();
-
-        Task<string> GeneratePasswordResetTokenAsync(Usuario user);
-        Task<bool> SendPasswordResetEmailAsync(Usuario user, string scheme, string host);
-        Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
-        Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
-
-        Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail);
-        Task<AuthResult> ChangeEmailAsync(string userId, string newEmail, string code);
-
         Task<Usuario> GetUserByEmailAsync(string email);
         Task<Usuario> GetUserByIdAsync(string userId);
         Task<bool> ApelidoExisteAsync(string apelido);
+
+        // Métodos de Autenticação
+        Task<LoginResult> LoginAsync(string email, string password, bool rememberMe); // Retorna LoginResult
+        Task LogoutAsync(); // Seu método existente
         Task<bool> SignInUserAsync(string email, string password, bool isPersistent, bool lockoutOnFailure);
-        Task SignOutUserAsync();
-        Task<bool> UpdateUserAsync(Usuario user);
+        Task SignOutUserAsync(); // Seu método existente
+
+        // Métodos de Redefinição de Senha e Confirmação de E-mail
+        Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
+        Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
+
+        // Métodos de Alteração de E-mail
+        Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail); // Retorna AuthResult
+        Task<AuthResult> ChangeEmailAsync(string userId, string newEmail, string code); // Retorna AuthResult
+
+        // <<-- ADICIONADO: Assinatura do método ChangePasswordAsync -->>
+        Task<bool> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword);
     }
 }

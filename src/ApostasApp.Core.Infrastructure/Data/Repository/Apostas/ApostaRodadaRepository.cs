@@ -50,7 +50,7 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
 
         // Opção 2: Se não há aposta em edição, pega a última submetida
         // (Isso será relevante quando o usuário puder ter múltiplas ApostaRodadas submetidas)
-        //return await DbSet.Where(ar => ar.ApostadorCampeamentoId == apostadorCampeamentoId &&
+        //return await DbSet.Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId &&
         //                                ar.RodadaId == rodadaId &&
          //                               ar.DataHoraSubmissao.HasValue)
          //                 .OrderByDescending(ar => ar.DataHoraSubmissao)

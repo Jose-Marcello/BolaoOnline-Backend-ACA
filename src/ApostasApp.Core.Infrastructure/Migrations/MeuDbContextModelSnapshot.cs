@@ -17,7 +17,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.15")
+                .HasAnnotation("ProductVersion", "8.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -126,7 +126,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ApostadorId")
@@ -136,22 +135,29 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("CustoAdesaoPago")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTime>("DataInscricao")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Pontuacao")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("Posicao")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApostadorId");
-
                     b.HasIndex("CampeonatoId");
+
+                    b.HasIndex("ApostadorId", "CampeonatoId")
+                        .IsUnique();
 
                     b.ToTable("ApostadoresCampeonatos", (string)null);
                 });
@@ -166,7 +172,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<decimal?>("CustoAdesao")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");
@@ -217,16 +223,15 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Escudo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("varchar(40)");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Sigla")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varchar(10)");
 
                     b.Property<int>("Tipo")
                         .HasColumnType("int");
@@ -238,7 +243,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.HasIndex("UfId");
 
-                    b.ToTable("Equipes", (string)null);
+                    b.ToTable("Equipes");
                 });
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Estadios.Estadio", b =>
@@ -287,20 +292,17 @@ namespace ApostasApp.Core.InfraStructure.Migrations
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.TransacaoFinanceira", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CampeonatoId")
+                    b.Property<Guid?>("ApostaRodadaId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DataTransacao")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Descricao")
+                        .IsRequired()
                         .HasColumnType("varchar(250)");
-
-                    b.Property<Guid?>("RodadaId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SaldoId")
                         .HasColumnType("uniqueidentifier");
@@ -313,9 +315,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CampeonatoId");
-
-                    b.HasIndex("RodadaId");
+                    b.HasIndex("ApostaRodadaId");
 
                     b.HasIndex("SaldoId");
 
@@ -408,7 +408,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("CustoApostaRodada")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime>("DataFim")
                         .HasColumnType("datetime2");
@@ -510,6 +510,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("RegistrationDate")
                         .HasColumnType("datetime2");
@@ -675,6 +682,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Usuarios.Usuario", "Usuario")
                         .WithOne("Apostador")
                         .HasForeignKey("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Usuario");
@@ -685,11 +693,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "ApostadorCampeonato")
                         .WithMany()
                         .HasForeignKey("ApostadorCampeonatoId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
                         .WithMany("ApostasRodada")
                         .HasForeignKey("RodadaId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ApostadorCampeonato");
@@ -702,11 +712,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", "ApostaRodada")
                         .WithMany("Palpites")
                         .HasForeignKey("ApostaRodadaId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Jogos.Jogo", "Jogo")
                         .WithMany("Palpites")
                         .HasForeignKey("JogoId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ApostaRodada");
@@ -719,11 +731,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "Apostador")
                         .WithMany("ApostadoresCampeonatos")
                         .HasForeignKey("ApostadorId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
                         .WithMany("ApostadoresCampeonatos")
                         .HasForeignKey("CampeonatoId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Apostador");
@@ -736,11 +750,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
                         .WithMany("EquipesCampeonatos")
                         .HasForeignKey("CampeonatoId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Equipes.Equipe", "Equipe")
                         .WithMany("EquipesCampeonatos")
                         .HasForeignKey("EquipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Campeonato");
@@ -752,7 +768,8 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 {
                     b.HasOne("ApostasApp.Core.Domain.Models.Ufs.Uf", "Uf")
                         .WithMany("Equipes")
-                        .HasForeignKey("UfId");
+                        .HasForeignKey("UfId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Uf");
                 });
@@ -771,6 +788,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "Apostador")
                         .WithOne("Saldo")
                         .HasForeignKey("ApostasApp.Core.Domain.Models.Financeiro.Saldo", "ApostadorId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Apostador");
@@ -778,22 +796,17 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.TransacaoFinanceira", b =>
                 {
-                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
+                    b.HasOne("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", "ApostaRodada")
                         .WithMany()
-                        .HasForeignKey("CampeonatoId");
-
-                    b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
-                        .WithMany()
-                        .HasForeignKey("RodadaId");
+                        .HasForeignKey("ApostaRodadaId");
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Financeiro.Saldo", "Saldo")
-                        .WithMany("Transacoes")
+                        .WithMany()
                         .HasForeignKey("SaldoId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Campeonato");
-
-                    b.Navigation("Rodada");
+                    b.Navigation("ApostaRodada");
 
                     b.Navigation("Saldo");
                 });
@@ -803,21 +816,25 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.EquipeCampeonato", "EquipeCasa")
                         .WithMany("JogosCasa")
                         .HasForeignKey("EquipeCasaId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.EquipeCampeonato", "EquipeVisitante")
                         .WithMany("JogosVisitante")
                         .HasForeignKey("EquipeVisitanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Estadios.Estadio", "Estadio")
                         .WithMany()
                         .HasForeignKey("EstadioId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
                         .WithMany("JogosRodada")
                         .HasForeignKey("RodadaId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EquipeCasa");
@@ -834,11 +851,13 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", "ApostadorCampeonato")
                         .WithMany("RankingRodadas")
                         .HasForeignKey("ApostadorCampeonatoId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ApostasApp.Core.Domain.Models.Rodadas.Rodada", "Rodada")
                         .WithMany("RankingRodadas")
                         .HasForeignKey("RodadaId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ApostadorCampeonato");
@@ -851,6 +870,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.Campeonato", "Campeonato")
                         .WithMany("Rodadas")
                         .HasForeignKey("CampeonatoId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Campeonato");
@@ -944,11 +964,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Equipes.Equipe", b =>
                 {
                     b.Navigation("EquipesCampeonatos");
-                });
-
-            modelBuilder.Entity("ApostasApp.Core.Domain.Models.Financeiro.Saldo", b =>
-                {
-                    b.Navigation("Transacoes");
                 });
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Jogos.Jogo", b =>

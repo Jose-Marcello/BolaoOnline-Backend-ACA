@@ -10,7 +10,7 @@ namespace ApostasApp.Core.Application.DTOs.ApostadorCampeonatos
     /// </summary>
     public class ApostadorCampeonatoDto
     {
-        public Guid Id { get; set; } // ID da entidade ApostadorCampeonato
+        public string Id { get; set; } // ID da entidade ApostadorCampeonato
         public DateTime DataInscricao { get; set; }
         public int PontuacaoAtual { get; set; }
 

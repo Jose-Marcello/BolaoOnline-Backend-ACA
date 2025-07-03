@@ -26,7 +26,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Financeiro // Ajuste o 
             // Usar FirstOrDefaultAsync para retornar null se não encontrar
             // Usar .Include(s => s.Transacoes) se você quiser carregar as transações junto com o saldo
             return await _context.Saldos
-                                 .Include(s => s.Transacoes) // Inclui as transações relacionadas
+                                 //.Include(s => s.Transacoes) // Inclui as transações relacionadas
                                  .FirstOrDefaultAsync(s => s.ApostadorId == apostadorId);
         }
         // Se precisar de outros métodos específicos para Saldo, adicione aqui

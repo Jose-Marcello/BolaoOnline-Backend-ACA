@@ -26,39 +26,39 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             _mapper = mapper;
         }
 
-        public async Task<ApostadorCampeonato> ObterPorId(Guid apostadorCampeamentoId)
+        public async Task<ApostadorCampeonato> ObterPorId(Guid apostadorCampeonatoId)
         {
-            return await _apostadorCampeonatoRepository.ObterPorId(apostadorCampeamentoId);
+            return await _apostadorCampeonatoRepository.ObterPorId(apostadorCampeonatoId);
         }
 
-        public async Task Adicionar(ApostadorCampeonato apostadorCampeamento)
+        public async Task Adicionar(ApostadorCampeonato apostadorCampeonato)
         {
-            if (!ExecutarValidacao(new ApostadorCampeonatoValidation(), apostadorCampeamento))
-                return;
+            //if (!ExecutarValidacao(new ApostadorCampeonatoValidation(), apostadorCampeonato))
+            //    return;
 
-            if (await _apostadorCampeonatoRepository.Buscar(ec => ec.CampeonatoId == apostadorCampeamento.CampeonatoId
-                                                             && ec.ApostadorId == apostadorCampeamento.ApostadorId).AnyAsync())
+            if (await _apostadorCampeonatoRepository.Buscar(ec => ec.CampeonatoId == apostadorCampeonato.CampeonatoId
+                                                             && ec.ApostadorId == apostadorCampeonato.ApostadorId).AnyAsync())
             {
                 Notificar("Alerta", "Este APOSTADOR já foi associado a este CAMPEONATO!");
                 return;
             }
 
-            await _apostadorCampeonatoRepository.Adicionar(apostadorCampeamento);
+            await _apostadorCampeonatoRepository.Adicionar(apostadorCampeonato);
 
-            await Commit();
+            await CommitAsync();
             Notificar("Sucesso", "Associação Apostador-Campeonato adicionada com sucesso!");
         }
 
-        public async Task Remover(ApostadorCampeonato apostadorCampeamento)
+        public async Task Remover(ApostadorCampeonato apostadorCampeonato)
         {
-            if (apostadorCampeamento == null)
+            if (apostadorCampeonato == null)
             {
                 Notificar("Alerta", "Associação Apostador-Campeonato não encontrada para remoção.");
                 return;
             }
 
-            await _apostadorCampeonatoRepository.Remover(apostadorCampeamento);
-            await Commit();
+            await _apostadorCampeonatoRepository.Remover(apostadorCampeonato);
+            await CommitAsync();
             Notificar("Sucesso", "Associação Apostador-Campeonato removida com sucesso!");
         }
 

@@ -1,45 +1,63 @@
-﻿using ApostasApp.Core.Domain.Models.Base;
-using ApostasApp.Core.Domain.Models.Apostadores;
-using ApostasApp.Core.Domain.Models.Campeonatos; // Adicionar este using
-using ApostasApp.Core.Domain.Models.Rodadas;     // Adicionar este using
+﻿// Localização: ApostasApp.Core.Domain.Models.Financeiro/TransacaoFinanceira.cs
+using ApostasApp.Core.Domain.Models.Base;
+using System;
+using ApostasApp.Core.Domain.Models.Apostas; // Adicione este using para ApostaRodada
 
 namespace ApostasApp.Core.Domain.Models.Financeiro
 {
     public class TransacaoFinanceira : Entity
     {
+        // Propriedades de Chave Estrangeira e Navegação para Saldo (já corretas)
+        public Guid SaldoId { get; set; }
+        public Saldo Saldo { get; private set; }
+
+        // >>> NOVAS PROPRIEDADES PARA LIGAÇÃO COM APOSTARODADA <<<
+        public Guid? ApostaRodadaId { get; private set; } // Chave Estrangeira (nullable)
+        public ApostaRodada ApostaRodada { get; private set; } // Propriedade de Navegação
+
+        public decimal Valor { get; private set; }
+        public TipoTransacao Tipo { get; private set; }
+        public DateTime DataTransacao { get; private set; }
+        public string Descricao { get; private set; }
+
+        // Construtor vazio para o Entity Framework Core
         protected TransacaoFinanceira() { }
 
-        // Construtor privado para EF Core       
-        public TransacaoFinanceira(Guid saldoId, TipoTransacao tipo, decimal valor, string descricao)
+        // Construtor principal - AGORA COM OPÇÃO PARA APOSTARODADAID
+        public TransacaoFinanceira(
+            Guid saldoId,
+            TipoTransacao tipo,
+            decimal valor,
+            string descricao,
+            Guid? apostaRodadaId = null) // Parâmetro opcional e nullable
+            : base()
         {
-            Id = Guid.NewGuid();
+            if (saldoId == Guid.Empty)
+                throw new ArgumentException("SaldoId não pode ser um GUID vazio.", nameof(saldoId));
+            if (valor == 0)
+                throw new ArgumentException("Valor da transação não pode ser zero.", nameof(valor));
+            if (string.IsNullOrWhiteSpace(descricao))
+                throw new ArgumentException("Descrição da transação não pode ser vazia.", nameof(descricao));
+
             SaldoId = saldoId;
             Tipo = tipo;
             Valor = valor;
-            DataTransacao = DateTime.Now;
             Descricao = descricao;
+            DataTransacao = DateTime.Now;
+            ApostaRodadaId = apostaRodadaId; // Atribui o ID opcional
         }
 
-        //public Guid ApostadorId { get; set; }
-        public decimal Valor { get; set; }
-        public TipoTransacao Tipo { get; set; }
-        public DateTime DataTransacao { get; set; }
-        public string? Descricao { get; set; }
+        // Você pode adicionar métodos para associar/desassociar a ApostaRodadaId se necessário
+        public void AssociarApostaRodada(Guid apostaRodadaId)
+        {
+            if (apostaRodadaId == Guid.Empty)
+                throw new ArgumentException("ApostaRodadaId não pode ser um GUID vazio.", nameof(apostaRodadaId));
+            ApostaRodadaId = apostaRodadaId;
+        }
 
-        // NOVAS PROPRIEDADES OPCIONAIS
-        public Guid? CampeonatoId { get; set; } // Pode ser nulo
-        public Guid? RodadaId { get; set; }     // Pode ser nulo
-        public Guid SaldoId { get; set; } // Chave estrangeira para o Saldo relacionado
-
-        /* EF Relations */
-       
-        public Campeonato? Campeonato { get; set; } // Pode ser nulo
-        public Rodada? Rodada { get; set; }         // Pode ser nulo
-
-        // Propriedade de navegação para o Saldo ao qual esta transação pertence
-        public Saldo Saldo { get; set; }
-        
+        public void DesassociarApostaRodada()
+        {
+            ApostaRodadaId = null;
+        }
     }
 }
-
-

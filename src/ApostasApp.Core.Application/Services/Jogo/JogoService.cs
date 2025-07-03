@@ -97,7 +97,7 @@ namespace ApostasApp.Core.Application.Services.Jogos
 
             // Chama o Commit() da BaseService para persistir as alterações
             // A BaseService é responsável por chamar _unitOfWork.CommitAsync()
-            var saved = await Commit(); // Assumindo que BaseService tem um método Commit()
+            var saved = await CommitAsync(); // Assumindo que BaseService tem um método Commit()
 
             if (saved)
             {

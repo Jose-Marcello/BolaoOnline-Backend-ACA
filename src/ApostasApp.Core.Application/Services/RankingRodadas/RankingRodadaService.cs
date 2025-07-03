@@ -37,8 +37,8 @@ namespace ApostasApp.Core.Application.Services.Rodadas
         public async Task Adicionar(RankingRodada rankingRodada)
         {
             // Assumindo que ExecutarValidacao está na BaseService
-            if (!ExecutarValidacao(new RankingRodadaValidation(), rankingRodada))
-                return;
+            //if (!ExecutarValidacao(new RankingRodadaValidation(), rankingRodada))
+            //    return;
 
             // Lógica de negócio comentada no original, mantida comentada aqui.
             /*if (_rodadaRepository.Buscar(r => r.NumeroRodada == rodada.NumeroRodada
@@ -49,7 +49,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
             }*/
 
             await _rankingRodadaRepository.Adicionar(rankingRodada);
-            await Commit(); // Chamar Commit() da BaseService para persistir as alterações
+            await CommitAsync(); // Chamar Commit() da BaseService para persistir as alterações
             Notificar("Sucesso", "Ranking de Rodada adicionado com sucesso!");
         }
 
@@ -60,18 +60,18 @@ namespace ApostasApp.Core.Application.Services.Rodadas
         public async Task Atualizar(RankingRodada rankingRodada)
         {
             // Assumindo que ExecutarValidacao está na BaseService
-            if (!ExecutarValidacao(new RankingRodadaValidation(), rankingRodada)) return;
+            //if (!ExecutarValidacao(new RankingRodadaValidation(), rankingRodada)) return;
 
             // Lógica de negócio comentada no original, mantida comentada aqui.
             /* if (_rodadaRepository.Buscar(r => r.NumeroRodada == rodada.NumeroRodada
-               && r.CampeonatoId == rodada.CampeamentoId).Result.Any())
+               && r.CampeonatoId == rodada.CampeonatoId).Result.Any())
              {
                  Notificar("Alerta", "Já existe uma rodada neste campeonato com este NÚMERO informado.");
                  return;
              }*/
 
             await _rankingRodadaRepository.Atualizar(rankingRodada);
-            await Commit(); // Chamar Commit() da BaseService para persistir as alterações
+            await CommitAsync(); // Chamar Commit() da BaseService para persistir as alterações
             Notificar("Sucesso", "Ranking de Rodada atualizado com sucesso!");
         }
 
@@ -99,7 +99,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
             }*/
 
             await _rankingRodadaRepository.Remover(rankingRodada); // Usar Remover(TEntity entity)
-            await Commit(); // Chamar Commit() da BaseService para persistir as alterações
+            await CommitAsync(); // Chamar Commit() da BaseService para persistir as alterações
             Notificar("Sucesso", "Registro de Ranking de Rodada removido com sucesso!");
         }
 

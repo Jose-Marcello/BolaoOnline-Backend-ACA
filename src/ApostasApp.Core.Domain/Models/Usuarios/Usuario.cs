@@ -27,6 +27,9 @@ namespace ApostasApp.Core.Domain.Models.Usuarios
         public DateTime? RegistrationDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
 
+        public string RefreshToken { get; set; }
+        public DateTime RefreshTokenExpiryTime { get; set; }
+
         /// <summary>
         /// Construtor padrão sem parâmetros, necessário para o ASP.NET Core Identity e Entity Framework Core.
         /// </summary>
@@ -46,7 +49,11 @@ namespace ApostasApp.Core.Domain.Models.Usuarios
             CPF = cpf;
             Celular = celular;
             RegistrationDate = DateTime.Now; // Define a data de registro ao criar
-            // LastLoginDate será atualizado no login
+
+            // *** NOVO: Inicializa as propriedades do Refresh Token ***
+            RefreshToken = null; // Ou string.Empty, dependendo da sua preferência para valores nulos
+            RefreshTokenExpiryTime = DateTime.MinValue; // Ou DateTime.UtcNow; se preferir um valor inicial real
+            // ******************************************************
         }
     }
 }

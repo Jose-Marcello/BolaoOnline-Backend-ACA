@@ -18,7 +18,7 @@ namespace ApostasApp.Core.Domain.Models.Financeiro
             ApostadorId = apostadorId;
             Valor = valorInicial;
             DataUltimaAtualizacao = DateTime.Now;
-            Transacoes = new List<TransacaoFinanceira>();
+            //Transacoes = new List<TransacaoFinanceira>();
         }
 
         public Guid ApostadorId { get; set; } // Chave estrangeira para o usuário/apostador
@@ -26,7 +26,7 @@ namespace ApostasApp.Core.Domain.Models.Financeiro
         public DateTime DataUltimaAtualizacao { get; private set; } // Data da última alteração
 
         // Coleção de transações associadas a este saldo
-        public ICollection<TransacaoFinanceira> Transacoes { get; set; }
+        //public ICollection<TransacaoFinanceira> Transacoes { get; set; }
 
         // Método para adicionar valor ao saldo (depósito)
         public void Adicionar(decimal valor)

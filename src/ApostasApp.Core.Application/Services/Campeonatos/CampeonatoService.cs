@@ -1,31 +1,31 @@
-﻿using ApostasApp.Core.Application.DTOs.Campeonatos;
+﻿// Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
+using ApostasApp.Core.Application.DTOs.Campeonatos;
+using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Base;
-using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
-using ApostasApp.Core.Application.Services.Interfaces.Campeonatos; // Para ICampeonatoService
-using ApostasApp.Core.Application.Services.Interfaces.Financeiro; // Para IFinanceiroService
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
-using ApostasApp.Core.Domain.Interfaces.Apostadores; // Para IApostadorRepository
-using ApostasApp.Core.Domain.Interfaces.Campeonatos; // Para ICampeonatoRepository, IApostadorCampeonatoRepository
-using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
-using ApostasApp.Core.Domain.Models.Campeonatos; // Para Campeonato, ApostadorCampeonato
+using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
+using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
+using ApostasApp.Core.Domain.Interfaces;
+using ApostasApp.Core.Domain.Interfaces.Apostadores;
+using ApostasApp.Core.Domain.Interfaces.Campeonatos;
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Campeonatos; // Importado para usar o modelo de domínio Campeonato
 using ApostasApp.Core.Domain.Models.Financeiro; // Para TipoTransacao
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (entidade de domínio)
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 
-namespace ApostasApp.Application.Campeonatos.Services
+namespace ApostasApp.Core.Application.Services.Campeonatos
 {
-    /// <summary>
-    /// CampeonatoService é responsável por operações de consulta e adesão a campeonatos no ApostasApp.
-    /// Ele herda de BaseService, que gerencia o IUnitOfWork e o INotificador.
-    /// </summary>
     public class CampeonatoService : BaseService, ICampeonatoService
     {
         private readonly ICampeonatoRepository _campeonatoRepository;
         private readonly IApostadorRepository _apostadorRepository;
         private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
         private readonly IFinanceiroService _financeiroService;
+        private readonly IMapper _mapper;
 
         public CampeonatoService(
             ICampeonatoRepository campeonatoRepository,
@@ -33,131 +33,181 @@ namespace ApostasApp.Application.Campeonatos.Services
             IApostadorCampeonatoRepository apostadorCampeonatoRepository,
             IFinanceiroService financeiroService,
             IUnitOfWork uow,
-            INotificador notificador) : base(notificador, uow)
+            INotificador notificador,
+            IMapper mapper) : base(notificador, uow)
         {
             _campeonatoRepository = campeonatoRepository;
             _apostadorRepository = apostadorRepository;
             _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
             _financeiroService = financeiroService;
+            _mapper = mapper;
         }
 
-        /// <summary>
-        /// Obtém uma lista de campeonatos disponíveis para exibição.
-        /// </summary>
-        /// <returns>Uma coleção de DTOs de Campeonatos.</returns>
-        public async Task<IEnumerable<CampeonatoListItemDto>> GetAvailableCampeonatosAsync()
-        {
-            var campeonatos = await _campeonatoRepository.ObterListaDeCampeonatosAtivos();
+        // <<-- CORRIGIDO: Implementação dos métodos da interface -->>
 
-            return campeonatos.Select(c => new CampeonatoListItemDto
+        public async Task<bool> Adicionar(CampeonatoDto campeonatoDto)
+        {
+            var campeonato = _mapper.Map<Campeonato>(campeonatoDto);
+            _campeonatoRepository.Adicionar(campeonato);
+            return await CommitAsync();
+        }
+
+        public async Task<bool> Atualizar(CampeonatoDto campeonatoDto)
+        {
+            var campeonato = _mapper.Map<Campeonato>(campeonatoDto);
+            _campeonatoRepository.Atualizar(campeonato);
+            return await CommitAsync();
+        }
+
+        public async Task<bool> Remover(Campeonato campeonato) //Guid id)
+        {
+            _campeonatoRepository.Remover(campeonato);
+            return await CommitAsync();
+        }
+
+        public async Task<CampeonatoDto> ObterPorId(Guid id)
+        {
+            var campeonato = await _campeonatoRepository.ObterPorId(id);
+            return _mapper.Map<CampeonatoDto>(campeonato);
+        }
+
+        public async Task<IEnumerable<CampeonatoDto>> ObterTodos()
+        {
+            var campeonatos = await _campeonatoRepository.ObterTodos();
+            return _mapper.Map<IEnumerable<CampeonatoDto>>(campeonatos);
+        }
+
+        // <<-- FIM DA CORREÇÃO DOS MÉTODOS DA INTERFACE -->>
+
+
+        public async Task<ApiResponse<IEnumerable<CampeonatoDto>>> GetAvailableCampeonatos(string? userId)
+        {
+            var apiResponse = new ApiResponse<IEnumerable<CampeonatoDto>>(false, null);
+            HashSet<string> campeonatosAderidosIds = new HashSet<string>();
+
+            if (!string.IsNullOrEmpty(userId))
             {
-                Id = c.Id,
+                var adesoesDoUsuario = await _apostadorCampeonatoRepository.ObterAdesoesPorUsuarioIdAsync(userId);
+                campeonatosAderidosIds = new HashSet<string>(
+                    adesoesDoUsuario.Select(ac => ac.CampeonatoId.ToString())
+                );
+            }
+
+            var todosCampeonatos = await _campeonatoRepository.ObterListaDeCampeonatosAtivos();
+
+            var campeonatosDto = todosCampeonatos.Select(c => new CampeonatoDto
+            {
+                Id = c.Id.ToString(),
                 Nome = c.Nome,
-                DataInic = c.DataInic,
+                DataInicio = c.DataInic,
                 DataFim = c.DataFim,
                 NumRodadas = c.NumRodadas,
-                CustoAdesao = c.CustoAdesao,
+                Tipo = c.Tipo.ToString(),
                 Ativo = c.Ativo,
-                Tipo = c.Tipo
+                CustoAdesao = c.CustoAdesao.HasValue ? (decimal)c.CustoAdesao.Value : 0m,
+                AderidoPeloUsuario = !string.IsNullOrEmpty(userId) && campeonatosAderidosIds.Contains(c.Id.ToString())
             }).ToList();
+
+            if (!campeonatosDto.Any())
+            {
+                Notificar("CAMPEONATOS_NAO_ENCONTRADOS", "Alerta", "Nenhum campeonato disponível encontrado na base de dados.");
+                apiResponse.Success = true;
+                apiResponse.Data = new List<CampeonatoDto>();
+            }
+            else
+            {
+                apiResponse.Success = true;
+                apiResponse.Data = campeonatosDto;
+            }
+            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            return apiResponse;
         }
 
-        /// <summary>
-        /// Permite que um apostador adira a um campeonato.
-        /// </summary>
-        /// <param name="apostadorId">O ID do apostador.</param>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>True se a adesão foi bem-sucedida, false caso contrário.</returns>
-        public async Task<bool> AdherirCampeonatoAsync(Guid apostadorId, Guid campeonatoId)
+        public async Task<ApiResponse<bool>> AderirCampeonatoAsync(Guid apostadorId, Guid campeonatoId)
         {
-            if (apostadorId == Guid.Empty || campeonatoId == Guid.Empty)
-            {
-                Notificar("Erro", "IDs de apostador ou campeonato inválidos.");
-                return false;
-            }
+            var apiResponse = new ApiResponse<bool>(false, false);
 
             var campeonato = await _campeonatoRepository.ObterPorId(campeonatoId);
-            var apostador = await _apostadorRepository.ObterPorId(apostadorId);
-
             if (campeonato == null)
             {
-                Notificar("Alerta", "Campeonato não encontrado.");
-                return false;
+                Notificar("CAMPEONATO_NAO_ENCONTRADO_ADESAO", "Erro", "Campeonato não encontrado.");
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                return apiResponse;
             }
 
+            var adesaoExistente = await _apostadorCampeonatoRepository.ObterApostadorDoCampeonato(campeonatoId, apostadorId);
+            if (adesaoExistente != null)
+            {
+                Notificar("JA_ADERIU_CAMPEONATO", "Alerta", "Você já aderiu a este campeonato.");
+                apiResponse.Success = true;
+                apiResponse.Data = true;
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                return apiResponse;
+            }
+
+            var apostador = await _apostadorRepository.ObterPorId(apostadorId);
             if (apostador == null)
             {
-                Notificar("Alerta", "Apostador não encontrado.");
-                return false;
+                Notificar("APOSTADOR_NAO_ENCONTRADO_ADESAO", "Erro", "Apostador não encontrado.");
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                return apiResponse;
             }
-
-            if (!campeonato.Ativo)
-            {
-                Notificar("Alerta", "Campeonato não está ativo para adesão.");
-                return false;
-            }
-
-            // Verificar se o apostador já aderiu
-            var apostadorCampeonato = await _apostadorCampeonatoRepository.ObterApostadorDoCampeonato(campeonatoId, apostadorId);
-
-            if (apostadorCampeonato != null)
-            {
-                Notificar("Alerta", "Apostador já aderiu a este campeonato.");
-                return false;
-            }
-
-            // Lógica de débito de saldo se houver custo de adesão
-            bool debitoSucesso = true;
 
             if (campeonato.CustoAdesao.HasValue && campeonato.CustoAdesao.Value > 0)
             {
-                debitoSucesso = await _financeiroService.DebitarSaldoAsync(
+                var debitoResponse = await _financeiroService.DebitarSaldoAsync(
                     apostadorId,
                     campeonato.CustoAdesao.Value,
                     TipoTransacao.AdesaoCampeonato,
                     $"Adesão ao campeonato: {campeonato.Nome}");
 
-                if (!debitoSucesso)
+                if (!debitoResponse.Success)
                 {
-                    return false;
+                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                    return apiResponse;
                 }
             }
 
-            // Criar e vincular a entidade ApostadorCampeonato
-            var novaAdesao = new ApostadorCampeonato(apostadorId, campeonatoId);
-            await _apostadorCampeonatoRepository.Adicionar(novaAdesao);
+            var novaAdesao = new ApostadorCampeonato(apostadorId, campeonato.Id)
+            {
+                DataInscricao = DateTime.Now,
+                CustoAdesaoPago = campeonato.CustoAdesao.HasValue && campeonato.CustoAdesao.Value > 0
+            };
 
-            var saved = await Commit();
+            _apostadorCampeonatoRepository.Adicionar(novaAdesao);
+
+            var saved = await CommitAsync();
 
             if (saved)
             {
-                Notificar("Sucesso", $"Adesão ao campeonato '{campeonato.Nome}' realizada com sucesso!");
-                return true;
+                apiResponse.Success = true;
+                apiResponse.Data = true;
+                Notificar("ADESAO_SUCESSO", "Sucesso", "Adesão ao campeonato realizada com sucesso!");
             }
             else
             {
-                Notificar("Erro", "Não foi possível registrar a adesão ao campeonato.");
-                return false;
+                Notificar("ADESAO_FALHA", "Erro", "Não foi possível vincular o apostador ao campeonato.");
             }
+            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            return apiResponse;
         }
 
-        /// <summary>
-        /// Obtém um campeonato pelo seu ID.
-        /// </summary>
-        /// <param name="id">O ID do campeonato.</param>
-        /// <returns>O campeonato encontrado, ou null se não existir.</returns>
-        public async Task<Campeonato> ObterPorId(Guid id)
+        public async Task<ApiResponse<CampeonatoDto?>> GetDetalhesCampeonato(Guid id)
         {
-            return await _campeonatoRepository.ObterPorId(id);
-        }
+            var apiResponse = new ApiResponse<CampeonatoDto?>(false, null);
+            var campeonato = await _campeonatoRepository.ObterPorId(id);
 
-        /// <summary>
-        /// Obtém todos os campeonatos (método de consulta geral, se necessário para outras partes do app).
-        /// </summary>
-        /// <returns>Uma coleção de campeonatos.</returns>
-        public async Task<IEnumerable<Campeonato>> ObterTodos()
-        {
-            return await _campeonatoRepository.ObterTodos();
+            if (campeonato == null)
+            {
+                Notificar("CAMPEONATO_DETALHES_NAO_ENCONTRADO", "Alerta", $"Campeonato com ID '{id}' não encontrado.");
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                return apiResponse;
+            }
+
+            apiResponse.Success = true;
+            apiResponse.Data = _mapper.Map<CampeonatoDto>(campeonato); // Usando o mapper para mapear a entidade para DTO
+            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            return apiResponse;
         }
     }
 }

@@ -1,20 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// LoginRequestDto.cs
+// DTO para a requisição de login
+using System.ComponentModel.DataAnnotations;
 
 namespace ApostasApp.Core.Application.DTOs.Usuarios
 {
     public class LoginRequestDto
     {
-        [Required(ErrorMessage = "O Email é obrigatório.")]
-        [EmailAddress(ErrorMessage = "O Email está em formato inválido.")]
+        [Required(ErrorMessage = "O email é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Formato de email inválido.")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "A Senha é obrigatória.")]
-        [DataType(DataType.Password)]
+        [Required(ErrorMessage = "A senha é obrigatória.")]
+        [MinLength(6, ErrorMessage = "A senha deve ter no mínimo {1} caracteres.")] // Ajuste conforme sua política de senha
         public string Password { get; set; }
 
-        [Display(Name = "Lembrar-me?")]
-        public bool IsPersistent { get; set; } = false; // "Remember me"
-
-        public bool LockoutOnFailure { get; set; } = true; // Bloquear a conta em caso de falhas
+        public bool IsPersistent { get; set; } // Para "Lembrar-me"
     }
 }

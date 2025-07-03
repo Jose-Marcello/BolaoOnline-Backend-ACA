@@ -37,13 +37,13 @@ namespace ApostasApp.Core.Application.Services.Apostadores
             try
             {
                 // CHAMA ExecutarValidacao da BaseService
-                if (!ExecutarValidacao(new ApostadorValidation(), apostador))
-                {
-                    return;
-                }
+                //if (!ExecutarValidacao(new ApostadorValidation(), apostador))
+                //{
+                //    return;
+                //}
 
                 await _apostadorRepository.Adicionar(apostador);
-                await Commit(); // CHAMA Commit da BaseService
+                await CommitAsync(); // CHAMA Commit da BaseService
                 Notificar("Sucesso", "Apostador adicionado com sucesso!");
             }
             catch (DbUpdateException ex)
@@ -73,10 +73,10 @@ namespace ApostasApp.Core.Application.Services.Apostadores
         public async Task Atualizar(Apostador apostador)
         {
             // CHAMA ExecutarValidacao da BaseService
-            if (!ExecutarValidacao(new ApostadorValidation(), apostador)) return;
+            //if (!ExecutarValidacao(new ApostadorValidation(), apostador)) return;
 
             await _apostadorRepository.Atualizar(apostador);
-            await Commit(); // CHAMA Commit da BaseService
+            await CommitAsync(); // CHAMA Commit da BaseService
             Notificar("Sucesso", "Apostador atualizado com sucesso!");
         }
 
@@ -94,7 +94,7 @@ namespace ApostasApp.Core.Application.Services.Apostadores
             }
 
             await _apostadorRepository.Remover(apostador);
-            await Commit(); // CHAMA Commit da BaseService
+            await CommitAsync(); // CHAMA Commit da BaseService
             Notificar("Sucesso", "Apostador removido com sucesso!");
         }
 
@@ -116,6 +116,21 @@ namespace ApostasApp.Core.Application.Services.Apostadores
         {
             return await _apostadorRepository.ObterTodos();
         }
-        
+
+
+        /// <summary>
+        /// Obtém um apostador pelo ID do usuário do Identity associado (UsuarioId).
+        /// </summary>
+        /// <param name="userId">O ID do usuário do Identity.</param>
+        /// <returns>A entidade Apostador encontrada, ou null se não existir.</returns>
+        public async Task<Apostador> GetApostadorByUserIdAsync(string userId)
+        {
+            // <<-- AQUI ESTÁ A MUDANÇA: Usando o método Buscar do IRepository
+            return await _apostadorRepository.Buscar(a => a.UsuarioId.ToString() == userId) // Converter Guid para string para comparação
+                                             .Include(a => a.Usuario) // Incluir a entidade Usuario
+                                             .Include(a => a.Saldo)   // Incluir a entidade Saldo
+                                             .FirstOrDefaultAsync();
+        }
+
     }
 }

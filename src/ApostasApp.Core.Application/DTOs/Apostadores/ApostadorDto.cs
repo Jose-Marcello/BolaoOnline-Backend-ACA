@@ -1,5 +1,9 @@
-﻿using ApostasApp.Core.Application.DTOs.Financeiro; // Para SaldoDto, se ainda for usado aqui
-using System;
+﻿// ApostadorDto.cs
+// Definição do ApostadorDto.
+// Localização: ApostasApp.Core.Application.DTOs.Apostadores
+
+using ApostasApp.Core.Application.DTOs.Financeiro; // Para SaldoDto
+using System; // Necessário para Guid
 
 namespace ApostasApp.Core.Application.DTOs.Apostadores
 {
@@ -9,14 +13,13 @@ namespace ApostasApp.Core.Application.DTOs.Apostadores
     /// </summary>
     public class ApostadorDto
     {
-        public Guid Id { get; set; } // ID da entidade Apostador
+        public string Id { get; set; } // ID da entidade Apostador (Guid como string)
         public string UsuarioId { get; set; } // ID do usuário do Identity (string)
         public string Apelido { get; set; } // Apelido do Usuário (vindo da entidade Usuario)
-        public string Email { get; set; }   // Email do Usuário (vindo da entidade Usuario)
+        public string Email { get; set; }    // Email do Usuário (vindo da entidade Usuario)
 
         public string Status { get; set; } // Status do Apostador (ex: "Ativo", "Inativo")
 
-        // Se o saldo for exibido diretamente no ApostadorDto, use o SaldoDto
-        public SaldoDto Saldo { get; set; }
+        public SaldoDto Saldo { get; set; } // O saldo é parte do ApostadorDto
     }
 }

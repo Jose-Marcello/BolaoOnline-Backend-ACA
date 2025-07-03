@@ -1,9 +1,8 @@
 ﻿using ApostasApp.Core.Domain.Models.Equipes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Reflection.Emit;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.InfraStructure.Data.Mapping // Verifique seu namespace de mapeamento
 {
     public class EquipeMapping : IEntityTypeConfiguration<Equipe>
     {
@@ -12,24 +11,25 @@ namespace ApostasApp.Core.InfraStructure.Data.Mappings
             builder.HasKey(e => e.Id);
 
             builder.Property(e => e.Nome)
-                .IsRequired()  
-                .HasColumnType("varchar(40)");
+                .IsRequired()
+                .HasColumnType("varchar(100)"); // Ajuste o tamanho se necessário
 
-            // 0 : N => Uf : Jogos - uma equipe pode não ter UF (EX: Seleções)
+            builder.Property(e => e.Sigla)
+                .IsRequired()
+                .HasColumnType("varchar(10)"); // Ajuste o tamanho se necessário
 
-            /*builder.HasMany(e => e.JogosCasa)
-              .WithOne(j => j.EquipeCasa)
-              .HasForeignKey(j => j.EquipeCasaId)
-              .IsRequired(true);*/
-         
-            /*
-            builder.HasMany(e => e.JogosVisita)
-              .WithOne(j => j.EquipeVisitante)
-              .HasForeignKey(j => j.EquipeVisitanteId)
-              .IsRequired(true);*/
+            builder.Property(e => e.Tipo)
+                .IsRequired();
 
+            builder.Property(e => e.Escudo) // Mapeamento da nova coluna
+                .HasColumnType("varchar(255)") // Defina um tamanho adequado para o caminho
+                .IsRequired(false); // Define como opcional (null na base)
 
-            builder.ToTable("Equipes");
+            // Configuração da chave estrangeira para UF
+            builder.HasOne(e => e.Uf)
+                   .WithMany() // Se Uf não tem uma coleção de Equipes
+                   .HasForeignKey(e => e.UfId)
+                   .OnDelete(DeleteBehavior.NoAction); // Ou .Restrict, dependendo da sua regra de negócio
         }
     }
 }

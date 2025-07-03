@@ -1,14 +1,7 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations; // Para validações básicas
-
-namespace ApostasApp.Core.Application.DTOs.Campeonatos
+﻿// VincularApostadorCampeonatoDTO.cs (Backend - assumindo que você o tem)
+// Mude Guid CampeonatoId para string CampeonatoId e Guid ApostadorId para string ApostadorId
+public class VincularApostadorCampeonatoDto
 {
-    public class VincularApostadorCampeonatoDTO
-    {
-        [Required(ErrorMessage = "O ID do apostador é obrigatório.")]
-        public Guid ApostadorId { get; set; } // Agora usando ApostadorId
-
-        [Required(ErrorMessage = "O ID do campeonato é obrigatório.")]
-        public Guid CampeonatoId { get; set; }
-    }
+    public string ApostadorId { get; set; } // << Alterar de Guid para string
+    public string CampeonatoId { get; set; } // << Alterar de Guid para string
 }

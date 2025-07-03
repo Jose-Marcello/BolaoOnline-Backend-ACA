@@ -1,116 +1,104 @@
-﻿using ApostasApp.Core.Application.Services.Base;
-using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
+﻿// Localização: ApostasApp.Core.Application.Services.Rodadas/RodadaService.cs
+
+using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas; // Para IRodadaService
-using ApostasApp.Core.Application.Validations;
+using ApostasApp.Core.Application.Validations; // Para RodadaValidation (se ainda for usada)
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
 using ApostasApp.Core.Domain.Interfaces.Campeonatos; // Para ICampeonatoRepository, IApostadorCampeonatoRepository
-using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador (Namespace correto para a interface)
-using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
+using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
-using ApostasApp.Core.Domain.Models.RankingRodadas;
-using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
-
+using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
+//using ApostasApp.Core.Domain.Models.Enums; // Para StatusRodada (se estiver aqui)
+using System; // Para Guid
+using System.Collections.Generic; // Para IEnumerable, List
+using System.Linq; // Para .Any(), .OrderBy(), .Take(), .ToList(), Enumerable.Empty<T>()
+using System.Threading.Tasks; // Para Task
+using Microsoft.EntityFrameworkCore; // Para .Include(), .AsNoTracking(), .ToListAsync()
 
 namespace ApostasApp.Core.Application.Services.Rodadas
 {
-    /// <summary>
-    /// RodadaService é responsável por fornecer dados de rodadas para a camada de aplicação.
-    /// Ele delega as operações de persistência e busca para o IRodadaRepository.
-    /// Ele herda de BaseService, que gerencia o IUnitOfWork e o INotificador.
-    /// </summary>
     public class RodadaService : BaseService, IRodadaService
     {
         private readonly IRodadaRepository _rodadaRepository;
         private readonly ICampeonatoRepository _campeonatoRepository;
-        private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository; // Adicionado
+        private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
 
-        // O construtor agora injeta INotificador, IUnitOfWork e IApostadorCampeonatoRepository
         public RodadaService(IRodadaRepository rodadaRepository,
                              ICampeonatoRepository campeonatoRepository,
-                             IApostadorCampeonatoRepository apostadorCampeonatoRepository, // Adicionado
+                             IApostadorCampeonatoRepository apostadorCampeonatoRepository,
                              INotificador notificador,
-                             IUnitOfWork uow) : base(notificador, uow) // Passando notificador e uow para o construtor da BaseService
+                             IUnitOfWork uow) : base(notificador, uow)
         {
             _rodadaRepository = rodadaRepository;
             _campeonatoRepository = campeonatoRepository;
-            _apostadorCampeonatoRepository = apostadorCampeonatoRepository; // Atribuição
+            _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
         }
 
-        /// <summary>
-        /// Obtém uma rodada específica pelo seu ID.
-        /// </summary>
-        /// <param name="rodadaId">O ID da rodada.</param>
-        /// <returns>A rodada encontrada, ou null se não existir.</returns>
         public async Task<Rodada> ObterRodadaPorId(Guid rodadaId)
         {
-            return await _rodadaRepository.ObterPorId(rodadaId);
+            var rodada = await _rodadaRepository.ObterPorId(rodadaId);
+            if (rodada == null)
+            {
+                Notificar("RODADA_NAO_ENCONTRADA", "Alerta", "Rodada não encontrada.");
+            }
+            return rodada;
         }
 
-        /// <summary>
-        /// Obtém a rodada que está atualmente no status 'Em Apostas' para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>A rodada em apostas, ou null se não houver.</returns>
         public async Task<Rodada> ObterRodadaEmApostasPorCampeonato(Guid campeonatoId)
         {
-            // Busca a rodada com status "Em Apostas" que pertence ao campeonato especificado.
-            // O repositório já deve incluir o Campeonato.
             var rodada = await _rodadaRepository.ObterRodadaEmApostasPorCampeonato(campeonatoId);
-
             if (rodada == null)
             {
-                Notificar("Alerta", "Não há rodada 'Em Apostas' para o campeonato informado."); // Notificar com dois parâmetros
-                return null;
+                Notificar("RODADA_EM_APOSTAS_UNICA_NAO_ENCONTRADA", "Alerta", "Não há rodada 'Em Apostas' única para o campeonato informado.");
             }
-
             return rodada;
         }
 
-        /// <summary>
-        /// Obtém a rodada que está atualmente no status 'Corrente' para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>A rodada corrente, ou null se não houver.</returns>
+        public async Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId)
+        {
+            var listRodada = await _rodadaRepository.ObterRodadasEmApostaPorCampeonato(campeonatoId);
+            if (listRodada == null || !listRodada.Any())
+            {
+                Notificar("RODADAS_EM_APOSTAS_NAO_ENCONTRADAS", "Alerta", "Não há rodadas 'Em Apostas' para o campeonato informado.");
+                return Enumerable.Empty<Rodada>();
+            }
+            return listRodada;
+        }
+
+        public async Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId)
+        {
+            var listRodada = await _rodadaRepository.ObterRodadasCorrentePorCampeonato(campeonatoId);
+            if (listRodada == null || !listRodada.Any())
+            {
+                Notificar("RODADAS_CORRENTE_NAO_ENCONTRADAS", "Alerta", "Não há rodadas 'Corrente' para o campeonato informado.");
+                return Enumerable.Empty<Rodada>();
+            }
+            return listRodada;
+        }
+
         public async Task<Rodada> ObterRodadaCorrentePorCampeonato(Guid campeonatoId)
         {
-            // Busca a rodada com status "Corrente" que pertence ao campeonato especificado.
-            // O repositório já deve incluir o Campeonato.
             var rodada = await _rodadaRepository.ObterRodadaCorrentePorCampeonato(campeonatoId);
-
             if (rodada == null)
             {
-                Notificar("Alerta", "Não há rodada 'Corrente' para o campeonato informado."); // Notificar com dois parâmetros
-                return null;
+                Notificar("RODADA_CORRENTE_UNICA_NAO_ENCONTRADA", "Alerta", "Não há rodada 'Corrente' única para o campeonato informado.");
             }
-
             return rodada;
         }
 
-        // =========================================================================================================
-        // Implementações dos métodos 'ParaApostador' que o Controller ainda espera
-        // =========================================================================================================
-
-        /// <summary>
-        /// Obtém uma rodada específica que está 'Em Apostas' e pertence ao campeonato do apostador.
-        /// Este método valida o ID da rodada fornecido.
-        /// </summary>
-        /// <param name="rodadaId">O ID da rodada a ser verificada.</param>
-        /// <param name="apostadorCampeamentoId">O ID do ApostadorCampeonato para verificar o vínculo.</param>
-        /// <returns>A rodada se for válida e estiver 'Em Apostas' para o campeonato, caso contrário null.</returns>
         public async Task<Rodada> ObterRodadaEmApostasParaApostador(Guid rodadaId, Guid apostadorCampeonatoId)
         {
             var rodada = await _rodadaRepository.ObterPorId(rodadaId);
             if (rodada == null)
             {
-                Notificar("Alerta", "Rodada não encontrada.");
+                Notificar("RODADA_NAO_ENCONTRADA_APOSTADOR", "Alerta", "Rodada não encontrada.");
                 return null;
             }
 
-            // Usando o método correto do IApostadorCampeonatoRepository para obter pelo ID da entidade
             var apostadorCampeonato = await _apostadorCampeonatoRepository.ObterApostadorCampeonato(apostadorCampeonatoId);
             if (apostadorCampeonato == null)
             {
-                Notificar("Alerta", "Apostador Campeonato não encontrado.");
+                Notificar("APOSTADOR_CAMPEONATO_NAO_ENCONTRADO", "Alerta", "Apostador Campeonato não encontrado.");
                 return null;
             }
 
@@ -119,31 +107,23 @@ namespace ApostasApp.Core.Application.Services.Rodadas
                 return rodada;
             }
 
-            Notificar("Alerta", "A rodada não está disponível para apostas ou não pertence ao seu campeonato.");
+            Notificar("RODADA_NAO_DISPONIVEL_APOSTAS", "Alerta", "A rodada não está disponível para apostas ou não pertence ao seu campeonato.");
             return null;
         }
 
-        /// <summary>
-        /// Obtém uma rodada específica que está 'Corrente' e pertence ao campeonato do apostador.
-        /// Este método valida o ID da rodada fornecido.
-        /// </summary>
-        /// <param name="rodadaId">O ID da rodada a ser verificada.</param>
-        /// <param name="apostadorCampeamentoId">O ID do ApostadorCampeonato para verificar o vínculo.</param>
-        /// <returns>A rodada se for válida e estiver 'Corrente' para o campeonato, caso contrário null.</returns>
         public async Task<Rodada> ObterRodadaCorrenteParaApostador(Guid rodadaId, Guid apostadorCampeonatoId)
         {
             var rodada = await _rodadaRepository.ObterPorId(rodadaId);
             if (rodada == null)
             {
-                Notificar("Alerta", "Rodada não encontrada.");
+                Notificar("RODADA_NAO_ENCONTRADA_CORRENTE_APOSTADOR", "Alerta", "Rodada não encontrada.");
                 return null;
             }
 
-            // Usando o método correto do IApostadorCampeonatoRepository para obter pelo ID da entidade
             var apostadorCampeonato = await _apostadorCampeonatoRepository.ObterApostadorCampeonato(apostadorCampeonatoId);
             if (apostadorCampeonato == null)
             {
-                Notificar("Alerta", "Apostador Campeonato não encontrado.");
+                Notificar("APOSTADOR_CAMPEONATO_NAO_ENCONTRADO_CORRENTE", "Alerta", "Apostador Campeonato não encontrado.");
                 return null;
             }
 
@@ -152,53 +132,71 @@ namespace ApostasApp.Core.Application.Services.Rodadas
                 return rodada;
             }
 
-            Notificar("Alerta", "A rodada não está corrente ou não pertence ao seu campeonato.");
+            Notificar("RODADA_NAO_CORRENTE_APOSTADOR", "Alerta", "A rodada não está corrente ou não pertence ao seu campeonato.");
             return null;
         }
 
-        // =========================================================================================================
-        // Métodos de listagem de rodadas (delegando para o repositório)
-        // =========================================================================================================
-
-        /// <summary>
-        /// Obtém todas as rodadas finalizadas para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>Uma coleção de rodadas finalizadas.</returns>
         public async Task<IEnumerable<Rodada>> ObterRodadasFinalizadasPorCampeonato(Guid campeonatoId)
         {
-            return await _rodadaRepository.ObterRodadasFinalizadasPorCampeonato(campeonatoId);
+            var rodadas = await _rodadaRepository.ObterRodadasFinalizadasPorCampeonato(campeonatoId);
+            if (rodadas == null || !rodadas.Any())
+            {
+                Notificar("RODADAS_FINALIZADAS_NAO_ENCONTRADAS", "Alerta", "Nenhuma rodada finalizada encontrada para este campeonato.");
+                return Enumerable.Empty<Rodada>();
+            }
+            return rodadas;
         }
 
-        /// <summary>
-        /// Obtém rodadas com ranking (corrente ou finalizada) para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>Uma coleção de rodadas com ranking.</returns>
         public async Task<IEnumerable<Rodada>> ObterRodadasComRankingPorCampeonato(Guid campeonatoId)
         {
-            return await _rodadaRepository.ObterRodadasComRankingPorCampeonato(campeonatoId);
+            var rodadas = await _rodadaRepository.ObterRodadasComRankingPorCampeonato(campeonatoId);
+            if (rodadas == null || !rodadas.Any())
+            {
+                Notificar("RODADAS_RANKING_NAO_ENCONTRADAS", "Alerta", "Nenhuma rodada com ranking encontrada para este campeonato.");
+                return Enumerable.Empty<Rodada>();
+            }
+            return rodadas;
         }
 
-        /// <summary>
-        /// Obtém todas as rodadas para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>Uma coleção de todas as rodadas do campeonato.</returns>
         public async Task<IEnumerable<Rodada>> ObterTodasAsRodadasDoCampeonato(Guid campeonatoId)
         {
-            return await _rodadaRepository.ObterTodasAsRodadasDoCampeonato(campeonatoId);
+            var rodadas = await _rodadaRepository.ObterTodasAsRodadasDoCampeonato(campeonatoId);
+            if (rodadas == null || !rodadas.Any())
+            {
+                Notificar("TODAS_RODADAS_NAO_ENCONTRADAS", "Alerta", "Nenhuma rodada encontrada para este campeonato.");
+                return Enumerable.Empty<Rodada>();
+            }
+            return rodadas;
         }
 
         public async Task Atualizar(Rodada Rodada)
         {
-            // Assumindo que ExecutarValidacao está na BaseService
-            if (!ExecutarValidacao(new RodadaValidation(), Rodada)) return;
-                        
+            // <<-- REMOVIDO ExecutarValidacao. Adicione sua lógica de validação aqui se necessário. -->>
+            if (Rodada == null)
+            {
+                Notificar("RODADA_NULA_ATUALIZAR", "Erro", "A rodada fornecida para atualização é nula.");
+                return;
+            }
+
             await _rodadaRepository.Atualizar(Rodada);
-            await Commit(); // Chamar Commit() da BaseService para persistir as alterações
-            Notificar("Sucesso", "Status da Rodada atualizado com sucesso!");
+            await CommitAsync(); // <<-- CORRIGIDO: Chamando CommitAsync()
+            Notificar("ATUALIZACAO_SUCESSO", "Sucesso", "Status da Rodada atualizado com sucesso!");
         }
-               
+
+        public async Task<IEnumerable<Rodada>> ObterRodadasEmDestaque()
+        {
+            var rodadas = await _rodadaRepository.Buscar(r => r.Status == StatusRodada.Corrente || r.Status == StatusRodada.EmApostas)
+                                                 .Include(r => r.Campeonato)
+                                                 .OrderBy(r => r.DataInic)
+                                                 .Take(5)
+                                                 .ToListAsync();
+
+            if (!rodadas.Any())
+            {
+                Notificar("RODADAS_DESTAQUE_NAO_ENCONTRADAS", "Alerta", "Nenhuma rodada em destaque encontrada na base de dados.");
+            }
+
+            return rodadas;
+        }
     }
 }

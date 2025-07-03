@@ -26,7 +26,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
                            .AsNoTracking()
                            .FirstOrDefaultAsync(ac => ac.Id == id);
         }
-
+        
         public async Task<ApostadorCampeonato> ObterApostadorDoCampeonato(Guid idCampeonato, Guid idApostador)
         {
             return await Db.ApostadoresCampeonatos
@@ -79,6 +79,17 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
                            .AsNoTracking()
                            .FirstOrDefaultAsync(ac => ac.Apostador.UsuarioId == usuarioId && ac.CampeonatoId == campeonatoId);
         }
+
+        public async Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorUsuarioIdAsync(string usuarioId)
+        {
+            return await Db.ApostadoresCampeonatos
+                           .Include(ac => ac.Apostador)
+                               .ThenInclude(a => a.Usuario) // Inclui o Usuario do Apostador
+                           .Include(ac => ac.Campeonato)
+                           .AsNoTracking()
+                           .Where(ac => ac.Apostador.UsuarioId == usuarioId).ToListAsync();
+        }
+
 
         public async Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId)
         {

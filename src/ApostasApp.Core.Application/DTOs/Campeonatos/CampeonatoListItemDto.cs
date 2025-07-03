@@ -1,20 +1,21 @@
-﻿// ApostasApp.Core.Application.DTOs.Campeonatos/CampeonatoListItemDto.cs
-using ApostasApp.Core.Domain.Models.Campeonatos;
+﻿// CampeonatoListItemDto.cs
+// DTO específico para a listagem de campeonatos.
+// Localização: ApostasApp.Core.Application.DTOs.Campeonatos
+
 using System;
+using ApostasApp.Core.Domain.Models.Campeonatos; // Para TiposCampeonato
 
 namespace ApostasApp.Core.Application.DTOs.Campeonatos
 {
     public class CampeonatoListItemDto
     {
-        public Guid Id { get; set; }
-        public string Nome { get; set; } = string.Empty; // Inicialize para evitar nulls
-        public DateTime DataInic { get; set; }
+        public int Id { get; set; }
+        public string Nome { get; set; }
+        public DateTime DataInic { get; set; } // Note 'DataInic' (original da entidade)
         public DateTime DataFim { get; set; }
         public int NumRodadas { get; set; }
-        public decimal? CustoAdesao { get; set; } // Pode ser nulo se não houver custo
+        public TiposCampeonato Tipo { get; set; } // O enum direto aqui, será mapeado para string depois
         public bool Ativo { get; set; }
-        // Outras propriedades relevantes para a exibição no Dashboard, se houver
-        public TiposCampeonato Tipo { get; set; }
-
+        public decimal? CustoAdesao { get; set; }
     }
 }

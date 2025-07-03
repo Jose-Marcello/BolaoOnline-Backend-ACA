@@ -28,6 +28,23 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
                            .FirstOrDefaultAsync(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas);
         }
 
+        
+        public async Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId)
+        {
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .AsNoTracking()
+                           .Where(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas).ToListAsync();
+        }
+
+        public async Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId)
+        {
+            return await Db.Rodadas
+                           .Include(r => r.Campeonato)
+                           .AsNoTracking()
+                           .Where(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.Corrente).ToListAsync();
+        }
+
         public async Task<Rodada> ObterRodadaCorrentePorCampeonato(Guid campeonatoId)
         {
             return await Db.Rodadas

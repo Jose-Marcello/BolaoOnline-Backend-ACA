@@ -1,17 +1,19 @@
-﻿using ApostasApp.Core.Domain.Interfaces;
+﻿// Exemplo: ApostasApp.Core.Application.Services.Base\BaseService.cs
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Models.Notificacoes;
-using FluentValidation;
+using ApostasApp.Core.Domain.Interfaces;
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (entidade de domínio)
+using ApostasApp.Core.Application.Services.Interfaces; // Para INotifiableService
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Linq; // Para .ToList() e .Select()
+using System.Threading.Tasks; // Para Task
 
 namespace ApostasApp.Core.Application.Services.Base
 {
-    public abstract class BaseService
+    // <<-- CORRIGIDO: BaseService agora implementa INotifiableService -->>
+    public abstract class BaseService : INotifiableService
     {
         private readonly INotificador _notificador;
-        protected readonly IUnitOfWork _uow;
+        private readonly IUnitOfWork _uow;
 
         protected BaseService(INotificador notificador, IUnitOfWork uow)
         {
@@ -19,56 +21,38 @@ namespace ApostasApp.Core.Application.Services.Base
             _uow = uow;
         }
 
-        protected void Notificar(string tipo, string mensagem, string nomeCampo = null)
+        protected void Notificar(string tipo, string mensagem, string codigo = null, string nomeCampo = null)
         {
-            _notificador.Handle(tipo, mensagem);
+            _notificador.Handle(new Notificacao(codigo, tipo, mensagem, nomeCampo));
         }
 
-        protected void Notificar(Notificacao notificacao)
+        protected void Notificar(Notificacao notificacao) // Sobrecarga para Notificacao de domínio
         {
             _notificador.Handle(notificacao);
         }
 
-        protected void Notificar(List<Notificacao> notificacoes)
-        {
-            _notificador.Handle(notificacoes);
-        }
-
-        protected bool TemNotificacao()
+        // <<-- CORRIGIDO: Métodos da interface agora são públicos -->>
+        public bool TemNotificacao()
         {
             return _notificador.TemNotificacao();
         }
 
-        protected async Task<bool> Commit()
+        // <<-- CORRIGIDO: Métodos da interface agora são públicos -->>
+        public IEnumerable<NotificationDto> ObterNotificacoesParaResposta()
         {
-            if (TemNotificacao())
-            {
-                return false;
-            }
-
-            if (await _uow.CommitAsync())
-            {
-                return true;
-            }
-
-            Notificar("Erro", "Houve um erro ao salvar os dados no banco de dados. Tente novamente mais tarde.");
-            return false;
+            return _notificador.ObterNotificacoes()
+                               .Select(n => new NotificationDto(n.Codigo, n.Tipo, n.Mensagem, n.NomeCampo))
+                               .ToList();
         }
 
-        protected bool ExecutarValidacao<TValidator, TEntity>(TValidator validator, TEntity entity)
-            where TValidator : AbstractValidator<TEntity>
-            where TEntity : class
+        protected async Task<bool> CommitAsync()
         {
-            var validationResult = validator.Validate(entity);
-            if (!validationResult.IsValid)
-            {
-                foreach (var error in validationResult.Errors)
-                {
-                    Notificar("Erro", error.ErrorMessage, error.PropertyName);
-                }
-                return false;
-            }
-            return true;
+            if (_notificador.TemNotificacao()) return false;
+
+            if (await _uow.CommitAsync()) return true;
+
+            _notificador.Handle(new Notificacao("ERRO_PERSISTENCIA", "Erro", "Não foi possível persistir os dados."));
+            return false;
         }
     }
 }

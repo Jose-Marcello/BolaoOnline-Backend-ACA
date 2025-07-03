@@ -1,59 +1,91 @@
-﻿using ApostasApp.Application.DTOs.Jogos;
-using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos; // Para ApostadorCampeonatoDto
-using ApostasApp.Core.Application.DTOs.Apostadores; // Para ApostadorDto
-using ApostasApp.Core.Application.DTOs.Apostas; // Para PalpiteDto
-using ApostasApp.Core.Application.DTOs.Campeonatos; // Para CampeonatoDto
-using ApostasApp.Core.Application.DTOs.Equipes; // Para EquipeDto, EquipeCampeonatoDto
-using ApostasApp.Core.Application.DTOs.Estadios; // Para EstadioDto
-using ApostasApp.Core.Application.DTOs.Financeiro; // Para SaldoDto
-using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto, JogoDto
-using ApostasApp.Core.Application.DTOs.Rodadas; // Para RodadaDto
-using ApostasApp.Core.Application.DTOs.Usuarios; // Para RegisterRequestDto, UsuarioProfileDto
-using ApostasApp.Core.Domain.Models.Apostadores; // Para a entidade Apostador
-using ApostasApp.Core.Domain.Models.Apostas; // Para a entidade Palpite
-using ApostasApp.Core.Domain.Models.Campeonatos; // Para a entidade Campeonato
-using ApostasApp.Core.Domain.Models.Equipes; // Para a entidade Equipe, EquipeCampeonato
-using ApostasApp.Core.Domain.Models.Estadios; // Para a entidade Estadio
-using ApostasApp.Core.Domain.Models.Financeiro; // Para a entidade Saldo
-using ApostasApp.Core.Domain.Models.Jogos; // Para a entidade Jogo, StatusJogo
-using ApostasApp.Core.Domain.Models.Rodadas; // Para a entidade Rodada
-using ApostasApp.Core.Domain.Models.Usuarios; // Para a entidade Usuario
+﻿// MappingProfile.cs
+// ... (seus usings existentes) ...
+
+using ApostasApp.Application.DTOs.Jogos;
+using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos;
+using ApostasApp.Core.Application.DTOs.Apostadores;
+using ApostasApp.Core.Application.DTOs.Apostas;
+using ApostasApp.Core.Application.DTOs.Campeonatos;
+using ApostasApp.Core.Application.DTOs.Equipes;
+using ApostasApp.Core.Application.DTOs.Estadios;
+using ApostasApp.Core.Application.DTOs.Financeiro;
+using ApostasApp.Core.Application.DTOs.Jogos;
+using ApostasApp.Core.Application.DTOs.Rodadas;
+using ApostasApp.Core.Application.DTOs.Usuarios;
+using ApostasApp.Core.Domain.Models.Apostadores;
+using ApostasApp.Core.Domain.Models.Apostas;
+using ApostasApp.Core.Domain.Models.Campeonatos;
+using ApostasApp.Core.Domain.Models.Equipes;
+using ApostasApp.Core.Domain.Models.Estadios;
+using ApostasApp.Core.Domain.Models.Financeiro;
+using ApostasApp.Core.Domain.Models.Jogos;
+using ApostasApp.Core.Domain.Models.Notificacoes;
+using ApostasApp.Core.Domain.Models.Rodadas;
+using ApostasApp.Core.Domain.Models.Usuarios;
 using AutoMapper;
 
 namespace ApostasApp.Core.Application.MappingProfiles
 {
-    /// <summary>
-    /// Perfil de mapeamento do AutoMapper para a aplicação.
-    /// Define como as entidades de domínio são mapeadas para os DTOs e vice-versa.
-    /// </summary>
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
+            // ... (Seus outros mapeamentos existentes) ...
+
+            CreateMap<Notificacao, NotificationDto>();
+
             // Mapeamentos para a entidade Jogo e seus DTOs
-            CreateMap<Jogo, JogoDetalheDto>(); // Detalhes completos do jogo
-            CreateMap<Jogo, JogoDto>();        // DTO de jogo para listagens/transferência simples
+            CreateMap<Jogo, JogoDetalheDto>();
+            CreateMap<Jogo, JogoDto>();
 
-            // Mapeamentos para a entidade Rodada e seus DTOs
-            CreateMap<Rodada, RodadaDto>();
+            // =========================================================================================
+            // Mapeamentos ATUALIZADOS para Rodada e seus DTOs
+            // =========================================================================================
+            CreateMap<Rodada, RodadaDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+                .ForMember(dest => dest.NumeroRodada, opt => opt.MapFrom(src => src.NumeroRodada))
+                .ForMember(dest => dest.NumJogos, opt => opt.MapFrom(src => src.NumJogos))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.Campeonato, opt => opt.MapFrom(src => src.Campeonato));
 
-            // Mapeamentos para a entidade Campeonato e seus DTOs
-            CreateMap<Campeonato, CampeonatoDto>();
+
+            // =========================================================================================
+            // Mapeamentos ATUALIZADOS para Campeonato e seus DTOs (CORREÇÃO AQUI!)
+            // =========================================================================================
+            
+            CreateMap<Campeonato, CampeonatoDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString())) // <<-- ESTA LINHA ESTÁ CORRETA SE DTO.Id FOR string!
+                .ForMember(dest => dest.Nome, opt => opt.MapFrom(src => src.Nome))
+                .ForMember(dest => dest.DataInicio, opt => opt.MapFrom(src => src.DataInic))
+                .ForMember(dest => dest.DataFim, opt => opt.MapFrom(src => src.DataFim))
+                .ForMember(dest => dest.Ativo, opt => opt.MapFrom(src => src.Ativo))
+                .ForMember(dest => dest.Tipo, opt => opt.MapFrom(src => src.Tipo.ToString())); // Entidade Tipo (enum) -> DTO Status (string)
+
 
             // Mapeamentos para a entidade Equipe e seus DTOs
-            CreateMap<Equipe, EquipeDto>(); // Inclui Escudo e Sigla
+            CreateMap<Equipe, EquipeDto>();
             CreateMap<EquipeCampeonato, EquipeCampeonatoDto>();
 
             // Mapeamentos para a entidade Estadio e seus DTOs
             CreateMap<Estadio, EstadioDto>();
 
-            // Mapeamentos para a entidade Apostador e seus DTOs
+            // =========================================================================================
+            // Mapeamentos ATUALIZADOS para Apostador e seus DTOs
+            // =========================================================================================
             CreateMap<Apostador, ApostadorDto>()
-                .ForMember(dest => dest.Apelido, opt => opt.MapFrom(src => src.Usuario.Apelido)) // Mapeia Apelido do Usuario
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Usuario.Email));     // Mapeia Email do Usuario
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+                .ForMember(dest => dest.UsuarioId, opt => opt.MapFrom(src => src.UsuarioId.ToString()))
+                .ForMember(dest => dest.Apelido, opt => opt.MapFrom(src => src.Usuario != null ? src.Usuario.Apelido : null))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Usuario != null ? src.Usuario.Email : null))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.Saldo, opt => opt.MapFrom(src => src.Saldo));
 
-            // Mapeamentos para a entidade Saldo e seus DTOs
-            CreateMap<Saldo, SaldoDto>();
+            // =========================================================================================
+            // Mapeamentos ATUALIZADOS para Saldo e seus DTOs
+            // =========================================================================================
+            CreateMap<Saldo, SaldoDto>()
+            .ForMember(dest => dest.ApostadorId, opt => opt.MapFrom(src => src.ApostadorId.ToString()));
+
 
             // Mapeamentos para a entidade ApostadorCampeonato e seus DTOs
             CreateMap<ApostadorCampeonato, ApostadorCampeonatoDto>();
@@ -62,11 +94,8 @@ namespace ApostasApp.Core.Application.MappingProfiles
             CreateMap<Palpite, PalpiteDto>();
 
             // Mapeamentos para a entidade Usuario e seus DTOs de autenticação/perfil
-            CreateMap<RegisterRequestDto, Usuario>();    // Mapeamento de DTO de requisição para entidade Usuario
-            CreateMap<Usuario, UsuarioProfileDto>();     // Mapeamento de entidade Usuario para DTO de perfil de resposta
-            // Nota: DTOs como LoginRequestDto, ForgotPasswordRequestDto, ResetPasswordRequestDto
-            // geralmente não precisam de mapeamento direto para entidades de domínio,
-            // pois seus dados são usados diretamente pelos serviços de identidade.
+            CreateMap<RegisterRequestDto, Usuario>();
+            CreateMap<Usuario, UsuarioProfileDto>();
         }
     }
 }

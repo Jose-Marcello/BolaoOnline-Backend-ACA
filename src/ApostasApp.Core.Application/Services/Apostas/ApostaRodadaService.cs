@@ -46,7 +46,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         public async Task Adicionar(ApostaRodada apostaRodada)
         {
             await _apostaRodadaRepository.Adicionar(apostaRodada);
-            await Commit();
+            await CommitAsync();
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         public async Task Atualizar(ApostaRodada apostaRodada)
         {
             await _apostaRodadaRepository.Atualizar(apostaRodada);
-            await Commit();
+            await CommitAsync();
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
             apostaRodada.DataHoraSubmissao = DateTime.Now;
             apostaRodada.Enviada = true;
             await _apostaRodadaRepository.Atualizar(apostaRodada);
-            await Commit();
+            await CommitAsync();
         }
 
         /// <summary>
@@ -97,9 +97,9 @@ namespace ApostasApp.Core.Application.Services.Apostas
         /// Obtém as apostas de um apostador em uma rodada, formatadas para edição.
         /// </summary>
         /// <param name="rodadaId">O ID da rodada.</param>
-        /// <param name="apostadorCampeamentoId">O ID do ApostadorCampeonato.</param>
+        /// <param name="apostadorCampeonatoId">O ID do ApostadorCampeonato.</param>
         /// <returns>Uma lista de DTOs com os dados das apostas para edição.</returns>
-        public async Task<IEnumerable<ApostaJogoDto>> ObterApostasDoApostadorNaRodadaParaEdicao(Guid rodadaId, Guid apostadorCampeamentoId)
+        public async Task<IEnumerable<ApostaJogoDto>> ObterApostasDoApostadorNaRodadaParaEdicao(Guid rodadaId, Guid apostadorCampeonatoId)
         {
             var rodada = await _rodadaRepository.ObterRodadaComJogosEEquipes(rodadaId);
             if (rodada == null || rodada.Status != StatusRodada.EmApostas)
@@ -108,7 +108,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
                 return new List<ApostaJogoDto>();
             }
 
-            var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeamentoId)
+            var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
                                                             .Include(ar => ar.Palpites)
                                                             .FirstOrDefaultAsync();
 
@@ -146,7 +146,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         /// Obtém as apostas de um apostador em uma rodada, formatadas para visualização (com placares reais e pontuação).
         /// </summary>
         /// <param name="rodadaId">O ID da rodada.</param>
-        /// <param name="apostadorCampeamentoId">O ID do ApostadorCampeonato.</param>
+        /// <param name="apostadorCampeonatoId">O ID do ApostadorCampeonato.</param>
         /// <returns>Uma lista de DTOs com os dados das apostas para visualização.</returns>
         public async Task<IEnumerable<ApostaJogoVisualizacaoDto>> ObterApostasDoApostadorNaRodadaParaVisualizacao(Guid rodadaId, Guid apostadorCampeonatoId)
         {
@@ -286,7 +286,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
             await _apostaRodadaRepository.Atualizar(apostaRodada);
 
             // 5. Salvar as alterações na UnitOfWork
-            return await Commit();
+            return await CommitAsync();
         }
     }
 }

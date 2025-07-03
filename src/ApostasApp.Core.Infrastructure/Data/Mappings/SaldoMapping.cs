@@ -29,10 +29,10 @@ namespace ApostasApp.Core.InfraStructure.Data.Mappings
 
             // Relacionamento 1:N entre Saldo e TransacaoFinanceira
             // Um Saldo pode ter muitas TransacoesFinanceiras
-            builder.HasMany(s => s.Transacoes) // Um Saldo tem muitas Transacoes
-                   .WithOne(tf => tf.Saldo)    // Uma Transacao tem um Saldo
-                   .HasForeignKey(tf => tf.SaldoId) // A FK SaldoId está na tabela TransacoesFinanceiras
-                   .IsRequired(); // Uma Transação sempre deve estar ligada a um Saldo
+            //builder.HasMany(s => s.Transacoes) // Um Saldo tem muitas Transacoes
+            //       .WithOne(tf => tf.Saldo)    // Uma Transacao tem um Saldo
+            //       .HasForeignKey(tf => tf.SaldoId) // A FK SaldoId está na tabela TransacoesFinanceiras
+            //       .IsRequired(); // Uma Transação sempre deve estar ligada a um Saldo
 
             builder.ToTable("Saldos"); // Nome da tabela no banco
         }

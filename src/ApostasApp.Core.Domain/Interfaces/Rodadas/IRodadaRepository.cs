@@ -25,6 +25,12 @@ namespace ApostasApp.Core.Domain.Models.Interfaces.Rodadas
         /// <returns>A rodada corrente, ou null se não houver.</returns>
         Task<Rodada> ObterRodadaCorrentePorCampeonato(Guid campeonatoId);
 
+        //Obtém a lista de Rodadas Correntes de um campeonato
+        Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId);
+
+        //Obtém a lista de Rodadas em Aposta de um campeonato
+        Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId);
+
         /// <summary>
         /// Obtém uma rodada específica, incluindo seus jogos e as equipes associadas a esses jogos.
         /// Essencial para exibir a interface de apostas.

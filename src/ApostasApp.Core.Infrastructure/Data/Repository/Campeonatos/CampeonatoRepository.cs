@@ -40,6 +40,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
             //throw new NotImplementedException();
 
             return await Db.Campeonatos.AsNoTracking()
+                         //.Include(c=> c.Tipo)
                          .Where(c => c.Ativo == true)
                          .ToListAsync();
 

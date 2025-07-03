@@ -1,17 +1,22 @@
-using ApostasApp.Core.Domain.Interfaces.Identity;
-using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Models.Usuarios;
-using ApostasApp.Core.Domain.Models.Notificacoes;
+// Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
-using System.Linq;
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Notificacoes;
+using ApostasApp.Core.Domain.Models; // Se a classe Usuario estiver aqui, caso contrário, remova ou ajuste.
+using ApostasApp.Core.Domain.Interfaces.Identity;
+using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Threading.Tasks;
+using System.Text;
+using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using System.Net;
-using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using System; // Para DateTime, Guid, etc.
+using System.Collections.Generic; // Para List
+using System.Linq; // Para Select, Any
+using System.Threading.Tasks; // Para Task
 
 namespace ApostasApp.Core.Infrastructure.Identity
 {
@@ -19,66 +24,64 @@ namespace ApostasApp.Core.Infrastructure.Identity
     {
         private readonly UserManager<Usuario> _userManager;
         private readonly SignInManager<Usuario> _signInManager;
-        private readonly ILogger<IdentityService> _logger;
         private readonly INotificador _notificador;
+        private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IEmailSender _emailSender;
+        private readonly ILogger<IdentityService> _logger;
 
-        public IdentityService(UserManager<Usuario> userManager,
-                               SignInManager<Usuario> signInManager,
-                               ILogger<IdentityService> logger,
-                               INotificador notificador,
-                               IHttpContextAccessor httpContextAccessor,
-                               IEmailSender emailSender)
+        public IdentityService(
+            UserManager<Usuario> userManager,
+            SignInManager<Usuario> signInManager,
+            INotificador notificador,
+            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor,
+            ILogger<IdentityService> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _logger = logger;
             _notificador = notificador;
+            _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
-            _emailSender = emailSender;
+            _logger = logger;
         }
+
+        // Implementação de IIdentityService
 
         public async Task<Usuario> GetLoggedInUserAsync()
         {
-            var principal = _httpContextAccessor.HttpContext?.User;
-            if (principal == null)
-            {
-                _notificador.Handle(new Notificacao("Alerta", "Nenhum usuário logado detectado."));
-                return null;
-            }
-            return await _userManager.GetUserAsync(principal);
+            var userPrincipal = _httpContextAccessor.HttpContext?.User;
+            if (userPrincipal == null) return null;
+            return await _userManager.GetUserAsync(userPrincipal);
         }
 
-        public Task<string> GetLoggedInUserIdAsync()
+        public async Task<string> GetLoggedInUserIdAsync()
         {
-            return Task.FromResult(_httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
-        public async Task<bool> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular)
+        public async Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular)
         {
-            var user = new Usuario
-            {
-                UserName = email,
-                Email = email,
-                Apelido = apelido,
-                CPF = cpf,
-                Celular = celular,
-                RegistrationDate = System.DateTime.Now,
-                LastLoginDate = null
-            };
-
+            var user = new Usuario { UserName = email, Email = email, Apelido = apelido, CPF = cpf, Celular = celular, EmailConfirmed = false, RegistrationDate = DateTime.Now };
             var result = await _userManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
+                var notifications = result.Errors.Select(error => new Notificacao("Erro", error.Description, error.Code)).ToList();
+                foreach (var notif in notifications)
                 {
-                    _notificador.Handle(new Notificacao("Erro", error.Description));
+                    _notificador.Handle(notif);
                 }
-                _logger.LogError($"Falha no registro do usuário {email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                return false;
+                return AuthResult.Failure(notifications);
             }
+            return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
+        }
+
+        public async Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host)
+        {
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var confirmationLink = $"{scheme}://{host}/Account/ConfirmEmail?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+            _notificador.Handle(new Notificacao("Sucesso", $"Link de confirmação de e-mail gerado para {user.Email}: {confirmationLink}"));
+            _logger.LogInformation($"Link de confirmação de e-mail para {user.Email}: {confirmationLink}");
             return true;
         }
 
@@ -87,165 +90,9 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return await _userManager.FindByEmailAsync(email);
         }
 
-        public async Task<string> GenerateEmailConfirmationTokenAsync(Usuario user)
-        {
-            return await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        }
-
-        /// <summary>
-        /// Envia um e-mail de confirmação para o usuário.
-        /// </summary>
-        public async Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host)
-        {
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var callbackUrl = $"{scheme}://{host}/api/Account/confirm-email?userId={user.Id}&code={WebUtility.UrlEncode(token)}";
-            var subject = "Confirme seu e-mail para o Bolão Online";
-            var message = $"Por favor, confirme sua conta clicando neste link: <a href='{callbackUrl}'>clique aqui</a>.";
-
-            try
-            {
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
-                _logger.LogInformation($"Email de confirmação ENVIADO REALMENTE para {user.Email} com link: {callbackUrl}");
-                return true;
-            }
-            catch (System.Exception ex)
-            {
-                _logger.LogError(ex, $"Falha REAL ao enviar email de confirmação para {user.Email}.");
-                _notificador.Handle(new Notificacao("Erro", $"Falha ao enviar e-mail de confirmação para {user.Email}. Verifique seu e-mail e tente novamente."));
-                return false;
-            }
-        }
-
         public async Task<Usuario> GetUserByIdAsync(string userId)
         {
             return await _userManager.FindByIdAsync(userId);
-        }
-
-        /// <summary>
-        /// Confirma o e-mail do usuário usando o token.
-        /// Garante que os erros do Identity sejam notificados.
-        /// </summary>
-        public async Task<bool> ConfirmEmailAsync(Usuario user, string code)
-        {
-            var result = await _userManager.ConfirmEmailAsync(user, code);
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                {
-                    _notificador.Handle(new Notificacao("Erro", $"Falha na confirmação de e-mail: {error.Description}"));
-                }
-                _logger.LogError($"Falha na confirmação de email para {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
-            return result.Succeeded;
-        }
-
-        public async Task<LoginResult> LoginAsync(string email, string password, bool rememberMe)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                _notificador.Handle(new Notificacao("Erro", "Usuário não encontrado."));
-                return LoginResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado.") });
-            }
-
-            if (!user.EmailConfirmed && _userManager.Options.SignIn.RequireConfirmedAccount)
-            {
-                _notificador.Handle(new Notificacao("Erro", "Seu e-mail ainda não foi confirmado."));
-                return LoginResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Seu e-mail ainda não foi confirmado.") });
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: true);
-
-            if (!result.Succeeded)
-            {
-                var errors = new List<Notificacao>();
-                if (result.IsLockedOut)
-                {
-                    errors.Add(new Notificacao("Erro", "Conta bloqueada. Tente novamente mais tarde."));
-                }
-                else if (result.IsNotAllowed)
-                {
-                    errors.Add(new Notificacao("Erro", "Login não permitido."));
-                }
-                else if (result.RequiresTwoFactor)
-                {
-                    errors.Add(new Notificacao("Alerta", "Login requer autenticação de dois fatores."));
-                }
-                else
-                {
-                    errors.Add(new Notificacao("Erro", "Credenciais inválidas."));
-                }
-                _notificador.Handle(errors);
-                _logger.LogError($"Falha no login para {email}: {result.ToString()}");
-                return LoginResult.Failure(errors);
-            }
-
-            return LoginResult.Succeeded(user.Id, user.Email, user.UserName);
-        }
-
-        public async Task LogoutAsync()
-        {
-            await _signInManager.SignOutAsync();
-        }
-
-        public async Task<bool> SignInUserAsync(string email, string password, bool isPersistent, bool lockoutOnFailure)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                _notificador.Handle(new Notificacao("Erro", "Usuário não encontrado."));
-                return false;
-            }
-
-            if (!user.EmailConfirmed)
-            {
-                _notificador.Handle(new Notificacao("Erro", "Seu e-mail ainda não foi confirmado."));
-                return false;
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure);
-
-            if (!result.Succeeded)
-            {
-                if (result.IsLockedOut)
-                {
-                    _notificador.Handle(new Notificacao("Erro", "Conta bloqueada. Tente novamente mais tarde."));
-                }
-                else if (result.IsNotAllowed)
-                {
-                    _notificador.Handle(new Notificacao("Erro", "Login não permitido."));
-                }
-                else if (result.RequiresTwoFactor)
-                {
-                    _notificador.Handle(new Notificacao("Alerta", "Login requer autenticação de dois fatores."));
-                }
-                else
-                {
-                    _notificador.Handle(new Notificacao("Erro", "Credenciais inválidas."));
-                }
-                _logger.LogError($"Falha no login para {email}: {result.ToString()}");
-                return false;
-            }
-            return true;
-        }
-
-        public async Task SignOutUserAsync()
-        {
-            await _signInManager.SignOutAsync();
-        }
-
-        public async Task<bool> UpdateUserAsync(Usuario user)
-        {
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                {
-                    _notificador.Handle(new Notificacao("Erro", error.Description));
-                }
-                _logger.LogError($"Falha na atualização do usuário {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
-            return result.Succeeded;
         }
 
         public async Task<bool> ApelidoExisteAsync(string apelido)
@@ -253,33 +100,152 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return await _userManager.Users.AnyAsync(u => u.Apelido == apelido);
         }
 
-        public async Task<string> GeneratePasswordResetTokenAsync(Usuario user)
+        public async Task<LoginResult> LoginAsync(string email, string password, bool rememberMe)
         {
-            return await _userManager.GeneratePasswordResetTokenAsync(user);
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                _notificador.Handle(new Notificacao("Erro", "Usuário ou senha inválidos."));
+                _logger.LogWarning($"Login falhou para '{email}': Usuário não encontrado.");
+                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Usuário ou senha inválidos.") });
+            }
+
+            if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
+            {
+                _notificador.Handle(new Notificacao("Erro", "Seu e-mail ainda não foi confirmado."));
+                _logger.LogWarning($"Login falhou para '{email}': E-mail não confirmado.");
+                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Seu e-mail ainda não foi confirmado.") });
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: true);
+
+            if (result.RequiresTwoFactor)
+            {
+                _notificador.Handle(new Notificacao("Alerta", "Autenticação de dois fatores necessária."));
+                _logger.LogInformation($"Login para '{email}' requer 2FA.");
+                return LoginResult.TwoFactorRequired();
+            }
+
+            if (result.IsLockedOut)
+            {
+                _notificador.Handle(new Notificacao("Erro", "A conta está bloqueada devido a várias tentativas de login inválidas. Por favor, tente novamente mais tarde."));
+                _logger.LogWarning($"Login falhou para '{email}': Conta bloqueada.");
+                return LoginResult.LockedOut();
+            }
+
+            if (result.IsNotAllowed)
+            {
+                _notificador.Handle(new Notificacao("Erro", "Você não tem permissão para fazer login."));
+                _logger.LogWarning($"Login falhou para '{email}': Não permitido.");
+                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Você não tem permissão para fazer login.") });
+            }
+
+            if (!result.Succeeded)
+            {
+                _notificador.Handle(new Notificacao("Erro", "Usuário ou senha inválidos."));
+                _logger.LogWarning($"Login falhou para '{email}': Credenciais inválidas (SignInManager result.Succeeded é false).");
+                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Usuário ou senha inválidos.") });
+            }
+
+            // O LOGIN FOI BEM-SUCEDIDO AQUI!
+            var jwtSecret = _configuration["Jwt:SecretKey"];
+            var jwtIssuer = _configuration["Jwt:Issuer"];
+            var jwtAudience = _configuration["Jwt:Audience"];
+
+            double jwtExpiresInMinutes = 60;
+            if (!double.TryParse(_configuration["Jwt:ExpiresInMinutes"], out jwtExpiresInMinutes))
+            {
+                _logger.LogWarning("Configuração 'Jwt:ExpiresInMinutes' não encontrada ou inválida. Usando padrão de 60 minutos.");
+            }
+
+            _logger.LogInformation($"[JWT_GERA] SecretKey lida: '{(string.IsNullOrWhiteSpace(jwtSecret) ? "[VAZIA]" : "******")}'");
+            _logger.LogInformation($"[JWT_GERA] Issuer lido: '{jwtIssuer}'");
+            _logger.LogInformation($"[JWT_GERA] Audience lida: '{jwtAudience}'");
+            _logger.LogInformation($"[JWT_GERA] Expira em minutos (da configuração): {jwtExpiresInMinutes}");
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(jwtSecret);
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName),
+            };
+            if (!string.IsNullOrEmpty(user.Apelido))
+            {
+                claims.Add(new Claim("apelido", user.Apelido));
+            }
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            foreach (var role in userRoles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var expires = DateTime.UtcNow.AddMinutes(jwtExpiresInMinutes);
+
+            _logger.LogInformation($"[JWT_GERA] Token gerado, expira em (UTC): {expires.ToString("o")}");
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Issuer = jwtIssuer,
+                Audience = jwtAudience,
+                Expires = expires,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var encodedToken = tokenHandler.WriteToken(token);
+
+            var refreshToken = Guid.NewGuid().ToString();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            user.LastLoginDate = DateTime.Now;
+            await _userManager.UpdateAsync(user);
+
+            _logger.LogInformation($"[IdentityService] Login bem-sucedido para '{email}'. Token JWT e RefreshToken gerados e retornados.");
+
+            return LoginResult.Succeeded(encodedToken, refreshToken, tokenDescriptor.Expires.Value);
         }
 
-        /// <summary>
-        /// Envia um e-mail de redefinição de senha para o usuário.
-        /// </summary>
-        public async Task<bool> SendPasswordResetEmailAsync(Usuario user, string scheme, string host)
+        // <<-- ADICIONADO: Implementação do método LogoutAsync -->>
+        public async Task LogoutAsync()
         {
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var callbackUrl = $"{scheme}://{host}/api/Account/reset-password?userId={user.Id}&token={WebUtility.UrlEncode(token)}";
-            var subject = "Redefinição de Senha para o Bolão Online";
-            var message = $"Por favor, redefina sua senha clicando neste link: <a href='{callbackUrl}'>clique aqui</a>.";
+            await _signInManager.SignOutAsync();
+            _logger.LogInformation("Usuário deslogado via LogoutAsync.");
+        }
 
-            try
+        public async Task SignOutUserAsync()
+        {
+            await _signInManager.SignOutAsync();
+            _logger.LogInformation("Usuário deslogado via SignOutUserAsync.");
+        }
+
+        public async Task<bool> SignInUserAsync(string email, string password, bool isPersistent, bool lockoutOnFailure)
+        {
+            var result = await _signInManager.PasswordSignInAsync(email, password, isPersistent, lockoutOnFailure);
+            return result.Succeeded;
+        }
+
+        public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
             {
-                await _emailSender.SendEmailAsync(user.Email, subject, message);
-                _logger.LogInformation($"Email de redefinição de senha ENVIADO REALMENTE para {user.Email} com link: {callbackUrl}.");
-                return true;
+                return true; // Evita enumeração de usuários
             }
-            catch (System.Exception ex)
-            {
-                _logger.LogError(ex, $"Falha REAL ao enviar email de redefinição de senha para {user.Email}.");
-                _notificador.Handle(new Notificacao("Erro", $"Falha ao enviar e-mail de redefinição de senha para {user.Email}. Tente novamente."));
-                return false;
-            }
+
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetLink = $"{scheme}://{host}/Account/ResetPassword?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+            _notificador.Handle(new Notificacao("Sucesso", $"Link de redefinição de senha gerado para {user.Email}: {resetLink}"));
+            _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
+            return true;
         }
 
         public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
@@ -289,23 +255,11 @@ namespace ApostasApp.Core.Infrastructure.Identity
             {
                 foreach (var error in result.Errors)
                 {
-                    _notificador.Handle(new Notificacao("Erro", error.Description));
+                    _notificador.Handle(new Notificacao("Erro", error.Description, error.Code));
                 }
-                _logger.LogError($"Falha na redefinição de senha para {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                return false;
             }
-            return result.Succeeded;
-        }
-
-        public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                _notificador.Handle(new Notificacao("Sucesso", "Se o email estiver cadastrado, um link para redefinição de senha foi enviado."));
-                return true;
-            }
-
-            return await SendPasswordResetEmailAsync(user, scheme, host);
+            return true;
         }
 
         public async Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail)
@@ -313,13 +267,13 @@ namespace ApostasApp.Core.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                _notificador.Handle(new Notificacao("Erro", "Usuário não encontrado."));
-                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado.") });
+                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado para geração de token.") });
             }
 
             var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
-            _logger.LogInformation($"Simulando envio de email de mudança de e-mail para {newEmail} com token: {token}");
-            _notificador.Handle(new Notificacao("Sucesso", $"E-mail de mudança de e-mail simulado enviado para {newEmail}."));
+            _notificador.Handle(new Notificacao("Sucesso", $"Token de alteração de e-mail gerado para {newEmail}: {token}"));
+            _logger.LogInformation($"Token de alteração de e-mail para {newEmail}: {token}");
+
             return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
         }
 
@@ -328,21 +282,42 @@ namespace ApostasApp.Core.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                _notificador.Handle(new Notificacao("Erro", "Usuário não encontrado."));
-                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado.") });
+                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado para alteração de e-mail.") });
             }
 
             var result = await _userManager.ChangeEmailAsync(user, newEmail, code);
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
+                var notifications = result.Errors.Select(e => new Notificacao("Erro", e.Description, e.Code)).ToList();
+                foreach (var notif in notifications)
                 {
-                    _notificador.Handle(new Notificacao("Erro", error.Description));
+                    _notificador.Handle(notif);
                 }
-                return AuthResult.Failure(result.Errors.Select(e => new Notificacao("Erro", e.Description)).ToList());
+                return AuthResult.Failure(notifications);
             }
-            _notificador.Handle(new Notificacao("Sucesso", "E-mail alterado com sucesso."));
-            return AuthResult.Succeeded(user.Id, newEmail, user.UserName);
+
+            user.Email = newEmail;
+            user.NormalizedEmail = _userManager.NormalizeEmail(newEmail);
+            user.UserName = newEmail;
+            user.NormalizedUserName = _userManager.NormalizeName(newEmail);
+            await _userManager.UpdateAsync(user);
+
+            return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
+        }
+
+        public async Task<bool> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword)
+        {
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (result.Succeeded)
+            {
+                return true;
+            }
+
+            foreach (var error in result.Errors)
+            {
+                _notificador.Handle(new Notificacao("Erro", error.Description, error.Code));
+            }
+            return false;
         }
     }
 }

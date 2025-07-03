@@ -1,36 +1,36 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// RegisterRequestDto.cs
+// DTO para a requisição de registro de usuário
+
+using System.ComponentModel.DataAnnotations;
 
 namespace ApostasApp.Core.Application.DTOs.Usuarios
 {
-    /// <summary>
-    /// DTO para a requisição de registro de um novo usuário.
-    /// Contém os campos necessários para o registro via API.
-    /// </summary>
     public class RegisterRequestDto
     {
-        [Required(ErrorMessage = "O Email é obrigatório.")]
-        [EmailAddress(ErrorMessage = "O Email está em formato inválido.")]
+        [Required(ErrorMessage = "O email é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Formato de email inválido.")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "A Senha é obrigatória.")]
-        [StringLength(100, ErrorMessage = "A {0} deve ter no mínimo {2} e no máximo {1} caracteres.", MinimumLength = 6)]
-        [DataType(DataType.Password)]
+        [Required(ErrorMessage = "A senha é obrigatória.")]
+        [MinLength(6, ErrorMessage = "A senha deve ter no mínimo {1} caracteres.")]
         public string Password { get; set; }
 
-        [DataType(DataType.Password)]
-        [Compare("Password", ErrorMessage = "A Senha e a Confirmação de Senha não conferem.")]
-        public string ConfirmPassword { get; set; } // Campo para confirmação de senha
+        [Compare("Password", ErrorMessage = "As senhas não conferem.")]
+        public string ConfirmPassword { get; set; }
 
-        [Required(ErrorMessage = "O Apelido é obrigatório.")]
-        [StringLength(50, ErrorMessage = "O {0} deve ter no máximo {1} caracteres.")]
+        [Required(ErrorMessage = "O apelido é obrigatório.")]
         public string Apelido { get; set; }
 
         [Required(ErrorMessage = "O CPF é obrigatório.")]
-        [RegularExpression(@"^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$", ErrorMessage = "O CPF está em formato inválido.")]
-        public string CPF { get; set; }
+        public string Cpf { get; set; }
 
-        [Required(ErrorMessage = "O Celular é obrigatório.")]
-        [Phone(ErrorMessage = "O Celular está em formato inválido.")]
+        [Required(ErrorMessage = "O celular é obrigatório.")]
         public string Celular { get; set; }
+
+        // NOVOS CAMPOS: Para passar scheme e host para o serviço de e-mail de confirmação.
+        public string Scheme { get; set; }
+        public string Host { get; set; }
+        public bool SendConfirmationEmail { get; set; } = true; // Por padrão, enviar e-mail de confirmação
+
     }
 }
