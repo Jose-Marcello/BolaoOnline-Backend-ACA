@@ -13,7 +13,7 @@ namespace ApostasApp.Core.Application.DTOs.Jogos
     /// </summary>
     public class JogoDetalheDto
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public DateTime DataJogo { get; set; }
         public TimeSpan HoraJogo { get; set; }
         public int GolsCasa { get; set; }

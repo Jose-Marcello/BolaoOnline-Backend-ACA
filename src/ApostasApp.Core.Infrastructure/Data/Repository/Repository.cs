@@ -36,6 +36,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository
         public virtual async Task<TEntity> ObterPorId(Guid id)
         {
             // FindAsync é otimizado para buscar por chave primária
+            Console.WriteLine($"DEBUG Repositorio Generico: Tentando obter {typeof(TEntity).Name} por ID: {id}");            
             return await DbSet.FindAsync(id);
         }
 

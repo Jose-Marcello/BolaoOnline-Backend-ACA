@@ -24,10 +24,15 @@ namespace ApostasApp.Core.Domain.Interfaces.Jogos
         /// <returns>Uma coleção de jogos da rodada.</returns>
         Task<IEnumerable<Jogo>> ObterJogosDaRodadaComEquipesEEstadio(Guid rodadaId); // Renomeado/Ajustado
 
+        Task<IEnumerable<Jogo>> ObterJogosDaRodada(Guid rodadaId); // Renomeado/Ajustado
+
+
         /// <summary>
         /// Obtém todos os jogos, incluindo Rodada e Campeonato, ordenados por Data e Hora do Jogo.
         /// </summary>
         /// <returns>Uma coleção de todos os jogos.</returns>
         Task<IEnumerable<Jogo>> ObterTodosJogosComRodadaECampeonato(); // Renomeado de ObterJogosRodada()
+
+        Task<IEnumerable<Jogo>> ObterJogosDaRodadaComPlacaresEEquipes(Guid rodadaId);
     }
 }

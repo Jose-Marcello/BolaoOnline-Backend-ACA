@@ -10,6 +10,9 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
         // Outros métodos específicos para ApostaRodada
 
         Task<ApostaRodada> ObterUltimaApostaRodadaDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId);
+
+        Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid apostadorCampeonatoId);
+
     }
 
 }

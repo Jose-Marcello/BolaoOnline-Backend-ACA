@@ -1,188 +1,180 @@
-﻿using ApostasApp.Core.Application.DTOs.Apostas; // Para PalpiteDto, SalvarPalpiteRequestDto
-using ApostasApp.Core.Application.Models; // <<-- NOVO: Para ApiResponse -->>
-using ApostasApp.Core.Application.Services.Interfaces.Palpites; // Para IPalpiteService (do serviço de aplicação)
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
-using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
-using ApostasApp.Core.Domain.Interfaces.Apostas; // Para IPalpiteRepository (do domínio)
-using ApostasApp.Core.Domain.Models.Apostas; // Para Palpite (entidade de domínio)
-using ApostasApp.Core.Domain.Models.Notificacoes; // <<-- NOVO: Para Notificacao (entidade de domínio) -->>
+﻿// Localização: ApostasApp.Core.Application.Services/Palpites/PalpiteService.cs
+
+using ApostasApp.Core.Application.DTOs.Apostas;
+using ApostasApp.Core.Application.DTOs.Palpites;
+using ApostasApp.Core.Application.Models;
+using ApostasApp.Core.Application.Services.Base; // Importar BaseService
+using ApostasApp.Core.Application.Services.Interfaces.Palpites;
+using ApostasApp.Core.Domain.Interfaces;
+using ApostasApp.Core.Domain.Interfaces.Apostas;
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Apostas;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using ApostasApp.Core.Application.Services.Base; // Para AnyAsync no PalpiteRepository.Buscar
-using System; // Para Guid
-using System.Collections.Generic; // Para IEnumerable, List
-using System.Linq; // Para Linq
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore; // Adicionado para Include e ToListAsync
+using Microsoft.Extensions.Logging;
+
 
 namespace ApostasApp.Core.Application.Services.Palpites
 {
-    /// <summary>
-    /// Serviço de aplicação para operações relacionadas a palpites/apostas.
-    /// Implementa a interface IPalpiteService e utiliza IPalpiteRepository para acesso a dados.
-    /// </summary>
     public class PalpiteService : BaseService, IPalpiteService
     {
         private readonly IPalpiteRepository _palpiteRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<PalpiteService> _logger;
 
-        public PalpiteService(IPalpiteRepository palpiteRepository,
-                                 IMapper mapper,
-                                 INotificador notificador,
-                                 IUnitOfWork uow) : base(notificador, uow)
+        public PalpiteService(
+            IPalpiteRepository palpiteRepository,
+            IMapper mapper,
+            INotificador notificador, // Injetar INotificador
+            IUnitOfWork uow, // Injetar IUnitOfWork
+            ILogger<PalpiteService> logger)
+            : base(notificador, uow) // Chamar construtor da BaseService
         {
             _palpiteRepository = palpiteRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
         /// Obtém uma coleção de palpites para uma rodada específica.
         /// </summary>
-        /// <param name="rodadaId">O ID da rodada.</param>
-        /// <returns>Um ApiResponse contendo uma coleção de DTOs de palpites.</returns>
         public async Task<ApiResponse<IEnumerable<PalpiteDto>>> ObterPalpitesDaRodada(Guid rodadaId)
         {
-            var apiResponse = new ApiResponse<IEnumerable<PalpiteDto>>(false, null);
-            var palpites = await _palpiteRepository.ObterPalpitesDaRodada(rodadaId);
+            try
+            {
+                var palpites = await _palpiteRepository.Buscar(p => p.Jogo.RodadaId == rodadaId)
+                                                       .Include(p => p.Jogo) // Incluir Jogo para acessar RodadaId
+                                                       .ToListAsync();
 
-            if (!palpites.Any())
-            {
-                Notificar("PALPITES_NAO_ENCONTRADOS", "Alerta", "Nenhum palpite encontrado para a rodada especificada.");
-                apiResponse.Success = true; // Considera sucesso, mas sem dados
-                apiResponse.Data = new List<PalpiteDto>();
+                if (!palpites.Any())
+                {
+                    Notificar("Alerta", "Nenhum palpite encontrado para a rodada especificada.");
+                    return new ApiResponse<IEnumerable<PalpiteDto>>(true, "Nenhum palpite encontrado.", new List<PalpiteDto>(), ObterNotificacoesParaResposta().ToList());
+                }
+
+                var palpitesDto = _mapper.Map<IEnumerable<PalpiteDto>>(palpites);
+                return new ApiResponse<IEnumerable<PalpiteDto>>(true, "Palpites obtidos com sucesso.", palpitesDto, ObterNotificacoesParaResposta().ToList());
             }
-            else
+            catch (Exception ex)
             {
-                apiResponse.Success = true;
-                apiResponse.Data = _mapper.Map<IEnumerable<PalpiteDto>>(palpites);
+                _logger.LogError(ex, "Erro ao obter palpites da rodada.");
+                Notificar("Erro", $"Erro ao obter palpites da rodada: {ex.Message}");
+                return new ApiResponse<IEnumerable<PalpiteDto>>(false, "Ocorreu um erro ao obter os palpites da rodada.", null, ObterNotificacoesParaResposta().ToList());
             }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
         }
 
         /// <summary>
         /// Adiciona um novo palpite.
         /// </summary>
-        /// <param name="palpiteRequest">O DTO de requisição contendo os dados do palpite.</param>
-        /// <returns>Um ApiResponse contendo o DTO do palpite adicionado.</returns>
         public async Task<ApiResponse<PalpiteDto>> AdicionarPalpite(SalvarPalpiteRequestDto palpiteRequest)
         {
-            var apiResponse = new ApiResponse<PalpiteDto>(false, null);
-
-            // Mapeia o DTO de requisição para a entidade de domínio
-            var palpite = _mapper.Map<Palpite>(palpiteRequest);
-
-            // A pontuação inicial é 0 e é calculada depois que o jogo termina.
-            palpite.Pontos = 0;
-
-            await _palpiteRepository.Adicionar(palpite);
-            var saved = await CommitAsync();
-
-            if (saved)
+            try
             {
-                apiResponse.Success = true;
-                apiResponse.Data = _mapper.Map<PalpiteDto>(palpite);
-                Notificar("PALPITE_ADICIONADO_SUCESSO", "Sucesso", "Palpite adicionado com sucesso!");
+                // Mapear DTO para entidade
+                var palpite = _mapper.Map<Palpite>(palpiteRequest);
+
+                // Adicionar ao repositório
+                await _palpiteRepository.Adicionar(palpite);
+
+                // Salvar mudanças
+                if (!await CommitAsync())
+                {
+                    return new ApiResponse<PalpiteDto>(false, "Falha ao adicionar palpite.", null, ObterNotificacoesParaResposta().ToList());
+                }
+
+                var palpiteDto = _mapper.Map<PalpiteDto>(palpite);
+                return new ApiResponse<PalpiteDto>(true, "Palpite adicionado com sucesso.", palpiteDto, ObterNotificacoesParaResposta().ToList());
             }
-            else
+            catch (Exception ex)
             {
-                Notificar("PALPITE_ADICIONADO_FALHA", "Erro", "Não foi possível adicionar o palpite.");
+                _logger.LogError(ex, "Erro ao adicionar palpite.");
+                Notificar("Erro", $"Erro ao adicionar palpite: {ex.Message}");
+                return new ApiResponse<PalpiteDto>(false, "Ocorreu um erro ao adicionar o palpite.", null, ObterNotificacoesParaResposta().ToList());
             }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
         }
 
         /// <summary>
         /// Atualiza um palpite existente.
         /// </summary>
-        /// <param name="palpiteId">O ID do palpite a ser atualizado.</param>
-        /// <param name="palpiteRequest">O DTO de requisição contendo os novos dados do palpite.</param>
-        /// <returns>Um ApiResponse contendo o DTO do palpite atualizado.</returns>
         public async Task<ApiResponse<PalpiteDto>> AtualizarPalpite(Guid palpiteId, SalvarPalpiteRequestDto palpiteRequest)
         {
-            var apiResponse = new ApiResponse<PalpiteDto>(false, null);
-            var palpiteExistente = await _palpiteRepository.ObterPorId(palpiteId);
-
-            if (palpiteExistente == null)
+            try
             {
-                Notificar("PALPITE_NAO_ENCONTRADO_ATUALIZACAO", "Erro", "Palpite não encontrado para atualização.");
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return apiResponse;
+                var palpiteExistente = await _palpiteRepository.ObterPorId(palpiteId);
+                if (palpiteExistente == null)
+                {
+                    Notificar("Alerta", "Palpite não encontrado para atualização.");
+                    return new ApiResponse<PalpiteDto>(false, "Palpite não encontrado.", null, ObterNotificacoesParaResposta().ToList());
+                }
+
+                // Atualizar propriedades do palpite existente
+                _mapper.Map(palpiteRequest, palpiteExistente);
+
+                await _palpiteRepository.Atualizar(palpiteExistente);
+
+                if (!await CommitAsync())
+                {
+                    return new ApiResponse<PalpiteDto>(false, "Falha ao atualizar palpite.", null, ObterNotificacoesParaResposta().ToList());
+                }
+
+                var palpiteDto = _mapper.Map<PalpiteDto>(palpiteExistente);
+                return new ApiResponse<PalpiteDto>(true, "Palpite atualizado com sucesso.", palpiteDto, ObterNotificacoesParaResposta().ToList());
             }
-
-            // Atualiza as propriedades da entidade existente com os dados do DTO de requisição
-            palpiteExistente.PlacarApostaCasa = palpiteRequest.PlacarApostaCasa;
-            palpiteExistente.PlacarApostaVisita = palpiteRequest.PlacarApostaVisita;
-
-            await _palpiteRepository.Atualizar(palpiteExistente);
-            var saved = await CommitAsync();
-
-            if (saved)
+            catch (Exception ex)
             {
-                apiResponse.Success = true;
-                apiResponse.Data = _mapper.Map<PalpiteDto>(palpiteExistente);
-                Notificar("PALPITE_ATUALIZADO_SUCESSO", "Sucesso", "Palpite atualizado com sucesso!");
+                _logger.LogError(ex, "Erro ao atualizar palpite.");
+                Notificar("Erro", $"Erro ao atualizar palpite: {ex.Message}");
+                return new ApiResponse<PalpiteDto>(false, "Ocorreu um erro ao atualizar o palpite.", null, ObterNotificacoesParaResposta().ToList());
             }
-            else
-            {
-                Notificar("PALPITE_ATUALIZADO_FALHA", "Erro", "Não foi possível atualizar o palpite.");
-            }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
         }
 
         /// <summary>
         /// Remove um palpite pelo seu ID.
         /// </summary>
-        /// <param name="palpiteId">O ID do palpite a ser removido.</param>
-        /// <returns>Um ApiResponse indicando se a remoção foi bem-sucedida.</returns>
         public async Task<ApiResponse<bool>> RemoverPalpite(Guid palpiteId)
         {
-            var apiResponse = new ApiResponse<bool>(false, false);
-            var palpite = await _palpiteRepository.ObterPorId(palpiteId);
-
-            if (palpite == null)
+            try
             {
-                Notificar("PALPITE_NAO_ENCONTRADO_REMOCAO", "Erro", "Palpite não encontrado para remoção.");
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return apiResponse;
-            }
+                var palpiteExistente = await _palpiteRepository.ObterPorId(palpiteId);
+                if (palpiteExistente == null)
+                {
+                    Notificar("Alerta", "Palpite não encontrado para remoção.");
+                    return new ApiResponse<bool>(false, "Palpite não encontrado.", false, ObterNotificacoesParaResposta().ToList());
+                }
 
-            await _palpiteRepository.Remover(palpite);
-            var saved = await CommitAsync();
+                await _palpiteRepository.Remover(palpiteExistente);
 
-            if (saved)
-            {
-                apiResponse.Success = true;
-                apiResponse.Data = true;
-                Notificar("PALPITE_REMOVIDO_SUCESSO", "Sucesso", "Palpite removido com sucesso!");
+                if (!await CommitAsync())
+                {
+                    return new ApiResponse<bool>(false, "Falha ao remover palpite.", false, ObterNotificacoesParaResposta().ToList());
+                }
+
+                return new ApiResponse<bool>(true, "Palpite removido com sucesso.", true, ObterNotificacoesParaResposta().ToList());
             }
-            else
+            catch (Exception ex)
             {
-                Notificar("PALPITE_REMOVIDO_FALHA", "Erro", "Não foi possível remover o palpite.");
+                _logger.LogError(ex, "Erro ao remover palpite.");
+                Notificar("Erro", $"Erro ao remover palpite: {ex.Message}");
+                return new ApiResponse<bool>(false, "Ocorreu um erro ao remover o palpite.", false, ObterNotificacoesParaResposta().ToList());
             }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
         }
 
         /// <summary>
         /// Verifica se existem apostas (palpites) para uma rodada específica.
         /// </summary>
-        /// <param name="rodadaId">O ID da rodada.</param>
-        /// <returns>Um ApiResponse indicando se existem palpites.</returns>
         public async Task<ApiResponse<bool>> ExistePalpitesParaRodada(Guid rodadaId)
         {
-            var apiResponse = new ApiResponse<bool>(false, false);
-            var existe = await _palpiteRepository.Buscar(p => p.Jogo.RodadaId == rodadaId).AnyAsync();
-
-            apiResponse.Success = true;
-            apiResponse.Data = existe;
-            // Se não houver palpites, uma notificação de alerta pode ser adicionada aqui, se desejado.
-            if (!existe)
+            try
             {
-                Notificar("NENHUM_PALPITE_RODADA", "Alerta", "Não existem palpites para esta rodada.");
+                var existe = await _palpiteRepository.Buscar(p => p.Jogo.RodadaId == rodadaId).AnyAsync();
+                return new ApiResponse<bool>(true, "Verificação de palpites concluída.", existe, ObterNotificacoesParaResposta().ToList());
             }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao verificar existência de palpites para a rodada.");
+                Notificar("Erro", $"Erro ao verificar existência de palpites: {ex.Message}");
+                return new ApiResponse<bool>(false, "Ocorreu um erro ao verificar palpites.", false, ObterNotificacoesParaResposta().ToList());
+            }
         }
     }
 }

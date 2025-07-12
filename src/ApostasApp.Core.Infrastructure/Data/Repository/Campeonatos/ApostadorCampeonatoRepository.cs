@@ -1,7 +1,8 @@
 ﻿using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Data.Repository;
+using ApostasApp.Core.InfraStructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -70,14 +71,15 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
                            .FirstOrDefaultAsync(ac => ac.ApostadorId == apostadorId);
         }
 
-        public async Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(string usuarioId, Guid campeonatoId)
+        public async Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(Guid apostadorId, Guid campeonatoId)
         {
             return await Db.ApostadoresCampeonatos
                            .Include(ac => ac.Apostador)
                                .ThenInclude(a => a.Usuario) // Inclui o Usuario do Apostador
                            .Include(ac => ac.Campeonato)
                            .AsNoTracking()
-                           .FirstOrDefaultAsync(ac => ac.Apostador.UsuarioId == usuarioId && ac.CampeonatoId == campeonatoId);
+                           //.FirstOrDefaultAsync(ac => ac.Apostador.UsuarioId == usuarioId && ac.CampeonatoId == campeonatoId);
+                           .FirstOrDefaultAsync(ac => ac.Apostador.Id == apostadorId && ac.CampeonatoId == campeonatoId);
         }
 
         public async Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorUsuarioIdAsync(string usuarioId)

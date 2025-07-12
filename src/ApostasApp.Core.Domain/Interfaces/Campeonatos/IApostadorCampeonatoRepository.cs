@@ -10,7 +10,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Campeonatos
         Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresComRanking(Guid campeonatoId);        
         Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresDoCampeonato(Guid id);
         Task<ApostadorCampeonato> ObterApostadorCampeonatoDoApostador(Guid apostadorId);
-        Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(string usuarioId, Guid campeonatoId);
+        Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(Guid apostadorCampeonatoId, Guid campeonatoId);
         Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorUsuarioIdAsync(string userId);
         
         Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId);

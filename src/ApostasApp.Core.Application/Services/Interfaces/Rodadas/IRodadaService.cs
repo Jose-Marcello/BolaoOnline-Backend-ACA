@@ -4,33 +4,33 @@ using System; // Para Guid
 using System.Collections.Generic; // Para IEnumerable, List
 using System.Threading.Tasks; // Para Task
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
-using ApostasApp.Core.Application.Services.Interfaces; // Para INotifiableService
+using ApostasApp.Core.Application.Models; // <<-- ADICIONADO: Para ApiResponse -->>
 
 namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
 {
-    // IRodadaService agora herda de INotifiableService
-    public interface IRodadaService : INotifiableService
+    // IRodadaService agora NÃO herda mais de INotifiableService
+    public interface IRodadaService
     {
-        // Métodos específicos de Rodada (garantidos para estarem completos aqui)
-        Task<Rodada> ObterRodadaPorId(Guid rodadaId);
+        // Métodos específicos de Rodada (agora retornando ApiResponse<T>)
+        Task<ApiResponse<Rodada>> ObterRodadaPorId(Guid rodadaId);
 
         // Métodos para obter rodadas em status "Em Apostas"
-        Task<Rodada> ObterRodadaEmApostasPorCampeonato(Guid campeonatoId); // Para obter uma única rodada (se houver)
-        Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId); // Para obter a lista de rodadas
+        Task<ApiResponse<Rodada>> ObterRodadaEmApostasPorCampeonato(Guid campeonatoId); // Para obter uma única rodada (se houver)
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId); // Para obter a lista de rodadas
 
         // Métodos para obter rodadas em status "Corrente"
-        Task<Rodada> ObterRodadaCorrentePorCampeonato(Guid campeonatoId); // Para obter uma única rodada (se houver)
-        Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId); // Para obter a lista de rodadas
+        Task<ApiResponse<Rodada>> ObterRodadaCorrentePorCampeonato(Guid campeonatoId); // Para obter uma única rodada (se houver)
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId); // Para obter a lista de rodadas
 
         // Métodos específicos para apostadores (seus métodos originais)
-        Task<Rodada> ObterRodadaEmApostasParaApostador(Guid rodadaId, Guid apostadorCampeonatoId);
-        Task<Rodada> ObterRodadaCorrenteParaApostador(Guid rodadaId, Guid apostadorCampeonatoId);
+        Task<ApiResponse<Rodada>> ObterRodadaEmApostasParaApostador(Guid rodadaId, Guid apostadorCampeonatoId);
+        Task<ApiResponse<Rodada>> ObterRodadaCorrenteParaApostador(Guid rodadaId, Guid apostadorCampeonatoId);
 
         // Outros métodos de Rodada
-        Task<IEnumerable<Rodada>> ObterRodadasFinalizadasPorCampeonato(Guid campeonatoId);
-        Task<IEnumerable<Rodada>> ObterRodadasComRankingPorCampeonato(Guid campeonatoId);
-        Task<IEnumerable<Rodada>> ObterTodasAsRodadasDoCampeonato(Guid campeonatoId);
-        Task Atualizar(Rodada Rodada); // Método para atualizar uma Rodada
-        Task<IEnumerable<Rodada>> ObterRodadasEmDestaque();
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasFinalizadasPorCampeonato(Guid campeonatoId);
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasComRankingPorCampeonato(Guid campeonatoId);
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterTodasAsRodadasDoCampeonato(Guid campeonatoId);
+        Task<ApiResponse> Atualizar(Rodada Rodada); // Método para atualizar uma Rodada (retornando ApiResponse sem Data)
+        Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasEmDestaque();
     }
 }

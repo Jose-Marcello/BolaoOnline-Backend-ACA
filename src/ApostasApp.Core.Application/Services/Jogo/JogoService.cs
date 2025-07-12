@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto, JogoViewModel
-using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
 using ApostasApp.Core.Application.Services.Interfaces.Jogos; // Para IJogoService
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se BaseService o expõe como protected)
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Interfaces.Jogos; // Para IJogoRepository
 using ApostasApp.Core.Domain.Models.Jogos;
-using ApostasApp.Application.DTOs.Jogos;
 using ApostasApp.Core.Application.Services.Base; // Para a entidade Jogo
 
 namespace ApostasApp.Core.Application.Services.Jogos

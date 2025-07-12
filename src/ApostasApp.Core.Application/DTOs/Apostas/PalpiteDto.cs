@@ -1,26 +1,23 @@
-﻿using ApostasApp.Application.DTOs.Jogos;
-using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos; // Para ApostadorCampeonatoDto
+﻿// ApostasApp.Core.Application.DTOs/Palpites/PalpiteDto.cs
 using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDto
 using System;
 
-namespace ApostasApp.Core.Application.DTOs.Apostas
+namespace ApostasApp.Core.Application.DTOs.Palpites // <<-- Namespace recomendado -->>
 {
     /// <summary>
-    /// DTO para representar um palpite/aposta.
-    /// Contém informações básicas do palpite, do jogo associado e do apostador no campeonato.
+    /// DTO para representar um palpite individual para um jogo.
     /// </summary>
     public class PalpiteDto
     {
-        public Guid Id { get; set; }
-        public Guid JogoId { get; set; }
-        public JogoDto Jogo { get; set; } // DTO do Jogo (se for incluído pelo serviço)
+        public string Id { get; set; } // Ajustado para string
+        public string JogoId { get; set; } // Ajustado para string
+        public string ApostaRodadaId { get; set; } // <<-- Adicionado: FK para ApostaRodada -->>
 
-        public Guid ApostadorCampeonatoId { get; set; }
-        public ApostadorCampeonatoDto ApostadorCampeonato { get; set; } // DTO do Apostador no Campeonato (se for incluído pelo serviço)
+        public int? PlacarApostaCasa { get; set; } // <<-- Nomenclatura ajustada -->>
+        public int? PlacarApostaVisita { get; set; } // <<-- Nomenclatura ajustada -->>
+        public int Pontos { get; set; } // <<-- Nomenclatura ajustada -->>
 
-        public int? PalpiteCasa { get; set; } // Placar do palpite para o time da casa
-        public int? PalpiteVisitante { get; set; } // Placar do palpite para o time visitante
-        public DateTime? DataHoraAposta { get; set; } // Data e hora em que o palpite foi feito
-        public int PontuacaoPalpite { get; set; } // Pontuação obtida por este palpite (calculada)
+        // DTO aninhado para exibir detalhes do jogo
+        public JogoDto Jogo { get; set; } // Referencia o JogoDto atualizado
     }
 }

@@ -1,12 +1,12 @@
-﻿// DTO para representar os dados de um palpite de jogo para visualização (com placares reais e pontuação)
+﻿// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoVisualizacaoDto.cs
 using System;
 
 namespace ApostasApp.Core.Application.DTOs.Apostas
 {
     public class ApostaJogoVisualizacaoDto
     {
-        public Guid Id { get; set; } // ID do Palpite
-        public Guid IdJogo { get; set; }
+        public string Id { get; set; } // <<-- CORRIGIDO: ID do Palpite como string -->>
+        public string IdJogo { get; set; } // <<-- CORRIGIDO: ID do Jogo como string -->>
         public string EquipeMandante { get; set; }
         public string SiglaMandante { get; set; }
         public string EscudoMandante { get; set; }

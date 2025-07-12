@@ -19,10 +19,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Mappings
             builder.Property(a => a.NomeCompleto)
                    .HasColumnType("varchar(250)") // Exemplo de definição de tipo e tamanho
                    .IsRequired();
-
-            builder.Property(a => a.Email)
-                   .HasColumnType("varchar(250)")
-                   .IsRequired();
+                        
 
             builder.Property(a => a.Status)
                    .IsRequired(); // Enum será mapeado como int por padrão

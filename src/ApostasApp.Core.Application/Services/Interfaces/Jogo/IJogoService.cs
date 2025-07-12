@@ -1,9 +1,4 @@
-﻿using ApostasApp.Application.DTOs.Jogos;
-using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto, JogoViewModel
-using ApostasApp.Core.Application.DTOs.Rodadas; // Para RodadaViewModel
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto, JogoViewModel
 
 namespace ApostasApp.Core.Application.Services.Interfaces.Jogos
 {

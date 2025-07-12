@@ -54,6 +54,20 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Jogos // Namespace ajus
                              .ToListAsync();
         }
 
+        public async Task<IEnumerable<Jogo>> ObterJogosDaRodada(Guid rodadaId)
+        {
+            return await Db.Jogos.AsNoTracking()
+                            // .Include(j => j.EquipeCasa)
+                            //     .ThenInclude(ec => ec.Equipe)
+                            // .Include(j => j.EquipeVisitante)
+                            //     .ThenInclude(ev => ev.Equipe)
+                            // .Include(j => j.Estadio)
+                             .Where(j => j.RodadaId == rodadaId)
+                             .OrderBy(j => j.DataJogo)
+                             .ThenBy(j => j.HoraJogo)
+                             .ToListAsync();
+        }
+
         /// <summary>
         /// Obtém todos os jogos, incluindo Rodada e Campeonato, ordenados por Data e Hora do Jogo.
         /// </summary>
@@ -72,5 +86,22 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Jogos // Namespace ajus
         // foram substituídos/consolidados pelos novos métodos mais claros.
         // Se você ainda precisar deles com os nomes antigos, pode mantê-los,
         // mas o ideal é usar os novos.
+
+
+        public async Task<IEnumerable<Jogo>> ObterJogosDaRodadaComPlacaresEEquipes(Guid rodadaId)
+        {
+            return await Db.Jogos // Seu DbSet para Jogos
+                                 .AsNoTracking()
+                                 .Include(j => j.EquipeCasa)
+                                     .ThenInclude(ec => ec.Equipe)
+                                 .Include(j => j.EquipeVisitante)
+                                     .ThenInclude(ev => ev.Equipe)
+                                 .Where(j => j.RodadaId == rodadaId)
+                                 .ToListAsync();
+        }
+
+
     }
+
+
 }

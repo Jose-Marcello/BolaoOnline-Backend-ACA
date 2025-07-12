@@ -1,15 +1,13 @@
-﻿// SaldoDto.cs
-// Localização: ApostasApp.Core.Application.DTOs.Financeiro
+﻿// ApostasApp.Core.Application.DTOs.Financeiro/SaldoDto.cs
 using System;
-using System.ComponentModel.DataAnnotations;
+
 namespace ApostasApp.Core.Application.DTOs.Financeiro
 {
     public class SaldoDto
     {
-        public Guid ApostadorId { get; set; }
-        [Required(ErrorMessage = "O valor do saldo é obrigatório.")]
-        [Range(0, (double)decimal.MaxValue, ErrorMessage = "O valor do saldo deve ser maior ou igual a zero.")]
-        public decimal Valor { get; set; }      
+        public string Id { get; set; } // ID do Saldo como string
+        public string ApostadorId { get; set; } // <<-- CORRIGIDO: ID do Apostador como string -->>
+        public decimal Valor { get; set; }
         public DateTime DataUltimaAtualizacao { get; set; }
     }
 }

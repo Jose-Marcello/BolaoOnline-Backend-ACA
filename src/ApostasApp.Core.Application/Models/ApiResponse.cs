@@ -1,19 +1,16 @@
-﻿// Localização: ApostasApp.Core.Application.Models/ApiResponse.cs
+﻿// ApostasApp.Core.Application.Models/ApiResponse.cs
+// Esta classe define o formato das respostas da sua API, incluindo métodos estáticos para criação.
 
+using ApostasApp.Core.Domain.Models.Notificacoes;
 using System.Collections.Generic;
-using ApostasApp.Core.Domain.Models.Notificacoes; // Ajuste este using se NotificationDto estiver em outro lugar
+using System.Linq;
 
 namespace ApostasApp.Core.Application.Models
 {
-    /// <summary>
-    /// Classe genérica para padronizar as respostas da API para o frontend.
-    /// Inclui status de sucesso, dados e uma lista de notificações.
-    /// </summary>
-    /// <typeparam name="T">O tipo de dado que a resposta contém.</typeparam>
-    public class ApiResponse<T>
+    public class ApiResponse
     {
         public bool Success { get; set; }
-        public T Data { get; set; }
+        public string Message { get; set; }
         public List<NotificationDto> Notifications { get; set; }
 
         public ApiResponse()
@@ -21,30 +18,59 @@ namespace ApostasApp.Core.Application.Models
             Notifications = new List<NotificationDto>();
         }
 
-        // Construtores para facilitar a criação de respostas
-        public ApiResponse(bool success, T data, List<NotificationDto> notifications = null)
+        public ApiResponse(bool success, List<NotificationDto> notifications = null)
         {
             Success = success;
-            Data = data;
+            Message = success ? "Operação realizada com sucesso." : "Ocorreu um erro.";
             Notifications = notifications ?? new List<NotificationDto>();
+        }
+
+        public ApiResponse(bool success, string message, List<NotificationDto> notifications = null)
+        {
+            Success = success;
+            Message = message;
+            Notifications = notifications ?? new List<NotificationDto>();
+        }
+
+        // <<-- MÉTODOS ESTÁTICOS CreateSuccess e CreateError (NÃO GENÉRICOS) -->>
+        public static ApiResponse CreateSuccess(string message = "Operação realizada com sucesso.", List<NotificationDto> notifications = null)
+        {
+            return new ApiResponse(true, message, notifications);
+        }
+
+        public static ApiResponse CreateError(string message = "Ocorreu um erro na operação.", List<NotificationDto> notifications = null)
+        {
+            return new ApiResponse(false, message, notifications);
+        }
+
+        // <<-- MÉTODOS ESTÁTICOS CreateSuccess e CreateError (GENÉRICOS) -->>
+        public static ApiResponse<T> CreateSuccess<T>(T data, string message = "Operação realizada com sucesso.", List<NotificationDto> notifications = null)
+        {
+            return new ApiResponse<T>(true, message, data, notifications);
+        }
+
+        public static ApiResponse<T> CreateError<T>(string message = "Ocorreu um erro na operação.", List<NotificationDto> notifications = null)
+        {
+            return new ApiResponse<T>(false, message, default(T), notifications);
         }
     }
 
-    /// <summary>
-    /// Versão não genérica para respostas que não retornam dados específicos.
-    /// </summary>
-    public class ApiResponse : ApiResponse<object>
+    public class ApiResponse<T> : ApiResponse
     {
+        public T Data { get; set; }
+
         public ApiResponse() : base() { }
 
-        public ApiResponse(bool success, string message = null, List<NotificationDto> notifications = null)
-            : base(success, null, notifications)
+        public ApiResponse(bool success, string message, T data, List<NotificationDto> notifications = null)
+            : base(success, message, notifications)
         {
-            // Você pode adicionar uma notificação de mensagem principal aqui se desejar
-            if (!string.IsNullOrEmpty(message))
-            {
-                Notifications.Add(new NotificationDto { Tipo = success ? "Sucesso" : "Erro", Mensagem = message });
-            }
+            Data = data;
+        }
+
+        public ApiResponse(bool success, T data, List<NotificationDto> notifications = null)
+            : base(success, notifications)
+        {
+            Data = data;
         }
     }
 }

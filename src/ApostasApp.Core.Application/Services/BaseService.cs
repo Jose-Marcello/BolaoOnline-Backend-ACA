@@ -1,16 +1,15 @@
-﻿// Exemplo: ApostasApp.Core.Application.Services.Base\BaseService.cs
-using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+﻿// Localização: ApostasApp.Core.Application.Services.Base/BaseService.cs
+
 using ApostasApp.Core.Domain.Interfaces;
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (entidade de domínio)
-using ApostasApp.Core.Application.Services.Interfaces; // Para INotifiableService
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Notificacoes;
 using System.Collections.Generic;
-using System.Linq; // Para .ToList() e .Select()
-using System.Threading.Tasks; // Para Task
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Application.Services.Base
 {
-    // <<-- CORRIGIDO: BaseService agora implementa INotifiableService -->>
-    public abstract class BaseService : INotifiableService
+    public abstract class BaseService
     {
         private readonly INotificador _notificador;
         private readonly IUnitOfWork _uow;
@@ -21,38 +20,27 @@ namespace ApostasApp.Core.Application.Services.Base
             _uow = uow;
         }
 
-        protected void Notificar(string tipo, string mensagem, string codigo = null, string nomeCampo = null)
+        // Métodos protegidos para notificação, acessíveis por classes filhas
+        protected void Notificar(NotificationDto notification)
         {
-            _notificador.Handle(new Notificacao(codigo, tipo, mensagem, nomeCampo));
+            _notificador.Handle(notification);
         }
 
-        protected void Notificar(Notificacao notificacao) // Sobrecarga para Notificacao de domínio
+        protected void Notificar(string tipo, string mensagem)
         {
-            _notificador.Handle(notificacao);
+            _notificador.Handle(new NotificationDto { Tipo = tipo, Mensagem = mensagem });
         }
 
-        // <<-- CORRIGIDO: Métodos da interface agora são públicos -->>
-        public bool TemNotificacao()
+        protected IEnumerable<NotificationDto> ObterNotificacoesParaResposta()
         {
-            return _notificador.TemNotificacao();
+            return _notificador.ObterNotificacoes();
         }
 
-        // <<-- CORRIGIDO: Métodos da interface agora são públicos -->>
-        public IEnumerable<NotificationDto> ObterNotificacoesParaResposta()
-        {
-            return _notificador.ObterNotificacoes()
-                               .Select(n => new NotificationDto(n.Codigo, n.Tipo, n.Mensagem, n.NomeCampo))
-                               .ToList();
-        }
-
+        // Método protegido para commit da Unit of Work
         protected async Task<bool> CommitAsync()
         {
             if (_notificador.TemNotificacao()) return false;
-
-            if (await _uow.CommitAsync()) return true;
-
-            _notificador.Handle(new Notificacao("ERRO_PERSISTENCIA", "Erro", "Não foi possível persistir os dados."));
-            return false;
+            return await _uow.CommitAsync();
         }
     }
 }

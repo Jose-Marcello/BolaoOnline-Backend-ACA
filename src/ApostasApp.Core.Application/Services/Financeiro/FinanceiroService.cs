@@ -1,14 +1,20 @@
-﻿// ApostasApp.Core.Application.Services.Financeiro/FinanceiroService.cs
+﻿// Localização: ApostasApp.Core.Application.Services.Financeiro/FinanceiroService.cs
+
 using ApostasApp.Core.Application.DTOs.Financeiro;
-using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces;
-using ApostasApp.Core.Domain.Interfaces.Apostadores; // Usando IApostadorRepository
-using ApostasApp.Core.Domain.Interfaces.Financeiro; // Usando ISaldoRepository, ITransacaoFinanceiraRepository
+using ApostasApp.Core.Domain.Interfaces.Apostadores;
+using ApostasApp.Core.Domain.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Financeiro;
-using AutoMapper; // Adicionado para IMapper
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para NotificationDto
+using AutoMapper;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Application.Services.Financeiro
 {
@@ -16,21 +22,21 @@ namespace ApostasApp.Core.Application.Services.Financeiro
     {
         private readonly ISaldoRepository _saldoRepository;
         private readonly ITransacaoFinanceiraRepository _transacaoFinanceiraRepository;
-        private readonly IApostadorRepository _apostadorRepository; // Mantido do seu original
-        private readonly IMapper _mapper; // Adicionado para mapeamento de DTOs
+        private readonly IApostadorRepository _apostadorRepository;
+        private readonly IMapper _mapper;
 
         public FinanceiroService(
             ISaldoRepository saldoRepository,
             ITransacaoFinanceiraRepository transacaoFinanceiraRepository,
-            IApostadorRepository apostadorRepository, // Injetado
+            IApostadorRepository apostadorRepository,
             IUnitOfWork uow,
             INotificador notificador,
-            IMapper mapper) : base(notificador, uow) // Passa notificador e uow para a BaseService
+            IMapper mapper) : base(notificador, uow)
         {
             _saldoRepository = saldoRepository;
             _transacaoFinanceiraRepository = transacaoFinanceiraRepository;
-            _apostadorRepository = apostadorRepository; // Atribuído
-            _mapper = mapper; // Atribuído
+            _apostadorRepository = apostadorRepository;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -40,26 +46,24 @@ namespace ApostasApp.Core.Application.Services.Financeiro
         /// <returns>Um ApiResponse com o DTO do saldo atual.</returns>
         public async Task<ApiResponse<SaldoDto>> ObterSaldoAtualAsync(Guid apostadorId)
         {
-            var apiResponse = new ApiResponse<SaldoDto>(false, null);
+            var apiResponse = new ApiResponse<SaldoDto>(); // Instancia o ApiResponse<T>
             var saldo = await _saldoRepository.ObterSaldoPorApostadorId(apostadorId);
 
             if (saldo == null)
             {
-                Notificar("SALDO_NAO_ENCONTRADO", "Alerta", "Apostador não possui saldo registrado. Saldo inicializado como zero.");
-                apiResponse.Success = true; // Considera sucesso, pois o saldo é "zero" e não um erro de sistema
-                apiResponse.Data = new SaldoDto { ApostadorId = apostadorId, Valor = 0, DataUltimaAtualizacao = DateTime.Now };
+                Notificar("Alerta", "Apostador não possui saldo registrado. Saldo inicializado como zero.");
+                apiResponse.Success = false;
+                apiResponse.Message = "Apostador não possui saldo registrado. Saldo inicializado como zero.";
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = default(SaldoDto); // Define o valor padrão para SaldoDto
             }
             else
             {
                 apiResponse.Success = true;
-                apiResponse.Data = new SaldoDto
-                {
-                    ApostadorId = saldo.ApostadorId,
-                    Valor = saldo.Valor,
-                    DataUltimaAtualizacao = saldo.DataUltimaAtualizacao
-                };
+                apiResponse.Message = "Saldo obtido com sucesso.";
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = _mapper.Map<SaldoDto>(saldo);
             }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList(); // Inclui notificações
             return apiResponse;
         }
 
@@ -73,12 +77,15 @@ namespace ApostasApp.Core.Application.Services.Financeiro
         /// <returns>Um ApiResponse indicando o sucesso do débito.</returns>
         public async Task<ApiResponse<bool>> DebitarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao)
         {
-            var apiResponse = new ApiResponse<bool>(false, false);
+            var apiResponse = new ApiResponse<bool>(); // Instancia o ApiResponse<bool>
 
             if (valor <= 0)
             {
-                Notificar("VALOR_DEBITO_INVALIDO", "Erro", "O valor do débito deve ser maior que zero.");
+                Notificar("Erro", "O valor do débito deve ser maior que zero.");
+                apiResponse.Success = false;
+                apiResponse.Message = "O valor do débito deve ser maior que zero.";
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = false;
                 return apiResponse;
             }
 
@@ -86,8 +93,11 @@ namespace ApostasApp.Core.Application.Services.Financeiro
 
             if (saldo == null)
             {
-                Notificar("SALDO_INEXISTENTE_DEBITO", "Erro", "Apostador não possui saldo para debitar. Por favor, deposite um valor antes.", "Saldo");
+                Notificar("Erro", "Apostador não possui saldo para debitar. Por favor, deposite um valor antes.");
+                apiResponse.Success = false;
+                apiResponse.Message = "Apostador não possui saldo para debitar.";
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = false;
                 return apiResponse;
             }
 
@@ -95,34 +105,29 @@ namespace ApostasApp.Core.Application.Services.Financeiro
 
             if (!debitoEfetuado)
             {
-                Notificar("SALDO_INSUFICIENTE", "Alerta", "Saldo insuficiente para realizar o débito.");
+                Notificar("Alerta", "Saldo insuficiente para realizar o débito.");
+                apiResponse.Success = false;
+                apiResponse.Message = "Saldo insuficiente para realizar o débito.";
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = false;
                 return apiResponse;
             }
 
             _saldoRepository.Atualizar(saldo);
-
             var transacao = new TransacaoFinanceira(
-                apostadorId, // O construtor de TransacaoFinanceira precisa do ApostadorId
+                apostadorId,
                 tipoTransacao,
-                -valor, // Valor negativo para representar o débito
+                -valor,
                 descricao
             );
-            transacao.SaldoId = saldo.Id; // <<-- CORREÇÃO CRÍTICA: Vincula a transação ao SaldoId
-
+            transacao.SaldoId = saldo.Id;
             _transacaoFinanceiraRepository.Adicionar(transacao);
 
-            if (await CommitAsync()) // <<-- ADICIONADO: CommitAsync para persistir as alterações
-            {
-                apiResponse.Success = true;
-                apiResponse.Data = true;
-                Notificar("DEBITO_SUCESSO", "Sucesso", $"Débito de {valor:C} realizado com sucesso. Saldo atual: {saldo.Valor:C}");
-            }
-            else
-            {
-                Notificar("DEBITO_FALHA_PERSISTENCIA", "Erro", "Não foi possível persistir o débito.");
-            }
+            Notificar("Sucesso", "Débito e transação preparados para persistência.");
+            apiResponse.Success = true;
+            apiResponse.Message = "Débito e transação preparados para persistência.";
             apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            apiResponse.Data = true;
             return apiResponse;
         }
 
@@ -136,12 +141,15 @@ namespace ApostasApp.Core.Application.Services.Financeiro
         /// <returns>Um ApiResponse indicando o sucesso do crédito.</returns>
         public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao)
         {
-            var apiResponse = new ApiResponse<bool>(false, false);
+            var apiResponse = new ApiResponse<bool>(); // Instancia o ApiResponse<bool>
 
             if (valor <= 0)
             {
-                Notificar("VALOR_CREDITO_INVALIDO", "Erro", "O valor do crédito deve ser maior que zero.");
+                Notificar("Erro", "O valor do crédito deve ser maior que zero.");
+                apiResponse.Success = false;
+                apiResponse.Message = "O valor do crédito deve ser maior que zero.";
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                apiResponse.Data = false;
                 return apiResponse;
             }
 
@@ -149,57 +157,29 @@ namespace ApostasApp.Core.Application.Services.Financeiro
 
             if (saldo == null)
             {
-                // Se não houver saldo, cria um novo saldo antes de adicionar
-                saldo = new Saldo(apostadorId, 0); // Cria um novo saldo com valor inicial zero
-                _saldoRepository.Adicionar(saldo); // Adiciona o novo saldo ao repositório
+                saldo = new Saldo(apostadorId, 0);
+                _saldoRepository.Adicionar(saldo);
             }
 
             saldo.Adicionar(valor);
             _saldoRepository.Atualizar(saldo);
 
             var transacao = new TransacaoFinanceira(
-                apostadorId, // O construtor de TransacaoFinanceira precisa do ApostadorId
+                apostadorId,
                 tipoTransacao,
                 valor,
                 descricao
             );
-            transacao.SaldoId = saldo.Id; // <<-- CORREÇÃO CRÍTICA: Vincula a transação ao SaldoId
+            transacao.SaldoId = saldo.Id;
 
             _transacaoFinanceiraRepository.Adicionar(transacao);
 
-            if (await CommitAsync()) // <<-- ADICIONADO: CommitAsync para persistir as alterações
-            {
-                apiResponse.Success = true;
-                apiResponse.Data = true;
-                Notificar("CREDITO_SUCESSO", "Sucesso", $"Crédito de {valor:C} realizado com sucesso. Saldo atual: {saldo.Valor:C}");
-            }
-            else
-            {
-                Notificar("CREDITO_FALHA_PERSISTENCIA", "Erro", "Não foi possível persistir o crédito.");
-            }
+            Notificar("Sucesso", "Crédito e transação preparados para persistência.");
+            apiResponse.Success = true;
+            apiResponse.Message = "Crédito e transação preparados para persistência.";
             apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            apiResponse.Data = true;
             return apiResponse;
         }
-
-        // Se você precisa do ObterExtratoFinanceiro, ele deve ser adicionado aqui.
-        // Ele deve retornar ApiResponse<IEnumerable<TransacaoFinanceiraDto>>
-        // public async Task<ApiResponse<IEnumerable<TransacaoFinanceiraDto>>> ObterExtratoFinanceiro(Guid apostadorId)
-        // {
-        //     var apiResponse = new ApiResponse<IEnumerable<TransacaoFinanceiraDto>>(false, null);
-        //     var extrato = await _transacaoFinanceiraRepository.ObterExtratoPorApostadorIdAsync(apostadorId);
-        //     if (extrato == null || !extrato.Any())
-        //     {
-        //         Notificar("EXTRATO_NAO_ENCONTRADO", "Alerta", "Nenhuma transação encontrada para este apostador.");
-        //         apiResponse.Success = true; // Considera sucesso, apenas sem dados
-        //         apiResponse.Data = Enumerable.Empty<TransacaoFinanceiraDto>();
-        //     }
-        //     else
-        //     {
-        //         apiResponse.Success = true;
-        //         apiResponse.Data = _mapper.Map<IEnumerable<TransacaoFinanceiraDto>>(extrato);
-        //     }
-        //     apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-        //     return apiResponse;
-        // }
     }
 }

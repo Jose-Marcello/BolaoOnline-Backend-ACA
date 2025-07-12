@@ -23,8 +23,17 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     {
         // _logger = null; // Cuidado com NullReferenceException se usar _logger
     }
+       
 
-    public async Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
+public async Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
+{
+        return await Db.ApostasRodada // Agora busca na coleção de ApostaRodada
+                       .Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId && ar.RodadaId == rodadaId)
+                       .FirstOrDefaultAsync();
+
+}
+
+public async Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
     {
         return await Db.ApostasRodada // Agora busca na coleção de ApostaRodada
                        .Include(ar => ar.Palpites) // Se precisar dos palpites para algo mais (não para o status de envio aqui)

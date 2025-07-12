@@ -1,10 +1,10 @@
 // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
 using Microsoft.AspNetCore.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Models.Notificacoes;
-using ApostasApp.Core.Domain.Models; // Se a classe Usuario estiver aqui, caso contrário, remova ou ajuste.
-using ApostasApp.Core.Domain.Interfaces.Identity;
+using ApostasApp.Core.Domain.Models.Notificacoes; // Usar NotificationDto
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
+using ApostasApp.Core.Domain.Interfaces.Identity;
+using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,10 +13,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System; // Para DateTime, Guid, etc.
-using System.Collections.Generic; // Para List
-using System.Linq; // Para Select, Any
-using System.Threading.Tasks; // Para Task
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Infrastructure.Identity
 {
@@ -45,8 +45,6 @@ namespace ApostasApp.Core.Infrastructure.Identity
             _logger = logger;
         }
 
-        // Implementação de IIdentityService
-
         public async Task<Usuario> GetLoggedInUserAsync()
         {
             var userPrincipal = _httpContextAccessor.HttpContext?.User;
@@ -66,7 +64,8 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
             if (!result.Succeeded)
             {
-                var notifications = result.Errors.Select(error => new Notificacao("Erro", error.Description, error.Code)).ToList();
+                // Mapeia IdentityError para NotificationDto
+                var notifications = result.Errors.Select(error => new NotificationDto { Tipo = "Erro", Mensagem = error.Description, Codigo = error.Code }).ToList();
                 foreach (var notif in notifications)
                 {
                     _notificador.Handle(notif);
@@ -80,7 +79,8 @@ namespace ApostasApp.Core.Infrastructure.Identity
         {
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
             var confirmationLink = $"{scheme}://{host}/Account/ConfirmEmail?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            _notificador.Handle(new Notificacao("Sucesso", $"Link de confirmação de e-mail gerado para {user.Email}: {confirmationLink}"));
+            // Passa NotificationDto para o notificador
+            _notificador.Handle(new NotificationDto { Tipo = "Sucesso", Mensagem = $"Link de confirmação de e-mail gerado para {user.Email}: {confirmationLink}" });
             _logger.LogInformation($"Link de confirmação de e-mail para {user.Email}: {confirmationLink}");
             return true;
         }
@@ -106,46 +106,52 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
             if (user == null)
             {
-                _notificador.Handle(new Notificacao("Erro", "Usuário ou senha inválidos."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = "Usuário ou senha inválidos." });
                 _logger.LogWarning($"Login falhou para '{email}': Usuário não encontrado.");
-                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Usuário ou senha inválidos.") });
+                return LoginResult.Failed(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Usuário ou senha inválidos." } });
             }
 
             if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
             {
-                _notificador.Handle(new Notificacao("Erro", "Seu e-mail ainda não foi confirmado."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = "Seu e-mail ainda não foi confirmado." });
                 _logger.LogWarning($"Login falhou para '{email}': E-mail não confirmado.");
-                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Seu e-mail ainda não foi confirmado.") });
+                return LoginResult.Failed(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Seu e-mail ainda não foi confirmado." } });
             }
 
             var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: true);
 
             if (result.RequiresTwoFactor)
             {
-                _notificador.Handle(new Notificacao("Alerta", "Autenticação de dois fatores necessária."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Alerta", Mensagem = "Autenticação de dois fatores necessária." });
                 _logger.LogInformation($"Login para '{email}' requer 2FA.");
                 return LoginResult.TwoFactorRequired();
             }
 
             if (result.IsLockedOut)
             {
-                _notificador.Handle(new Notificacao("Erro", "A conta está bloqueada devido a várias tentativas de login inválidas. Por favor, tente novamente mais tarde."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = "A conta está bloqueada devido a várias tentativas de login inválidas. Por favor, tente novamente mais tarde." });
                 _logger.LogWarning($"Login falhou para '{email}': Conta bloqueada.");
                 return LoginResult.LockedOut();
             }
 
             if (result.IsNotAllowed)
             {
-                _notificador.Handle(new Notificacao("Erro", "Você não tem permissão para fazer login."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = "Você não tem permissão para fazer login." });
                 _logger.LogWarning($"Login falhou para '{email}': Não permitido.");
-                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Você não tem permissão para fazer login.") });
+                return LoginResult.Failed(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Você não tem permissão para fazer login." } });
             }
 
             if (!result.Succeeded)
             {
-                _notificador.Handle(new Notificacao("Erro", "Usuário ou senha inválidos."));
+                // Passa NotificationDto para o notificador
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = "Usuário ou senha inválidos." });
                 _logger.LogWarning($"Login falhou para '{email}': Credenciais inválidas (SignInManager result.Succeeded é false).");
-                return LoginResult.Failed(new List<Notificacao> { new Notificacao("Erro", "Usuário ou senha inválidos.") });
+                return LoginResult.Failed(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Usuário ou senha inválidos." } });
             }
 
             // O LOGIN FOI BEM-SUCEDIDO AQUI!
@@ -214,7 +220,6 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return LoginResult.Succeeded(encodedToken, refreshToken, tokenDescriptor.Expires.Value);
         }
 
-        // <<-- ADICIONADO: Implementação do método LogoutAsync -->>
         public async Task LogoutAsync()
         {
             await _signInManager.SignOutAsync();
@@ -243,7 +248,8 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
             var code = await _userManager.GeneratePasswordResetTokenAsync(user);
             var resetLink = $"{scheme}://{host}/Account/ResetPassword?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            _notificador.Handle(new Notificacao("Sucesso", $"Link de redefinição de senha gerado para {user.Email}: {resetLink}"));
+            // Passa NotificationDto para o notificador
+            _notificador.Handle(new NotificationDto { Tipo = "Sucesso", Mensagem = $"Link de redefinição de senha gerado para {user.Email}: {resetLink}" });
             _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
             return true;
         }
@@ -255,7 +261,8 @@ namespace ApostasApp.Core.Infrastructure.Identity
             {
                 foreach (var error in result.Errors)
                 {
-                    _notificador.Handle(new Notificacao("Erro", error.Description, error.Code));
+                    // Mapeia IdentityError para NotificationDto
+                    _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = error.Description, Codigo = error.Code });
                 }
                 return false;
             }
@@ -267,11 +274,13 @@ namespace ApostasApp.Core.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado para geração de token.") });
+                // Retorna AuthResult.Failure com NotificationDto
+                return AuthResult.Failure(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Usuário não encontrado para geração de token." } });
             }
 
             var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
-            _notificador.Handle(new Notificacao("Sucesso", $"Token de alteração de e-mail gerado para {newEmail}: {token}"));
+            // Passa NotificationDto para o notificador
+            _notificador.Handle(new NotificationDto { Tipo = "Sucesso", Mensagem = $"Token de alteração de e-mail gerado para {newEmail}: {token}" });
             _logger.LogInformation($"Token de alteração de e-mail para {newEmail}: {token}");
 
             return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
@@ -282,13 +291,15 @@ namespace ApostasApp.Core.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return AuthResult.Failure(new List<Notificacao> { new Notificacao("Erro", "Usuário não encontrado para alteração de e-mail.") });
+                // Retorna AuthResult.Failure com NotificationDto
+                return AuthResult.Failure(new List<NotificationDto> { new NotificationDto { Tipo = "Erro", Mensagem = "Usuário não encontrado para alteração de e-mail." } });
             }
 
             var result = await _userManager.ChangeEmailAsync(user, newEmail, code);
             if (!result.Succeeded)
             {
-                var notifications = result.Errors.Select(e => new Notificacao("Erro", e.Description, e.Code)).ToList();
+                // Mapeia IdentityError para NotificationDto
+                var notifications = result.Errors.Select(e => new NotificationDto { Tipo = "Erro", Mensagem = e.Description, Codigo = e.Code }).ToList();
                 foreach (var notif in notifications)
                 {
                     _notificador.Handle(notif);
@@ -315,7 +326,8 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
             foreach (var error in result.Errors)
             {
-                _notificador.Handle(new Notificacao("Erro", error.Description, error.Code));
+                // Mapeia IdentityError para NotificationDto
+                _notificador.Handle(new NotificationDto { Tipo = "Erro", Mensagem = error.Description, Codigo = error.Code });
             }
             return false;
         }

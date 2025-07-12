@@ -1,7 +1,7 @@
-﻿// Exemplo: ApostasApp.Core.Domain.Interfaces.Identity\IIdentityService.cs
-using ApostasApp.Core.Domain.Models; // Para LoginResult e AuthResult
+﻿// Localização: ApostasApp.Core.Domain.Interfaces.Identity\IIdentityService.cs
+using ApostasApp.Core.Domain.Models.Identity; // Para LoginResult e AuthResult
 using ApostasApp.Core.Domain.Models.Usuarios; // Para Usuario
-using System.Security.Claims; // Para AuthResult (se AuthResult usa Claims)
+using System.Security.Claims; // Para AuthResult (se AuthResult usa Claims, embora não diretamente na interface)
 using System.Threading.Tasks;
 using System; // Para DateTime (se usado em LoginResult/AuthResult)
 using System.Collections.Generic; // Para List (se usado em LoginResult/AuthResult)
@@ -33,7 +33,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
         Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail); // Retorna AuthResult
         Task<AuthResult> ChangeEmailAsync(string userId, string newEmail, string code); // Retorna AuthResult
 
-        // <<-- ADICIONADO: Assinatura do método ChangePasswordAsync -->>
+        // Assinatura do método ChangePasswordAsync
         Task<bool> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword);
     }
 }

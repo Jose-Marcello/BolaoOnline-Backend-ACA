@@ -2,19 +2,19 @@
 // DTO específico para a listagem de campeonatos.
 // Localização: ApostasApp.Core.Application.DTOs.Campeonatos
 
-using System;
-using ApostasApp.Core.Domain.Models.Campeonatos; // Para TiposCampeonato
+// Não precisamos mais do using para TiposCampeonato se o Tipo for string no DTO
+// using ApostasApp.Core.Domain.Models.Campeonatos; // Apenas se o DTO ainda usar o enum
 
 namespace ApostasApp.Core.Application.DTOs.Campeonatos
 {
     public class CampeonatoListItemDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } // <<-- CORRIGIDO: ID como string -->>
         public string Nome { get; set; }
-        public DateTime DataInic { get; set; } // Note 'DataInic' (original da entidade)
+        public DateTime DataInic { get; set; }
         public DateTime DataFim { get; set; }
         public int NumRodadas { get; set; }
-        public TiposCampeonato Tipo { get; set; } // O enum direto aqui, será mapeado para string depois
+        public string Tipo { get; set; } // <<-- CORRIGIDO: Enum mapeado para string -->>
         public bool Ativo { get; set; }
         public decimal? CustoAdesao { get; set; }
     }

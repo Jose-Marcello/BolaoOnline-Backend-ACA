@@ -28,10 +28,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("varchar(250)");
-
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
                         .HasColumnType("varchar(250)");
@@ -62,6 +58,9 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
                     b.Property<decimal?>("CustoPagoApostaRodada")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DataHoraSubmissao")
                         .HasColumnType("datetime2");
@@ -690,8 +689,8 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", b =>
                 {
-                    b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "ApostadorCampeonato")
-                        .WithMany()
+                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", "ApostadorCampeonato")
+                        .WithMany("ApostasRodada")
                         .HasForeignKey("ApostadorCampeonatoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -942,6 +941,8 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", b =>
                 {
+                    b.Navigation("ApostasRodada");
+
                     b.Navigation("RankingRodadas");
                 });
 

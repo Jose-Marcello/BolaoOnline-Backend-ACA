@@ -2,6 +2,7 @@
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Base; // Para a classe Entity
 using ApostasApp.Core.Domain.Models.RankingRodadas;
+using ApostasApp.Core.Domain.Models.Apostas; // <<-- ADICIONADO: Para ApostaRodada
 using System;
 using System.Collections.Generic;
 
@@ -15,6 +16,7 @@ namespace ApostasApp.Core.Domain.Models.Campeonatos
             // para recriar entidades a partir do banco de dados.
             // Coleções devem ser inicializadas para evitar NullReferenceException.
             RankingRodadas = new List<RankingRodada>();
+            ApostasRodada = new List<ApostaRodada>(); // <<-- ADICIONADO: Inicializa a coleção
         }
 
         // NOVO Construtor para criar uma adesão
@@ -45,5 +47,7 @@ namespace ApostasApp.Core.Domain.Models.Campeonatos
         public bool CustoAdesaoPago { get; set; } // Indica se o custo de adesão ao campeonato foi pago (true/false)
 
         public ICollection<RankingRodada> RankingRodadas { get; set; } // Relação para o ranking por rodada
+        public ICollection<ApostaRodada> ApostasRodada { get; set; } // <<-- ADICIONADO: Coleção de ApostasRodada
     }
 }
+

@@ -17,8 +17,7 @@ namespace ApostasApp.Core.Domain.Models.Apostadores
 
         public Saldo Saldo { get; set; } // Propriedade de navegação para Saldo
 
-        public string NomeCompleto { get; set; }
-        public string Email { get; set; }
+        public string NomeCompleto { get; set; }       
        
         public StatusApostador Status { get; set; } = StatusApostador.AguardandoAssociacao;
 

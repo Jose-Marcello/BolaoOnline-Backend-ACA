@@ -10,5 +10,8 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
 
         // Novo método para remover todos os palpites associados a uma rodada
         Task<bool> RemoverTodosPalpitesDaRodada(Guid rodadaId);
+       
+        Task AdicionarRange(IEnumerable<Palpite> entities); // <<-- ADICIONE ESTA LINHA SE NÃO TIVER -->>
+       
     }
 }

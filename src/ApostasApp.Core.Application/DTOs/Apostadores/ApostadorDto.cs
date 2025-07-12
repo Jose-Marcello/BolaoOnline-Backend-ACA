@@ -2,6 +2,7 @@
 // Definição do ApostadorDto.
 // Localização: ApostasApp.Core.Application.DTOs.Apostadores
 
+using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos;
 using ApostasApp.Core.Application.DTOs.Financeiro; // Para SaldoDto
 using System; // Necessário para Guid
 
@@ -16,10 +17,12 @@ namespace ApostasApp.Core.Application.DTOs.Apostadores
         public string Id { get; set; } // ID da entidade Apostador (Guid como string)
         public string UsuarioId { get; set; } // ID do usuário do Identity (string)
         public string Apelido { get; set; } // Apelido do Usuário (vindo da entidade Usuario)
-        public string Email { get; set; }    // Email do Usuário (vindo da entidade Usuario)
+        public string Email { get; set; }    // Email do Usuário (vindo da entidade Usuario, mapeado do UserName/Email do IdentityUser)
 
         public string Status { get; set; } // Status do Apostador (ex: "Ativo", "Inativo")
 
         public SaldoDto Saldo { get; set; } // O saldo é parte do ApostadorDto
+
+        public ICollection<ApostadorCampeonatoDto> CampeonatosAderidos { get; set; }
     }
 }

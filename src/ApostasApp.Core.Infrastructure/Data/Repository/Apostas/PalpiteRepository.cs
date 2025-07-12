@@ -25,15 +25,16 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Apostas
         {
             return await DbSet.AsNoTracking()
                               .Include(p => p.Jogo) // Incluir dados do Jogo
-                                  .ThenInclude(j => j.EquipeCasa) // j.EquipeCasa já é a entidade Equipe.
-                                      .ThenInclude(ec => ec.Equipe) // Remover esta linha se EquipeCasa já é a entidade Equipe. Manter se EquipeCasa é uma "join entity".
+                                  .ThenInclude(j => j.EquipeCasa) // EquipeCampeonato
+                                      .ThenInclude(ec => ec.Equipe) // Equipe (nome, escudo, sigla)
                               .Include(p => p.Jogo)
-                                  .ThenInclude(j => j.EquipeVisitante) // j.EquipeVisitante já é a entidade Equipe.
-                                      .ThenInclude(ev => ev.Equipe) // Remover esta linha se EquipeVisitante já é a entidade Equipe. Manter se EquipeVisitante é uma "join entity".
-                                                                    // CORREÇÃO AQUI: Navega de Palpite -> ApostaRodada -> Apostador (que é o ApostadorCampeonato na ApostaRodada) -> Usuario
+                                  .ThenInclude(j => j.EquipeVisitante) // EquipeCampeonato
+                                      .ThenInclude(ev => ev.Equipe) // Equipe (nome, escudo, sigla)
+                                                                    // <<-- CORREÇÃO AQUI: Navega de Palpite -> ApostaRodada -> ApostadorCampeonato (a adesão) -> Apostador (o apostador real) -> Usuario
                               .Include(p => p.ApostaRodada) // 'p' é Palpite, tem ApostaRodada
-                                  .ThenInclude(ar => ar.ApostadorCampeonato) // 'ar' é ApostaRodada, tem ApostadorCampeonato (que é do TIPO Apostador)
-                                      .ThenInclude(apostador => apostador.Usuario) // AGORA CORRETO: 'apostador' é do tipo Apostador, que tem a propriedade Usuario.
+                                  .ThenInclude(ar => ar.ApostadorCampeonato) // 'ar' é ApostaRodada, tem ApostadorCampeonato (a adesão)
+                                      .ThenInclude(ac => ac.Apostador) // 'ac' é ApostadorCampeonato, tem Apostador (o apostador real)
+                                          .ThenInclude(apostador => apostador.Usuario) // 'apostador' é do tipo Apostador, que tem a propriedade Usuario.
                               .Where(p => p.Jogo.RodadaId == rodadaId)
                               .ToListAsync();
         }
@@ -57,6 +58,12 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Apostas
                 _logger.LogError(ex, "Erro ao remover palpites da rodada {RodadaId}", rodadaId);
                 return false;
             }
+
+        }
+
+        public async Task AdicionarRange(IEnumerable<Palpite> entities)
+        {
+            await DbSet.AddRangeAsync(entities);
         }
     }
 }
