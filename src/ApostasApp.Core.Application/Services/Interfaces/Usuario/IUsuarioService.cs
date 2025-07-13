@@ -28,7 +28,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Usuarios
         Task<string> GetLoggedInUserId();
         Task<bool> RegistrarNovoUsuario(string email, string password, string apelido, string cpf, string celular, string scheme, string host);
         Task<UsuarioLoginResult> Login(string email, string password, bool rememberMe);
-        Task Logout();
+        //Task Logout();
         Task<bool> RealizarLogin(string email, string password, bool isPersistent, bool lockoutOnFailure);
         Task RealizarLogout();
         Task<ApostadorDto> GetUsuarioProfileAsync(string userId);

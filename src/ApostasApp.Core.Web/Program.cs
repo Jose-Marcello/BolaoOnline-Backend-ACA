@@ -8,7 +8,6 @@ using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
 using ApostasApp.Web.Configurations;
-using AutoMapper; // Necessário para AutoMapper
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http; // Necessário para IHttpContextAccessor
 using Microsoft.AspNetCore.Identity;
@@ -53,7 +52,8 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     options.Lockout.AllowedForNewUsers = true;
     options.User.RequireUniqueEmail = true;
 })
-.AddEntityFrameworkStores<IdentityDbContext>()
+//.AddEntityFrameworkStores<IdentityDbContext>()
+.AddEntityFrameworkStores<MeuDbContext>() // <<-- MUDANÇA CRÍTICA AQUI!
 .AddDefaultTokenProviders();
 
 // ===================================================================================================

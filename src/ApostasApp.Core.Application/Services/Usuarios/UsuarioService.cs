@@ -14,7 +14,7 @@ using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Financeiro;
-using ApostasApp.Core.Domain.Models.Identity; // <<-- MUITO IMPORTANTE: ESTE USING DEVE ESTAR AQUI! -->>
+using ApostasApp.Core.Domain.Models.Identity; // MUITO IMPORTANTE: ESTE USING DEVE ESTAR AQUI!
 using ApostasApp.Core.Domain.Models.Notificacoes;
 using ApostasApp.Core.Domain.Models.Usuarios;
 using AutoMapper;
@@ -25,7 +25,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using System.Linq; // Adicionado para Enumerable.Empty
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,6 +67,9 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             var apiResponse = new ApiResponse<LoginResponseDto>();
             var responseData = new LoginResponseDto { LoginSucesso = false };
 
+            // Inicializa a lista de notificações da resposta da API para garantir que nunca seja null
+            apiResponse.Notifications = new List<NotificationDto>();
+
             try
             {
                 var loginResult = await _identityService.LoginAsync(request.Email, request.Password, request.IsPersistent);
@@ -91,16 +94,10 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                     responseData.LoginSucesso = false;
                 }
 
-                if (loginResult.Notifications != null && loginResult.Notifications.Any())
-                {
-                    responseData.Erros = loginResult.Notifications
-                        .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
-                        .ToList();
-                }
-                else
-                {
-                    responseData.Erros = new List<NotificationDto>();
-                }
+                // Mapeia as notificações do IdentityService para NotificationDto, garantindo que nunca seja null
+                responseData.Erros = loginResult.Notifications?
+                    .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
+                    .ToList() ?? new List<NotificationDto>();
 
                 if (responseData.LoginSucesso)
                 {
@@ -121,9 +118,32 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 _logger.LogError(ex, $"EXCEÇÃO NO LOGIN (LoginAsync Service): {ex.Message}");
             }
 
-            apiResponse.Notifications = ObterNotificacoesParaResposta().Concat(responseData.Erros).ToList();
+            // <<-- CORREÇÃO PRINCIPAL AQUI (LINHA 127 APROXIMADAMENTE) -->>
+            // Garante que ObterNotificacoesParaResposta() e responseData.Erros nunca sejam null antes de AddRange
+            // Usa Enumerable.Empty<NotificationDto>() para garantir uma coleção vazia se for null
+            var notificationsFromService = ObterNotificacoesParaResposta();
+            if (notificationsFromService != null)
+            {
+                apiResponse.Notifications.AddRange(notificationsFromService);
+            }
+            else
+            {
+                // Logar para entender por que ObterNotificacoesParaResposta() está retornando null
+                _logger.LogError("ObterNotificacoesParaResposta() retornou null inesperadamente.");
+            }
 
-            if (!apiResponse.Success && (apiResponse.Notifications == null || !apiResponse.Notifications.Any()))
+            if (responseData.Erros != null)
+            {
+                apiResponse.Notifications.AddRange(responseData.Erros);
+            }
+            else
+            {
+                // Isso não deveria acontecer com a lógica atual, mas é uma proteção extra
+                _logger.LogError("responseData.Erros é null inesperadamente antes de AddRange.");
+            }
+            // <<-- FIM DA CORREÇÃO -->>
+
+            if (!apiResponse.Success && !apiResponse.Notifications.Any())
             {
                 apiResponse.Notifications.Add(new NotificationDto { Codigo = "GENERIC_ERROR", Tipo = "Erro", Mensagem = "Ocorreu um erro inesperado." });
             }
@@ -245,7 +265,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return apiResponse;
         }
 
-        public async Task<ApiResponse<bool>> ConfirmEmail(string userId, string code)
+        public async Task<ApiResponse<bool>> ConfirmEmail(string userId, string stringcode)
         {
             var apiResponse = new ApiResponse<bool>();
             try
@@ -258,7 +278,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                     return apiResponse;
                 }
 
-                var identityResult = await _userManager.ConfirmEmailAsync(user, code);
+                var identityResult = await _userManager.ConfirmEmailAsync(user, stringcode);
 
                 if (identityResult.Succeeded)
                 {
@@ -382,28 +402,26 @@ namespace ApostasApp.Core.Application.Services.Usuarios
 
         public async Task<ApiResponse<AuthResult>> ChangeEmail(string userId, string newEmail)
         {
-            var apiResponse = new ApiResponse<AuthResult>(); // Instanciação direta
+            var apiResponse = new ApiResponse<AuthResult>();
             try
             {
                 var result = await _identityService.GenerateChangeEmailTokenAsync(userId, newEmail);
                 if (result.Success)
                 {
                     apiResponse.Success = true;
-                    apiResponse.Data = result; // 'result' já é AuthResult, atribuindo diretamente
+                    apiResponse.Data = result;
                     Notificar("Sucesso", "E-mail de confirmação de alteração enviado para o novo endereço.");
                 }
                 else
                 {
-                    // Propaga as notificações do IdentityService
                     apiResponse.Notifications = result.Notifications.ToList();
-                    // Se não houver notificações do IdentityService, adiciona uma genérica
                     if (!apiResponse.Notifications.Any())
                     {
                         Notificar("Erro", "Falha ao iniciar alteração de e-mail.");
                         apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                     }
                     apiResponse.Success = false;
-                    apiResponse.Data = null; // Em caso de falha, Data deve ser nula
+                    apiResponse.Data = null;
                 }
             }
             catch (Exception ex)
@@ -414,7 +432,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 apiResponse.Data = null;
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
             }
-            // Garante que as notificações do serviço também sejam incluídas
             apiResponse.Notifications = apiResponse.Notifications.Concat(ObterNotificacoesParaResposta()).ToList();
             return apiResponse;
         }
@@ -433,9 +450,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 }
                 else
                 {
-                    // Propaga as notificações do IdentityService
                     apiResponse.Notifications = result.Notifications.ToList();
-                    // Se não houver notificações do IdentityService, adiciona uma genérica
                     if (!apiResponse.Notifications.Any())
                     {
                         Notificar("Erro", "Falha ao confirmar alteração de e-mail.");
@@ -451,11 +466,24 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = false;
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
             }
-            // Garante que as notificações do serviço também sejam incluídas
             apiResponse.Notifications = apiResponse.Notifications.Concat(ObterNotificacoesParaResposta()).ToList();
             return apiResponse;
+        }
+
+        public async Task RealizarLogout()
+        {
+            try
+            {
+                await _identityService.SignOutUserAsync();
+                Notificar("Sucesso", "Logout realizado com sucesso.");
+                _logger.LogInformation("Usuário deslogado com sucesso via Logout.");
+            }
+            catch (Exception ex)
+            {
+                Notificar("Erro", $"Ocorreu um erro inesperado durante o logout: {ex.Message}");
+                _logger.LogError(ex, $"EXCEÇÃO NO LOGOUT: {ex.Message}");
+            }
         }
 
         public async Task<Usuario> GetLoggedInUser()
@@ -598,13 +626,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return usuarioLoginResultDto;
         }
 
-        public async Task Logout()
-        {
-            await _identityService.SignOutUserAsync();
-            Notificar("Sucesso", "Logout realizado com sucesso.");
-            _logger.LogInformation("Usuário deslogado com sucesso via RealizarLogout.");
-        }
-
         public async Task<bool> RealizarLogin(string email, string password, bool isPersistent, bool lockoutOnFailure)
         {
             var loginResult = await _identityService.SignInUserAsync(email, password, isPersistent, lockoutOnFailure);
@@ -632,13 +653,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 _logger.LogInformation($"Login bem-sucedido para '{email}'.");
             }
             return loginResult;
-        }
-
-        public async Task RealizarLogout()
-        {
-            await _identityService.SignOutUserAsync();
-            Notificar("Sucesso", "Logout realizado com sucesso.");
-            _logger.LogInformation("Usuário deslogado com sucesso via RealizarLogout.");
         }
 
         public async Task<ApostadorDto> GetUsuarioProfileAsync(string userId)

@@ -9,18 +9,18 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ApostasApp.Core.InfraStructure.Migrations
+namespace ApostasApp.Core.Infrastructure.Migrations
 {
     [DbContext(typeof(MeuDbContext))]
-    [Migration("20250705155024_AddDataCriacaoToApostaRodada")]
-    partial class AddDataCriacaoToApostaRodada
+    [Migration("20250713010835_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.16")
+                .HasAnnotation("ProductVersion", "8.0.18")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -30,10 +30,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("varchar(250)");
 
                     b.Property<string>("NomeCompleto")
                         .IsRequired()
@@ -696,8 +692,8 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Apostas.ApostaRodada", b =>
                 {
-                    b.HasOne("ApostasApp.Core.Domain.Models.Apostadores.Apostador", "ApostadorCampeonato")
-                        .WithMany()
+                    b.HasOne("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", "ApostadorCampeonato")
+                        .WithMany("ApostasRodada")
                         .HasForeignKey("ApostadorCampeonatoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -948,6 +944,8 @@ namespace ApostasApp.Core.InfraStructure.Migrations
 
             modelBuilder.Entity("ApostasApp.Core.Domain.Models.Campeonatos.ApostadorCampeonato", b =>
                 {
+                    b.Navigation("ApostasRodada");
+
                     b.Navigation("RankingRodadas");
                 });
 

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ApostasApp.Core.InfraStructure.Migrations
+namespace ApostasApp.Core.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -116,7 +116,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsuarioId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     NomeCompleto = table.Column<string>(type: "varchar(250)", nullable: false),
-                    Email = table.Column<string>(type: "varchar(250)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -244,8 +243,9 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Nome = table.Column<string>(type: "varchar(40)", nullable: false),
-                    Sigla = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Nome = table.Column<string>(type: "varchar(100)", nullable: false),
+                    Sigla = table.Column<string>(type: "varchar(10)", nullable: false),
+                    Escudo = table.Column<string>(type: "varchar(255)", nullable: true),
                     Tipo = table.Column<int>(type: "int", nullable: false),
                     UfId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -327,38 +327,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ApostasRodada",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostadorCampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IdentificadorAposta = table.Column<string>(type: "varchar(100)", nullable: true),
-                    DataHoraSubmissao = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EhApostaCampeonato = table.Column<bool>(type: "bit", nullable: false),
-                    EhApostaIsolada = table.Column<bool>(type: "bit", nullable: false),
-                    CustoPagoApostaRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    PontuacaoTotalRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Enviada = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ApostasRodada", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ApostasRodada_Apostadores_ApostadorCampeonatoId",
-                        column: x => x.ApostadorCampeonatoId,
-                        principalTable: "Apostadores",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ApostasRodada_Rodadas_RodadaId",
-                        column: x => x.RodadaId,
-                        principalTable: "Rodadas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "EquipesCampeonatos",
                 columns: table => new
                 {
@@ -381,6 +349,39 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         principalTable: "Equipes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ApostasRodada",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ApostadorCampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IdentificadorAposta = table.Column<string>(type: "varchar(100)", nullable: true),
+                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DataHoraSubmissao = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EhApostaCampeonato = table.Column<bool>(type: "bit", nullable: false),
+                    EhApostaIsolada = table.Column<bool>(type: "bit", nullable: false),
+                    CustoPagoApostaRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    PontuacaoTotalRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Enviada = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApostasRodada", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ApostasRodada_ApostadoresCampeonatos_ApostadorCampeonatoId",
+                        column: x => x.ApostadorCampeonatoId,
+                        principalTable: "ApostadoresCampeonatos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ApostasRodada_Rodadas_RodadaId",
+                        column: x => x.RodadaId,
+                        principalTable: "Rodadas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -407,34 +408,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         name: "FK_RankingRodadas_Rodadas_RodadaId",
                         column: x => x.RodadaId,
                         principalTable: "Rodadas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TransacoesFinanceiras",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SaldoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostaRodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Tipo = table.Column<int>(type: "int", nullable: false),
-                    DataTransacao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Descricao = table.Column<string>(type: "varchar(250)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TransacoesFinanceiras", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TransacoesFinanceiras_ApostasRodada_ApostaRodadaId",
-                        column: x => x.ApostaRodadaId,
-                        principalTable: "ApostasRodada",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_TransacoesFinanceiras_Saldos_SaldoId",
-                        column: x => x.SaldoId,
-                        principalTable: "Saldos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -474,11 +447,39 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                         column: x => x.EstadioId,
                         principalTable: "Estadios",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Jogos_Rodadas_RodadaId",
                         column: x => x.RodadaId,
                         principalTable: "Rodadas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TransacoesFinanceiras",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SaldoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ApostaRodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Tipo = table.Column<int>(type: "int", nullable: false),
+                    DataTransacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Descricao = table.Column<string>(type: "varchar(250)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TransacoesFinanceiras", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TransacoesFinanceiras_ApostasRodada_ApostaRodadaId",
+                        column: x => x.ApostaRodadaId,
+                        principalTable: "ApostasRodada",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_TransacoesFinanceiras_Saldos_SaldoId",
+                        column: x => x.SaldoId,
+                        principalTable: "Saldos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -693,9 +694,6 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 name: "Jogos");
 
             migrationBuilder.DropTable(
-                name: "ApostadoresCampeonatos");
-
-            migrationBuilder.DropTable(
                 name: "ApostasRodada");
 
             migrationBuilder.DropTable(
@@ -708,22 +706,25 @@ namespace ApostasApp.Core.InfraStructure.Migrations
                 name: "Estadios");
 
             migrationBuilder.DropTable(
-                name: "Rodadas");
+                name: "ApostadoresCampeonatos");
 
             migrationBuilder.DropTable(
-                name: "Apostadores");
+                name: "Rodadas");
 
             migrationBuilder.DropTable(
                 name: "Equipes");
 
             migrationBuilder.DropTable(
+                name: "Apostadores");
+
+            migrationBuilder.DropTable(
                 name: "Campeonatos");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Ufs");
 
             migrationBuilder.DropTable(
-                name: "Ufs");
+                name: "AspNetUsers");
         }
     }
 }

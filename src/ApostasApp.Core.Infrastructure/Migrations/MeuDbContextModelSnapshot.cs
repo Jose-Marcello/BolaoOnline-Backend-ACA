@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ApostasApp.Core.InfraStructure.Migrations
+namespace ApostasApp.Core.Infrastructure.Migrations
 {
     [DbContext(typeof(MeuDbContext))]
     partial class MeuDbContextModelSnapshot : ModelSnapshot
@@ -17,7 +17,7 @@ namespace ApostasApp.Core.InfraStructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.16")
+                .HasAnnotation("ProductVersion", "8.0.18")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
