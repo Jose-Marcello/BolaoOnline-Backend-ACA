@@ -94,7 +94,17 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile está em ApostasApp.Core.Application
 });
 
-builder.Services.AddControllers();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // ADICIONE ESTA LINHA PARA TRATAR REFERÊNCIAS CIRCULARES
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        // Opcional: para melhor legibilidade no desenvolvimento
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+
 
 // ===================================================================================================
 // Configuração do Swagger/OpenAPI
