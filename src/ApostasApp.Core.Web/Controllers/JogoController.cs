@@ -1,15 +1,20 @@
-﻿using ApostasApp.Core.Application.Services.Interfaces.Jogos; // Para IJogoService
+﻿// Localização: ApostasApp.Core.Web/Controllers/JogoController.cs
+
+using ApostasApp.Core.Application.Services.Interfaces.Jogos; // Para IJogoService
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas; // Para IRodadaService
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
+using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto
+using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Web.Controllers; // Para BaseController
 using AutoMapper; // Apenas se houver necessidade de mapeamentos no Controller
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq; // Para Linq
 using System.Threading.Tasks;
-using ApostasApp.Core.Domain.Interfaces; // *** NOVO: Para IUnitOfWork ***
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp.Core.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -22,8 +27,9 @@ namespace ApostasApp.Web.Controllers
         public JogoController(IMapper mapper,
                               IJogoService jogoService,
                               IRodadaService rodadaService,
-                              INotificador notificador,
-                              IUnitOfWork uow) : base(notificador, uow) // *** CORRIGIDO: Passando 'uow' para o construtor base ***
+                              INotificador notificador
+                              /* REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor */)
+            : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _mapper = mapper;
             _jogoService = jogoService;
@@ -42,11 +48,14 @@ namespace ApostasApp.Web.Controllers
 
             if (jogoDetalheDto == null)
             {
-                Notificar("Alerta", "Jogo não encontrado."); // Notificação mais específica
-                return NotFound(ObterNotificacoesParaResposta()); // *** CORRIGIDO: Usando o nome correto do método ***
+                // CORRIGIDO: Usando NotificarAlerta do BaseController
+                NotificarAlerta("Jogo não encontrado.");
+                // CORRIGIDO: Usando CustomResponse para retornar a ApiResponse padronizada
+                return CustomResponse<JogoDetalheDto>();
             }
 
-            return Ok(jogoDetalheDto);
+            // CORRIGIDO: Usando CustomResponse para retornar o DTO encapsulado em ApiResponse de sucesso
+            return CustomResponse(jogoDetalheDto);
         }
 
         // ========================================================================================================

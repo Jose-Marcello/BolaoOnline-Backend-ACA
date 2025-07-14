@@ -1,5 +1,4 @@
-﻿using ApostasApp.Core.Application.Services.Base;
-using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
+﻿using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
 using ApostasApp.Core.Application.Services.Interfaces.RankingRodadas; // Para IRankingRodadaService
 using ApostasApp.Core.Application.Validations; // Para RankingRodadaValidation (se for usada aqui)
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork

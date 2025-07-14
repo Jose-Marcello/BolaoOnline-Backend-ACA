@@ -8,7 +8,6 @@ using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using ApostasApp.Core.Application.Services.Base; // Para BaseService
 using ApostasApp.Core.Application.Models; // <<-- ADICIONADO: Para ApiResponse -->>
 using Microsoft.Extensions.Logging; // <<-- ADICIONADO: Para ILogger -->>
 using System;

@@ -5,7 +5,6 @@ using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Financeiro;
 using ApostasApp.Core.Application.DTOs.Usuarios;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios;
 using ApostasApp.Core.Domain.Interfaces;
@@ -15,8 +14,8 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Financeiro;
 using ApostasApp.Core.Domain.Models.Identity; // MUITO IMPORTANTE: ESTE USING DEVE ESTAR AQUI!
-using ApostasApp.Core.Domain.Models.Notificacoes;
-using ApostasApp.Core.Domain.Models.Usuarios;
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (classe de domínio)
+using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +24,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq; // Adicionado para Enumerable.Empty
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -67,7 +66,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             var apiResponse = new ApiResponse<LoginResponseDto>();
             var responseData = new LoginResponseDto { LoginSucesso = false };
 
-            // Inicializa a lista de notificações da resposta da API para garantir que nunca seja null
             apiResponse.Notifications = new List<NotificationDto>();
 
             try
@@ -94,7 +92,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                     responseData.LoginSucesso = false;
                 }
 
-                // Mapeia as notificações do IdentityService para NotificationDto, garantindo que nunca seja null
+                // Mapear Notificacao para NotificationDto
                 responseData.Erros = loginResult.Notifications?
                     .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
                     .ToList() ?? new List<NotificationDto>();
@@ -118,9 +116,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 _logger.LogError(ex, $"EXCEÇÃO NO LOGIN (LoginAsync Service): {ex.Message}");
             }
 
-            // <<-- CORREÇÃO PRINCIPAL AQUI (LINHA 127 APROXIMADAMENTE) -->>
-            // Garante que ObterNotificacoesParaResposta() e responseData.Erros nunca sejam null antes de AddRange
-            // Usa Enumerable.Empty<NotificationDto>() para garantir uma coleção vazia se for null
             var notificationsFromService = ObterNotificacoesParaResposta();
             if (notificationsFromService != null)
             {
@@ -128,7 +123,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             }
             else
             {
-                // Logar para entender por que ObterNotificacoesParaResposta() está retornando null
                 _logger.LogError("ObterNotificacoesParaResposta() retornou null inesperadamente.");
             }
 
@@ -138,10 +132,8 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             }
             else
             {
-                // Isso não deveria acontecer com a lógica atual, mas é uma proteção extra
                 _logger.LogError("responseData.Erros é null inesperadamente antes de AddRange.");
             }
-            // <<-- FIM DA CORREÇÃO -->>
 
             if (!apiResponse.Success && !apiResponse.Notifications.Any())
             {
@@ -414,11 +406,15 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 }
                 else
                 {
-                    apiResponse.Notifications = result.Notifications.ToList();
-                    if (!apiResponse.Notifications.Any())
+                    // Mapear Notificacao para NotificationDto
+                    apiResponse.Notifications = result.Notifications?
+                        .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
+                        .ToList() ?? new List<NotificationDto>();
+
+                    if (!apiResponse.Notifications.Any()) // Verifica se ainda não há notificações
                     {
                         Notificar("Erro", "Falha ao iniciar alteração de e-mail.");
-                        apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                        apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta()); // Adiciona notificações do serviço base
                     }
                     apiResponse.Success = false;
                     apiResponse.Data = null;
@@ -430,9 +426,10 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = null;
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
             }
-            apiResponse.Notifications = apiResponse.Notifications.Concat(ObterNotificacoesParaResposta()).ToList();
+            // Concatenar notificações apenas se apiResponse.Notifications não for null
+            if (apiResponse.Notifications == null) apiResponse.Notifications = new List<NotificationDto>();
+            apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
             return apiResponse;
         }
 
@@ -450,11 +447,15 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 }
                 else
                 {
-                    apiResponse.Notifications = result.Notifications.ToList();
-                    if (!apiResponse.Notifications.Any())
+                    // Mapear Notificacao para NotificationDto
+                    apiResponse.Notifications = result.Notifications?
+                        .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
+                        .ToList() ?? new List<NotificationDto>();
+
+                    if (!apiResponse.Notifications.Any()) // Verifica se ainda não há notificações
                     {
                         Notificar("Erro", "Falha ao confirmar alteração de e-mail.");
-                        apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                        apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta()); // Adiciona notificações do serviço base
                     }
                     apiResponse.Success = false;
                     apiResponse.Data = false;
@@ -467,7 +468,9 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 apiResponse.Success = false;
                 apiResponse.Data = false;
             }
-            apiResponse.Notifications = apiResponse.Notifications.Concat(ObterNotificacoesParaResposta()).ToList();
+            // Concatenar notificações apenas se apiResponse.Notifications não for null
+            if (apiResponse.Notifications == null) apiResponse.Notifications = new List<NotificationDto>();
+            apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
             return apiResponse;
         }
 
@@ -525,7 +528,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 {
                     foreach (var notif in registrationResult.Notifications)
                     {
-                        Notificar(new NotificationDto { Codigo = notif.Codigo, Tipo = notif.Tipo, Mensagem = notif.Mensagem, NomeCampo = notif.NomeCampo });
+                        Notificar(notif.Tipo, notif.Mensagem, notif.NomeCampo);
                     }
                 }
                 else if (!ObterNotificacoesParaResposta().Any())
@@ -588,6 +591,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             var usuarioLoginResultDto = new UsuarioLoginResult
             {
                 Success = domainLoginResult.Success,
+                // Mapear Notificacao para NotificationDto
                 Notifications = domainLoginResult.Notifications?
                     .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
                     .ToList() ?? new List<NotificationDto>()
@@ -599,7 +603,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 {
                     foreach (var notif in domainLoginResult.Notifications)
                     {
-                        Notificar(new NotificationDto { Codigo = notif.Codigo, Tipo = notif.Tipo, Mensagem = notif.Mensagem, NomeCampo = notif.NomeCampo });
+                        Notificar(notif.Tipo, notif.Mensagem, notif.NomeCampo);
                     }
                 }
                 else if (!ObterNotificacoesParaResposta().Any())
@@ -719,6 +723,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return user;
         }
 
+        // Método ObterUsuarioPorEmail (reintegrado e corrigido para usar user.Email)
         public async Task<Usuario> ObterUsuarioPorEmail(string email)
         {
             var user = await _identityService.GetUserByEmailAsync(email);
@@ -728,42 +733,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 _logger.LogWarning($"Tentativa de obter usuário por e-mail '{email}' falhou: Usuário não encontrado.");
             }
             return user;
-        }
-
-        private async Task<string> GerarJwtToken(Usuario user)
-        {
-            var jwtSecret = _configuration["Jwt:SecretKey"];
-            var jwtIssuer = _configuration["Jwt:Issuer"];
-            var jwtAudience = _configuration["Jwt:Audience"];
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim("apelido", user.Apelido)
-            };
-
-            var userRoles = await _userManager.GetRolesAsync(user);
-            foreach (var userRole in userRoles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, userRole));
-            }
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.Now.AddDays(Convert.ToDouble(_configuration["Jwt:ExpireDays"])); // Exemplo: 7 dias
-
-            var token = new JwtSecurityToken(
-                issuer: jwtIssuer,
-                audience: jwtAudience,
-                claims: claims,
-                expires: expires,
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

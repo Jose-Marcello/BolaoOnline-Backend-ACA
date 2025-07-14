@@ -1,22 +1,15 @@
-// Exemplo: C:\Projetos\BolaoOnline\BolaoOnlineApi\Controllers\AccountController.cs
+// Localização: ApostasApp.Core.Web/Controllers/AccountController.cs
 
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Usuarios; // Para LoginRequestDto, LoginResponseDto, RegisterRequestDto, RegisterResponse
-using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para NotificationDto (usar diretamente)
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using System;
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
+using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -25,10 +18,11 @@ namespace ApostasApp.Web.Controllers
         private readonly IUsuarioService _usuarioService;
         private readonly ILogger<AccountController> _logger;
 
+        // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da injeção no Controller
         public AccountController(IUsuarioService usuarioService,
                                  ILogger<AccountController> logger,
-                                 INotificador notificador, IUnitOfWork uow)
-                                 : base(notificador, uow) // Passa notificador e uow para a BaseController
+                                 INotificador notificador)
+                                 : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _usuarioService = usuarioService;
             _logger = logger;
@@ -64,7 +58,8 @@ namespace ApostasApp.Web.Controllers
                 }
             }
 
-            return CustomApiResponse(response); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(response); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("register")]
@@ -89,7 +84,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Registro de {request.Email} falhou.");
             }
 
-            return CustomApiResponse(registerResult); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(registerResult); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("forgot-password")]
@@ -117,7 +113,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na solicitação de redefinição de senha para {request.Email}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("reset-password")]
@@ -142,7 +139,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na redefinição de senha para UserId: {request.UserId}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpGet("confirm-email")]
@@ -153,12 +151,9 @@ namespace ApostasApp.Web.Controllers
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
             {
-                // Cria uma ApiResponse de falha para retornar de forma consistente
-                var apiResponse = new ApiResponse<bool>(false, false);
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "PARAMETROS_INVALIDOS", Tipo = "Erro", Mensagem = "Parâmetros de confirmação de e-mail inválidos." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("Parâmetros de confirmação de e-mail inválidos.", "PARAMETROS_INVALIDOS");
+                return CustomResponse(); // Retorna a resposta padronizada com as notificações
             }
 
             var result = await _usuarioService.ConfirmEmail(userId, code);
@@ -172,7 +167,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na confirmação de e-mail para UserId: {userId}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("resend-email-confirmation")]
@@ -200,7 +196,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha no reenvio de confirmação de e-mail para {request.Email}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("change-password")]
@@ -217,12 +214,9 @@ namespace ApostasApp.Web.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                // Cria uma ApiResponse de falha para retornar de forma consistente
-                var apiResponse = new ApiResponse<bool>(false, false);
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "NAO_AUTENTICADO", Tipo = "Erro", Mensagem = "Usuário não autenticado ou ID do usuário não encontrado no token." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("Usuário não autenticado ou ID do usuário não encontrado no token.", "NAO_AUTENTICADO");
+                return CustomResponse(); // Retorna a resposta padronizada com as notificações
             }
 
             var result = await _usuarioService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
@@ -236,7 +230,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na alteração de senha para UserId: {userId}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("change-email-request")]
@@ -253,12 +248,9 @@ namespace ApostasApp.Web.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                // Cria uma ApiResponse de falha para retornar de forma consistente
-                var apiResponse = new ApiResponse<object>(false, null); // Pode ser object ou AuthResult
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "NAO_AUTENTICADO", Tipo = "Erro", Mensagem = "Usuário não autenticado ou ID do usuário não encontrado no token." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("Usuário não autenticado ou ID do usuário não encontrado no token.", "NAO_AUTENTICADO");
+                return CustomResponse(); // Retorna a resposta padronizada com as notificações
             }
 
             var result = await _usuarioService.ChangeEmail(userId, request.NewEmail);
@@ -272,7 +264,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na solicitação de alteração de e-mail para UserId: {userId}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [HttpPost("confirm-change-email")]
@@ -297,7 +290,8 @@ namespace ApostasApp.Web.Controllers
                 _logger.LogWarning($"Falha na confirmação de alteração de e-mail para UserId: {request.UserId}.");
             }
 
-            return CustomApiResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
         [Authorize]
@@ -308,19 +302,22 @@ namespace ApostasApp.Web.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                // Retorna Unauthorized diretamente, pois não há ApiResponse para encapsular aqui
-                return Unauthorized("Usuário não autenticado ou ID do usuário não encontrado no token.");
+                // CORRIGIDO: Usando NotificarErro e CustomResponse para consistência
+                NotificarErro("Usuário não autenticado ou ID do usuário não encontrado no token.", "NAO_AUTENTICADO");
+                return CustomResponse<ApostadorDto>(); // Retorna uma ApiResponse de erro com o tipo correto
             }
 
             var apostadorProfile = await _usuarioService.GetUsuarioProfileAsync(userId);
 
             if (apostadorProfile == null)
             {
-                // Retorna NotFound diretamente
-                return NotFound("Perfil do apostador não encontrado ou não associado.");
+                // CORRIGIDO: Usando NotificarErro e CustomResponse para consistência
+                NotificarErro("Perfil do apostador não encontrado ou não associado.", "PERFIL_NAO_ENCONTRADO");
+                return CustomResponse<ApostadorDto>(); // Retorna uma ApiResponse de erro com o tipo correto
             }
 
-            return Ok(apostadorProfile); // Retorna o DTO diretamente
+            // CORRIGIDO: Usando CustomResponse
+            return CustomResponse(apostadorProfile); // Retorna o DTO encapsulado em ApiResponse de sucesso
         }
     }
 }

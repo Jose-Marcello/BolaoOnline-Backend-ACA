@@ -1,7 +1,6 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Rodadas/RodadaService.cs
 
 using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;

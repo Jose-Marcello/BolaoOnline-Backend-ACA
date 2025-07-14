@@ -1,16 +1,18 @@
-// Exemplo: ApostasApp.Web/Controllers/FinanceiroController.cs
+// Localização: ApostasApp.Core.Web/Controllers/FinanceiroController.cs
+
 using ApostasApp.Core.Application.DTOs.Financeiro;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Models.Financeiro; // Para TipoTransacao
 using Microsoft.AspNetCore.Mvc;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using System; // Para Guid e Task
 using System.Threading.Tasks; // Para Task
 using Microsoft.AspNetCore.Authorization; // Para [Authorize]
+using ApostasApp.Core.Web.Controllers; // Para BaseController
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -22,7 +24,8 @@ namespace ApostasApp.Web.Controllers
         public FinanceiroController(
             IFinanceiroService financeiroService,
             INotificador notificador,
-            IUnitOfWork uow) : base(notificador, uow)
+            // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
+            IUnitOfWork uow) : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _financeiroService = financeiroService;
         }
@@ -31,7 +34,7 @@ namespace ApostasApp.Web.Controllers
         public async Task<IActionResult> GetSaldo(Guid apostadorId)
         {
             var response = await _financeiroService.ObterSaldoAtualAsync(apostadorId);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
 
         [HttpPost("depositar/{apostadorId}")]
@@ -43,7 +46,7 @@ namespace ApostasApp.Web.Controllers
             }
 
             var response = await _financeiroService.CreditarSaldoAsync(apostadorId, request.Amount, TipoTransacao.CreditoManual, "Depósito via API");
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
         /*
         [HttpPost("debitar/{apostadorId}")]
@@ -55,7 +58,7 @@ namespace ApostasApp.Web.Controllers
             }
 
             var response = await _financeiroService.DebitarSaldoAsync(apostadorId, request.Amount, TipoTransacao.DebitoManual, "Débito via API");
-            return CustomApiResponse(response);
+            return CustomResponse(response);
         }
         */
     }

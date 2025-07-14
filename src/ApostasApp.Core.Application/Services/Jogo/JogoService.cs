@@ -5,7 +5,6 @@ using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se BaseService o e
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Interfaces.Jogos; // Para IJogoRepository
 using ApostasApp.Core.Domain.Models.Jogos;
-using ApostasApp.Core.Application.Services.Base; // Para a entidade Jogo
 
 namespace ApostasApp.Core.Application.Services.Jogos
 {

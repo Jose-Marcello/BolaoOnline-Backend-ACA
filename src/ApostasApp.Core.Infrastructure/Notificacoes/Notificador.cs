@@ -1,38 +1,49 @@
 ﻿// Localização: ApostasApp.Core.Infrastructure/Notificacoes/Notificador.cs
 
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Models.Notificacoes;
+using ApostasApp.Core.Domain.Models.Notificacoes; // Usar Notificacao
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ApostasApp.Core.Infrastructure.Notificacoes
+namespace ApostasApp.Core.Infrastructure.Notificacoes // Namespace CORRIGIDO
 {
     public class Notificador : INotificador
     {
-        private List<NotificationDto> _notifications;
+        private List<Notificacao> _notificacoes; // Usando Notificacao
 
         public Notificador()
         {
-            _notifications = new List<NotificationDto>();
+            _notificacoes = new List<Notificacao>();
         }
 
         public bool TemNotificacao()
         {
-            return _notifications.Any();
+            // Retorna true se houver QUALQUER notificação
+            return _notificacoes.Any();
         }
 
-        public List<NotificationDto> ObterNotificacoes()
+        public List<Notificacao> ObterNotificacoes()
         {
-            return _notifications;
+            return _notificacoes;
         }
 
-        public void Handle(NotificationDto notification)
+        public void Handle(Notificacao notificacao) // Recebe Notificacao
         {
-            _notifications.Add(notification);
+            _notificacoes.Add(notificacao);
+        }
+
+        // Método para lidar com uma coleção de Notificacao (usando IEnumerable)
+        public void Handle(IEnumerable<Notificacao> notificacoes)
+        {
+            _notificacoes.AddRange(notificacoes);
+        }
+
+        public void LimparNotificacoes()
+        {
+            _notificacoes.Clear();
         }
     }
 }
-
 
 /*
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;

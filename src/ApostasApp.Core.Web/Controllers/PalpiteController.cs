@@ -1,21 +1,25 @@
-﻿using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
+﻿// Localização: ApostasApp.Core.Web/Controllers/PalpiteController.cs
+
+using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Jogos;
 using ApostasApp.Core.Application.Services.Interfaces.RankingRodadas;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
 using ApostasApp.Core.Application.Services.Interfaces.Palpites; // Para IPalpiteService
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Application.DTOs.Apostas; // Para PalpiteDto, SalvarPalpiteRequestDto
-using ApostasApp.Core.Application.Models; // <<-- NOVO: Para ApiResponse -->>
+using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Web.Controllers; // Para BaseController
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using System; // Para Guid
 using System.Collections.Generic;
 using System.Linq; // Para Linq
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization; // Para [Authorize]
+using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -35,8 +39,9 @@ namespace ApostasApp.Web.Controllers
                                  IJogoService jogoService,
                                  IRodadaService rodadaService,
                                  IPalpiteService palpiteService,
-                                 INotificador notificador,
-                                 IUnitOfWork uow) : base(notificador, uow)
+                                 INotificador notificador
+                                 /* REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor */)
+            : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _mapper = mapper;
             _apostadorCampeonatoService = apostadorCampeonatoService;
@@ -67,7 +72,7 @@ namespace ApostasApp.Web.Controllers
         public async Task<IActionResult> ConsultarApostas(Guid rodadaId)
         {
             var response = await _palpiteService.ObterPalpitesDaRodada(rodadaId);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
 
         /// <summary>
@@ -84,7 +89,7 @@ namespace ApostasApp.Web.Controllers
             }
 
             var response = await _palpiteService.AdicionarPalpite(request);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
 
         /// <summary>
@@ -102,7 +107,7 @@ namespace ApostasApp.Web.Controllers
             }
 
             var response = await _palpiteService.AtualizarPalpite(id, request);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
 
         /// <summary>
@@ -114,7 +119,7 @@ namespace ApostasApp.Web.Controllers
         public async Task<IActionResult> RemoverPalpite(Guid id)
         {
             var response = await _palpiteService.RemoverPalpite(id);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
 
         /// <summary>
@@ -126,7 +131,7 @@ namespace ApostasApp.Web.Controllers
         public async Task<IActionResult> ExistePalpitesParaRodada(Guid rodadaId)
         {
             var response = await _palpiteService.ExistePalpitesParaRodada(rodadaId);
-            return CustomApiResponse(response); // Usa CustomApiResponse
+            return CustomResponse(response); // Usa CustomResponse
         }
     }
 }

@@ -5,7 +5,6 @@ using ApostasApp.Core.Application.DTOs.ApostasRodada;
 using ApostasApp.Core.Application.DTOs.Jogos;
 using ApostasApp.Core.Application.DTOs.Palpites;
 using ApostasApp.Core.Application.Models;
-using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostas;
@@ -400,7 +399,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
             {
                 _logger.LogError(ex, "Erro ao obter status da aposta da rodada.");
 
-                Notificar(new NotificationDto { Tipo = "Erro", Mensagem = $"Erro ao obter status da aposta da rodada: {ex.Message}" });
+                Notificar("Erro", $"Erro ao obter status da aposta da rodada: {ex.Message}");
 
                 return new ApiResponse<ApostaRodadaStatusDto>
                 {

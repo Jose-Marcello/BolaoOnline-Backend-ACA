@@ -1,6 +1,6 @@
 // Localização: ApostasApp.Core.Domain/Models/Identity/AuthResult.cs
 
-using ApostasApp.Core.Domain.Models.Notificacoes; // Usar NotificationDto
+using ApostasApp.Core.Domain.Models.Notificacoes; // AGORA USAR Notificacao
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,15 +12,15 @@ namespace ApostasApp.Core.Domain.Models.Identity
         public string UserId { get; set; }
         public string Email { get; set; }
         public string Username { get; set; }
-        public List<NotificationDto> Notifications { get; set; } // Alterado para NotificationDto
+        public List<Notificacao> Notifications { get; set; } // Alterado para Notificacao
 
-        private AuthResult(bool success, string userId, string email, string username, List<NotificationDto> notifications)
+        private AuthResult(bool success, string userId, string email, string username, List<Notificacao> notifications) // Alterado para Notificacao
         {
             Success = success;
             UserId = userId;
             Email = email;
             Username = username;
-            Notifications = notifications ?? new List<NotificationDto>();
+            Notifications = notifications ?? new List<Notificacao>();
         }
 
         public static AuthResult Succeeded(string userId, string email, string username)
@@ -28,14 +28,15 @@ namespace ApostasApp.Core.Domain.Models.Identity
             return new AuthResult(true, userId, email, username, null);
         }
 
-        public static AuthResult Failure(List<NotificationDto> notifications) // Alterado para NotificationDto
+        public static AuthResult Failure(List<Notificacao> notifications) // Alterado para Notificacao
         {
             return new AuthResult(false, null, null, null, notifications);
         }
 
         public static AuthResult Failure(string message, string type = "Erro", string code = null, string fieldName = null)
         {
-            return new AuthResult(false, null, null, null, new List<NotificationDto> { new NotificationDto { Codigo = code, Tipo = type, Mensagem = message, NomeCampo = fieldName } });
+            // Alterado para criar uma instância de Notificacao
+            return new AuthResult(false, null, null, null, new List<Notificacao> { new Notificacao(code, type, message, fieldName) });
         }
     }
 }

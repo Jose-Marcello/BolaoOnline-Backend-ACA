@@ -1,7 +1,6 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Apostadores/ApostadorService.cs
 using ApostasApp.Core.Application.DTOs.Apostadores; // Para ApostadorDto
 using ApostasApp.Core.Application.Models;
-using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostadores;

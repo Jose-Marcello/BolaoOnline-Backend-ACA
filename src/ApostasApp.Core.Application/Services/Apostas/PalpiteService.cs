@@ -3,7 +3,6 @@
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.Palpites;
 using ApostasApp.Core.Application.Models;
-using ApostasApp.Core.Application.Services.Base; // Importar BaseService
 using ApostasApp.Core.Application.Services.Interfaces.Palpites;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostas;

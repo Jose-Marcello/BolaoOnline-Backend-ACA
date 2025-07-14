@@ -1,164 +1,220 @@
-﻿// ApostasApp.Web/Controllers/BaseController.cs
+﻿// Localização: ApostasApp.Core.Web/Controllers/BaseController.cs
 
-using ApostasApp.Core.Application.DTOs.Usuarios; // Manter se necessário para outros métodos
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
-using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para NotificationDto (usar diretamente)
+using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (domínio)
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System; // Adicionar para usar Guid
+using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
 using System.Collections.Generic;
-using System.Linq; // Para usar o .Select
-using System.Security.Claims; // Adicionar para usar Claims
-using Microsoft.AspNetCore.Http; // Para StatusCodes
-using ApostasApp.Core.Application.Models; // Para ApiResponse (se ApiResponse for definido aqui, caso contrário, remova)
+using System.Linq;
+using System.Security.Claims; // Necessário para acessar Claims
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers
 {
-    /// <summary>
-    /// Classe base abstrata para todos os controladores da aplicação.
-    /// Fornece funcionalidades comuns como acesso ao Notificador e tratamento de notificações.
-    /// </summary>
+    [ApiController]
     public abstract class BaseController : ControllerBase
     {
-        protected readonly INotificador Notificador;
-        protected readonly IUnitOfWork Uow; // Propriedade para IUnitOfWork
+        private readonly INotificador _notificador;
 
-        // Construtor que aceita INotificador e IUnitOfWork
-        public BaseController(INotificador notificador, IUnitOfWork uow)
+        protected BaseController(INotificador notificador)
         {
-            Notificador = notificador;
-            Uow = uow; // Atribuição do IUnitOfWork
+            _notificador = notificador;
         }
 
-        /// <summary>
-        /// Obtém o ID do usuário logado a partir dos claims do token JWT.
-        /// Retorna Guid.Empty se o ID não for encontrado ou não for um Guid válido.
-        /// </summary>
-        protected string? ObterUsuarioLogadoId()
+        // Propriedade para verificar se há notificações de erro
+        protected bool OperacaoValida()
         {
-            var userIdClaim = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            return userIdClaim?.Value;
+            // Uma operação é considerada válida se NÃO houver notificações do TIPO "Erro"
+            return !_notificador.ObterNotificacoes().Any(n => n.Tipo == "Erro");
         }
 
-        /// <summary>
-        /// Verifica se o usuário está autenticado.
-        /// </summary>
-        protected bool UsuarioEstaAutenticado()
+        // Método para notificar o sistema de domínio a partir do controller
+        protected void NotificarErro(string mensagem, string codigo = null, string nomeCampo = null)
         {
-            return HttpContext.User.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(ObterUsuarioLogadoId());
+            _notificador.Handle(new Notificacao(codigo, "Erro", mensagem, nomeCampo));
         }
 
-        /// <summary>
-        /// Adiciona uma notificação de erro com uma mensagem específica.
-        /// </summary>
-        /// <param name="mensagem">A mensagem de erro.</param>
-        /// <param name="codigo">Opcional: Código de erro.</param>
-        protected void NotificarErro(string mensagem, string codigo = null)
+        protected void NotificarSucesso(string mensagem, string codigo = null, string nomeCampo = null)
         {
-            // CORRIGIDO: Usando NotificationDto
-            Notificador.Handle(new NotificationDto { Codigo = codigo, Tipo = "Erro", Mensagem = mensagem });
+            _notificador.Handle(new Notificacao(codigo, "Sucesso", mensagem, nomeCampo));
         }
 
-        /// <summary>
-        /// Adiciona uma notificação com um tipo (ex: "Alerta", "Sucesso", "Erro") e uma mensagem.
-        /// </summary>
-        /// <param name="tipo">O tipo da notificação (ex: "Alerta").</param>
-        /// <param name="mensagem">A mensagem da notificação.</param>
-        /// <param name="codigo">Opcional: Código da notificação.</param>
-        protected void Notificar(string tipo, string mensagem, string codigo = null)
+        protected void NotificarAlerta(string mensagem, string codigo = null, string nomeCampo = null)
         {
-            // CORRIGIDO: Usando NotificationDto
-            Notificador.Handle(new NotificationDto { Codigo = codigo, Tipo = tipo, Mensagem = mensagem });
+            _notificador.Handle(new Notificacao(codigo, "Alerta", mensagem, nomeCampo));
         }
 
-        /// <summary>
-        /// Adiciona uma notificação com tipo, mensagem e nome de campo opcional.
-        /// </summary>
-        /// <param name="tipo">O tipo da notificação (ex: "Erro").</param>
-        /// <param name="mensagem">A mensagem da notificação.</param>
-        /// <param name="nomeCampo">Opcional: O nome do campo a que a notificação se refere.</param>
-        /// <param name="codigo">Opcional: Código da notificação.</param>
-        protected void Notificar(string tipo, string mensagem, string nomeCampo, string codigo = null)
+        // SOBRECARGA 1: Processa um ApiResponse<T> já existente (vindo de um serviço)
+        // Ex: return CustomResponse(serviceResponse);
+        protected ActionResult CustomResponse<T>(ApiResponse<T> serviceResponse)
         {
-            // CORRIGIDO: Usando NotificationDto
-            Notificador.Handle(new NotificationDto { Codigo = codigo, Tipo = tipo, Mensagem = mensagem, NomeCampo = nomeCampo });
-        }
+            var allNotifications = new List<NotificationDto>();
 
-        /// <summary>
-        /// Adiciona uma notificação usando um objeto NotificationDto existente.
-        /// </summary>
-        protected void Notificar(NotificationDto notificacao) // O parâmetro agora é NotificationDto
-        {
-            Notificador.Handle(notificacao);
-        }
-
-        /// <summary>
-        /// Verifica se há notificações registradas.
-        /// </summary>
-        /// <returns>True se houver notificações, false caso contrário.</returns>
-        protected bool TemNotificacao()
-        {
-            return Notificador.TemNotificacao();
-        }
-
-        /// <summary>
-        /// Obtém todas as notificações registradas.
-        /// </summary>
-        /// <returns>Uma coleção de objetos NotificationDto.</returns>
-        protected IEnumerable<NotificationDto> ObterNotificacoesParaResposta()
-        {
-            // O Notificador.ObterNotificacoes() já deve retornar NotificationDto
-            return Notificador.ObterNotificacoes();
-        }
-
-        /// <summary>
-        /// Retorna um ProblemDetails para erros de validação de modelo.
-        /// Este método é para ser usado quando ModelState.IsValid é false.
-        /// </summary>
-        /// <param name="modelState">O ModelState atual do controlador.</param>
-        /// <returns>Um BadRequestObjectResult com os detalhes do problema.</returns>
-        protected IActionResult CustomValidationProblem(ModelStateDictionary modelState)
-        {
-            var problemDetails = new ValidationProblemDetails(modelState)
+            if (serviceResponse.Notifications != null)
             {
-                Title = "One or more validation errors occurred.",
-                Status = StatusCodes.Status400BadRequest,
-                Detail = "Ocorreram erros na requisição.",
-                Instance = HttpContext.Request.Path
-            };
-
-            // Adicionar notificações do _notificador às extensões do problemDetails
-            if (Notificador.TemNotificacao())
-            {
-                var notificationsDto = ObterNotificacoesParaResposta().ToList();
-                problemDetails.Extensions.Add("notifications", notificationsDto);
+                allNotifications.AddRange(serviceResponse.Notifications);
             }
 
-            return new BadRequestObjectResult(problemDetails)
+            var controllerNotifications = _notificador.ObterNotificacoes()
+                                                      .Select(n => new NotificationDto
+                                                      {
+                                                          Codigo = n.Codigo,
+                                                          Tipo = n.Tipo,
+                                                          Mensagem = n.Mensagem,
+                                                          NomeCampo = n.NomeCampo
+                                                      })
+                                                      .ToList();
+            if (controllerNotifications.Any())
             {
-                ContentTypes = { "application/problem+json", "application/json" }
-            };
-        }
+                allNotifications.AddRange(controllerNotifications);
+            }
 
-        /// <summary>
-        /// Retorna uma resposta padronizada para APIs, incluindo notificações.
-        /// Este método é para ser usado quando a operação do serviço já retornou um ApiResponse.
-        /// </summary>
-        /// <param name="response">O objeto ApiResponse a ser retornado.</param>
-        /// <returns>Um IActionResult com o status HTTP apropriado (200 OK ou 400 BadRequest).</returns>
-        protected IActionResult CustomApiResponse<T>(ApiResponse<T> response)
-        {
-            if (response.Success)
+            _notificador.LimparNotificacoes();
+
+            bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
+
+            if (hasErrors)
             {
-                return Ok(response);
+                return BadRequest(ApiResponse<T>.CreateError(
+                    serviceResponse.Message ?? "Ocorreram erros na sua requisição.",
+                    allNotifications
+                ));
             }
             else
             {
-                // Se a ApiResponse em si sinaliza falha, retorna BadRequest.
-                // As notificações já estão dentro do objeto response.
-                return BadRequest(response);
+                return Ok(ApiResponse<T>.CreateSuccess(
+                    serviceResponse.Data,
+                    serviceResponse.Message ?? "Operação realizada com sucesso.",
+                    allNotifications
+                ));
             }
+        }
+
+        // SOBRECARGA 2: Constrói um ApiResponse<T> a partir de um objeto de dados T (para sucesso)
+        // e notificações do notificador (para erros/alertas)
+        // Ex: return CustomResponse(meuObjetoDto);
+        protected ActionResult CustomResponse<T>(T data)
+        {
+            var allNotifications = _notificador.ObterNotificacoes()
+                                            .Select(n => new NotificationDto
+                                            {
+                                                Codigo = n.Codigo,
+                                                Tipo = n.Tipo,
+                                                Mensagem = n.Mensagem,
+                                                NomeCampo = n.NomeCampo
+                                            })
+                                            .ToList();
+            _notificador.LimparNotificacoes();
+
+            bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
+
+            if (hasErrors)
+            {
+                return BadRequest(ApiResponse<T>.CreateError(
+                    "Ocorreram erros na sua requisição.",
+                    allNotifications
+                ));
+            }
+            else
+            {
+                return Ok(ApiResponse<T>.CreateSuccess(
+                    data,
+                    "Operação realizada com sucesso.",
+                    allNotifications
+                ));
+            }
+        }
+
+        // SOBRECARGA 3: Constrói um ApiResponse<T> sem dados específicos (Data = default(T)),
+        // útil para retornos de erro/alerta onde o tipo de dado é relevante mas não há um objeto para retornar.
+        // Ex: return CustomResponse<MeuDtoDeErro>();
+        protected ActionResult CustomResponse<T>()
+        {
+            var allNotifications = _notificador.ObterNotificacoes()
+                                            .Select(n => new NotificationDto
+                                            {
+                                                Codigo = n.Codigo,
+                                                Tipo = n.Tipo,
+                                                Mensagem = n.Mensagem,
+                                                NomeCampo = n.NomeCampo
+                                            })
+                                            .ToList();
+            _notificador.LimparNotificacoes();
+
+            bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
+
+            if (hasErrors)
+            {
+                return BadRequest(ApiResponse<T>.CreateError(
+                    "Ocorreram erros na sua requisição.",
+                    allNotifications
+                ));
+            }
+            else
+            {
+                return Ok(ApiResponse<T>.CreateSuccess(
+                    default(T), // Data é o valor padrão para T
+                    "Operação realizada com sucesso.",
+                    allNotifications
+                ));
+            }
+        }
+
+        // SOBRECARGA 4: Constrói um ApiResponse simples (sem tipo genérico para Data),
+        // útil para retornos gerais de sucesso/erro sem um DTO de dados.
+        // Ex: return CustomResponse();
+        protected ActionResult CustomResponse()
+        {
+            var allNotifications = _notificador.ObterNotificacoes()
+                                            .Select(n => new NotificationDto
+                                            {
+                                                Codigo = n.Codigo,
+                                                Tipo = n.Tipo,
+                                                Mensagem = n.Mensagem,
+                                                NomeCampo = n.NomeCampo
+                                            })
+                                            .ToList();
+            _notificador.LimparNotificacoes();
+
+            bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
+
+            if (hasErrors)
+            {
+                return BadRequest(ApiResponse.CreateError(
+                    "Ocorreram erros na sua requisição.",
+                    allNotifications
+                ));
+            }
+            else
+            {
+                return Ok(ApiResponse.CreateSuccess(
+                    "Operação realizada com sucesso.",
+                    allNotifications
+                ));
+            }
+        }
+
+        // Método para lidar com erros do ModelState e notificar
+        protected ActionResult CustomValidationProblem(ModelStateDictionary modelState)
+        {
+            var errors = modelState.Values.SelectMany(v => v.Errors);
+            foreach (var error in errors)
+            {
+                NotificarErro(error.ErrorMessage, null, error.Exception?.Message);
+            }
+            return CustomResponse(); // Chama CustomResponse() sem dados, que irá coletar as notificações de erro do ModelState
+        }
+
+        // Método auxiliar para obter o ID do usuário logado
+        protected string ObterUsuarioIdLogado()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
+        }
+
+        // Método auxiliar para verificar se o usuário está autenticado
+        protected bool UsuarioEstaAutenticado()
+        {
+            return User.Identity.IsAuthenticated;
         }
     }
 }

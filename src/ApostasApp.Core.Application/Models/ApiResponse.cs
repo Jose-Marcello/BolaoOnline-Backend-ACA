@@ -1,7 +1,9 @@
 ﻿// ApostasApp.Core.Application.Models/ApiResponse.cs
 // Esta classe define o formato das respostas da sua API, incluindo métodos estáticos para criação.
 
-using ApostasApp.Core.Domain.Models.Notificacoes;
+// Usar NotificationDto para a comunicação da API
+using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao, se necessário mapear de/para
+
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +13,7 @@ namespace ApostasApp.Core.Application.Models
     {
         public bool Success { get; set; }
         public string Message { get; set; }
-        public List<NotificationDto> Notifications { get; set; }
+        public List<NotificationDto> Notifications { get; set; } // Propriedade para DTOs de notificação
 
         public ApiResponse()
         {

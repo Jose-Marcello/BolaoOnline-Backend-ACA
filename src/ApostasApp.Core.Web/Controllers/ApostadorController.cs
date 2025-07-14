@@ -1,4 +1,4 @@
-﻿// ApostadorController.cs
+﻿// Localização: ApostasApp.Core.Web/Controllers/ApostadorController.cs
 // NOVO controlador para lidar com dados gerais do apostador.
 // Ele fornecerá os endpoints que o frontend Angular está a procurar.
 
@@ -14,14 +14,13 @@ using Microsoft.AspNetCore.Authorization;
 using System.Linq; // Necessário para o método .Any()
 using AutoMapper;
 using System.Collections.Generic;
-using ApostasApp.Core.Domain.Interfaces;
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using System.Threading.Tasks;
 using System;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para NotificationDto (usar diretamente)
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
 
-namespace ApostasApp.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp.Core.Web.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -37,14 +36,14 @@ namespace ApostasApp.Web.Controllers
 
         public ApostadorController(
             INotificador notificador,
-            IUnitOfWork uow,
+            // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
             IUsuarioService usuarioService,
             IApostadorService apostadorService,
             IApostadorCampeonatoService apostadorCampeonatoService,
             IRodadaService rodadaService,
             ICampeonatoService campeonatoService,
             IMapper mapper)
-            : base(notificador, uow)
+            : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _usuarioService = usuarioService;
             _apostadorService = apostadorService;
@@ -61,35 +60,31 @@ namespace ApostasApp.Web.Controllers
         [HttpGet("Dados")]
         public async Task<IActionResult> GetDadosApostador()
         {
-            var userId = ObterUsuarioLogadoId();
+            var userId = ObterUsuarioIdLogado(); // Método do BaseController
             if (string.IsNullOrEmpty(userId))
             {
-                var apiResponse = new ApiResponse<ApostadorDto>(false, null);
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "USUARIO_NAO_IDENTIFICADO", Tipo = "Erro", Mensagem = "Usuário não identificado ou token inválido." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("Usuário não identificado ou token inválido.", "USUARIO_NAO_IDENTIFICADO");
+                return CustomResponse<ApostadorDto>(); // Usa CustomResponse do BaseController
             }
 
             var apostadorEntity = await _apostadorService.GetApostadorByUserIdAsync(userId);
 
             if (apostadorEntity == null)
             {
-                var apiResponse = new ApiResponse<ApostadorDto>(false, null);
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "DADOS_APOSTADOR_NAO_ENCONTRADOS", Tipo = "Alerta", Mensagem = "Dados do apostador não encontrados." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarAlerta do BaseController
+                NotificarAlerta("Dados do apostador não encontrados.", "DADOS_APOSTADOR_NAO_ENCONTRADOS");
+                return CustomResponse<ApostadorDto>(); // Usa CustomResponse do BaseController
             }
 
             var apostadorDto = _mapper.Map<ApostadorDto>(apostadorEntity);
 
-            if (apostadorDto.Saldo != null && apostadorDto.Saldo.ApostadorId == "")
+            if (apostadorDto.Saldo != null && string.IsNullOrEmpty(apostadorDto.Saldo.ApostadorId))
             {
                 apostadorDto.Saldo.ApostadorId = apostadorEntity.Id.ToString();
             }
 
-            return CustomApiResponse(new ApiResponse<ApostadorDto>(true, apostadorDto));
+            return CustomResponse(apostadorDto); // Retorna o DTO encapsulado em ApiResponse de sucesso
         }
 
         // ==============================================================================
@@ -107,10 +102,8 @@ namespace ApostasApp.Web.Controllers
             var loggedInUser = await _usuarioService.GetLoggedInUser();
             if (loggedInUser == null)
             {
-                var apiResponse = new ApiResponse<List<CampeonatoDto>>(false, null);
-                Notificador.Handle(new NotificationDto { Codigo = "USUARIO_NAO_LOGADO", Tipo = "Erro", Mensagem = "Usuário não logado ou sessão expirada." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                NotificarErro("Usuário não logado ou sessão expirada.", "USUARIO_NAO_LOGADO");
+                return CustomResponse<List<CampeonatoDto>>();
             }
 
             var campeonatosEntity = await _apostadorCampeonatoService.ObterTodosCampeonatosDoApostadorPorUsuarioId(loggedInUser.Id);
@@ -118,13 +111,11 @@ namespace ApostasApp.Web.Controllers
 
             if (campeonatosDto == null || !campeonatosDto.Any())
             {
-                var apiResponse = new ApiResponse<List<CampeonatoDto>>(true, new List<CampeonatoDto>());
-                Notificador.Handle(new NotificationDto { Codigo = "NENHUM_CAMPEONATO_ASSOCIADO", Tipo = "Alerta", Mensagem = "Nenhum campeonato associado encontrado para o apostador." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                NotificarAlerta("Nenhum campeonato associado encontrado para o apostador.", "NENHUM_CAMPEONATO_ASSOCIADO");
+                return CustomResponse<List<CampeonatoDto>>(new List<CampeonatoDto>()); // Retorna lista vazia com alerta
             }
 
-            return CustomApiResponse(new ApiResponse<List<CampeonatoDto>>(true, campeonatosDto));
+            return CustomResponse(campeonatosDto);
         }
         */
         // ==============================================================================
@@ -140,9 +131,9 @@ namespace ApostasApp.Web.Controllers
         {
             string? userId = null; // Inicialize userId como null por padrão
 
-            if (UsuarioEstaAutenticado())
+            if (UsuarioEstaAutenticado()) // Método do BaseController
             {
-                userId = ObterUsuarioLogadoId();
+                userId = ObterUsuarioIdLogado(); // Método do BaseController
             }
 
             var response = await _campeonatoService.GetAvailableCampeonatos(userId);
@@ -150,21 +141,18 @@ namespace ApostasApp.Web.Controllers
             // O serviço já deve ter adicionado notificações se algo deu errado
             if (!response.Success) // Se o serviço indicou falha
             {
-                // As notificações já estarão em response.Notifications
-                return CustomApiResponse(response);
+                // As notificações já estarão em response.Notifications (NotificationDto)
+                return CustomResponse(response);
             }
 
             // <<-- CORRIGIDO: Acessando response.Data antes de chamar Any() -->>
             if (response.Data == null || !response.Data.Any())
             {
-                var apiResponse = new ApiResponse<IEnumerable<CampeonatoDto>>(true, new List<CampeonatoDto>());
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "NENHUM_CAMPEONATO_DISPONIVEL", Tipo = "Alerta", Mensagem = "Nenhum campeonato ativo disponível no momento." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                NotificarAlerta("Nenhum campeonato ativo disponível no momento.", "NENHUM_CAMPEONATO_DISPONIVEL");
+                return CustomResponse<IEnumerable<CampeonatoDto>>(new List<CampeonatoDto>()); // Retorna lista vazia com alerta
             }
 
-            return CustomApiResponse(response); // Retorna a resposta de sucesso do serviço
+            return CustomResponse(response); // Retorna a resposta de sucesso do serviço
         }
 
         /// <summary>
@@ -175,74 +163,64 @@ namespace ApostasApp.Web.Controllers
         [AllowAnonymous] // <--- AGORA ELE SERÁ REALMENTE ANÔNIMO
         public async Task<IActionResult> GetRodadasEmDestaque()
         {
-            var rodadasEntity = await _rodadaService.ObterRodadasEmDestaque();
+            var rodadasApiResponse = await _rodadaService.ObterRodadasEmDestaque(); // Retorna ApiResponse<IEnumerable<RodadaDto>>
 
-            // <<-- CORRIGIDO: Verificando se o serviço adicionou notificações -->>
-            if (Notificador.TemNotificacao())
+            // O serviço já deve ter adicionado notificações se algo deu errado
+            if (!rodadasApiResponse.Success)
             {
-                var apiResponse = new ApiResponse<IEnumerable<RodadaDto>>(false, null);
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                return CustomResponse(rodadasApiResponse);
             }
 
-            var rodadasDto = _mapper.Map<List<RodadaDto>>(rodadasEntity.Data); // Mapeia o Data da ApiResponse
+            var rodadasDto = rodadasApiResponse.Data?.ToList(); // Mapeia o Data da ApiResponse para List<RodadaDto>
 
             if (rodadasDto == null || !rodadasDto.Any())
             {
-                var apiResponse = new ApiResponse<IEnumerable<RodadaDto>>(true, new List<RodadaDto>());
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "NENHUMA_RODADA_DESTAQUE", Tipo = "Alerta", Mensagem = "Nenhuma rodada em destaque encontrada." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                NotificarAlerta("Nenhuma rodada em destaque encontrada.", "NENHUMA_RODADA_DESTAQUE");
+                return CustomResponse<IEnumerable<RodadaDto>>(new List<RodadaDto>()); // Retorna lista vazia com alerta
             }
 
-            return CustomApiResponse(new ApiResponse<IEnumerable<RodadaDto>>(true, rodadasDto));
+            return CustomResponse(rodadasApiResponse); // Retorna a resposta de sucesso do serviço
         }
 
         [HttpPost("AderirCampeonato")]
         [Authorize] // Este método CONTINUA protegido por [Authorize]
         public async Task<IActionResult> AderirCampeonato([FromBody] VincularApostadorCampeonatoDto request)
         {
-            var userIdString = ObterUsuarioLogadoId();
-            var apiResponse = new ApiResponse<bool>(false, false);
+            var userIdString = ObterUsuarioIdLogado(); // Método do BaseController
 
             if (string.IsNullOrEmpty(userIdString))
             {
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "USUARIO_NAO_AUTENTICADO", Tipo = "Erro", Mensagem = "Usuário não autenticado ou token inválido." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("Usuário não autenticado ou token inválido.", "USUARIO_NAO_AUTENTICADO");
+                return CustomResponse<bool>(); // Usa CustomResponse do BaseController
             }
 
             var apostadorEntity = await _apostadorService.GetApostadorByUserIdAsync(userIdString);
             if (apostadorEntity == null)
             {
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "APOSTADOR_NAO_ENCONTRADO", Tipo = "Alerta", Mensagem = "Dados do apostador não encontrados." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarAlerta do BaseController
+                NotificarAlerta("Dados do apostador não encontrados.", "APOSTADOR_NAO_ENCONTRADO");
+                return CustomResponse<bool>(); // Usa CustomResponse do BaseController
             }
 
             if (!string.IsNullOrEmpty(request.ApostadorId) && request.ApostadorId != apostadorEntity.Id.ToString())
             {
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "ID_APOSTADOR_INVALIDO", Tipo = "Erro", Mensagem = "ID do apostador na requisição inválido ou não corresponde ao usuário logado." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("ID do apostador na requisição inválido ou não corresponde ao usuário logado.", "ID_APOSTADOR_INVALIDO");
+                return CustomResponse<bool>(); // Usa CustomResponse do BaseController
             }
 
             Guid campeonatoIdGuid;
             if (!Guid.TryParse(request.CampeonatoId, out campeonatoIdGuid))
             {
-                // CORRIGIDO: Usando NotificationDto
-                Notificador.Handle(new NotificationDto { Codigo = "ID_CAMPEONATO_INVALIDO", Tipo = "Erro", Mensagem = "ID do Campeonato fornecido é inválido." });
-                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                return CustomApiResponse(apiResponse);
+                // CORRIGIDO: Usando NotificarErro do BaseController
+                NotificarErro("ID do Campeonato fornecido é inválido.", "ID_CAMPEONATO_INVALIDO");
+                return CustomResponse<bool>(); // Usa CustomResponse do BaseController
             }
 
             var resultadoAdesao = await _campeonatoService.AderirCampeonatoAsync(apostadorEntity.Id, campeonatoIdGuid);
 
-            return CustomApiResponse(resultadoAdesao);
+            return CustomResponse(resultadoAdesao); // Retorna a ApiResponse do serviço de forma consistente
         }
     }
 }

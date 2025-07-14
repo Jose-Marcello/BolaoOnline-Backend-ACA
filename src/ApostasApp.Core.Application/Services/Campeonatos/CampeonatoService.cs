@@ -1,7 +1,6 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Application.Services.Base;
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces;
@@ -290,8 +289,11 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                         {
                             var palpite = new Palpite(apostaRodada.Id, jogo.Id)
                             {
+                                ApostaRodadaId = apostaRodada.Id,
+                                JogoId = jogo.Id,
                                 PlacarApostaCasa = null,
-                                PlacarApostaVisita = null
+                                PlacarApostaVisita = null,
+                                Pontos = 0
                             };
                             _palpiteRepository.Adicionar(palpite);
                         }
