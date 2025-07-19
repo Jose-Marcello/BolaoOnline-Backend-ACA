@@ -7,6 +7,7 @@ using ApostasApp.Core.Application.DTOs.Usuarios;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios;
+using ApostasApp.Core.Application.Utils;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Interfaces.Identity;
@@ -262,6 +263,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             var apiResponse = new ApiResponse<bool>();
             try
             {
+                // Corrigido: Usar GetUserByIdAsync em vez de GetUserByIdByIdAsync
                 var user = await _identityService.GetUserByIdAsync(userId);
                 if (user == null)
                 {
@@ -505,6 +507,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return await _identityService.GetLoggedInUserIdAsync();
         }
 
+        // <<-- MÉTODO RegistrarNovoUsuario (COM LÓGICA DE ROLLBACK MANUAL) -->>
         public async Task<bool> RegistrarNovoUsuario(string email, string password, string apelido, string cpf, string celular, string scheme, string host)
         {
             if (string.IsNullOrWhiteSpace(apelido))
@@ -520,10 +523,17 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 return false;
             }
 
-            var registrationResult = await _identityService.RegisterUserAsync(email, password, apelido, cpf, celular);
+            // 1. Limpeza do CPF e Celular (garantir que estão apenas com números)
+            var cleanedCpf = cpf.CleanNumbers();
+            var cleanedCelular = celular.CleanNumbers();
+
+            // 2. Tenta registrar o usuário no Identity (isso DEVE persistir no AspNetUsers IMEDIATAMENTE)
+            // A interface IIdentityService.RegisterUserAsync espera parâmetros individuais
+            var registrationResult = await _identityService.RegisterUserAsync(email, password, apelido, cleanedCpf, cleanedCelular);
 
             if (!registrationResult.Success)
             {
+                // Propaga as notificações do IdentityService
                 if (registrationResult.Notifications != null && registrationResult.Notifications.Any())
                 {
                     foreach (var notif in registrationResult.Notifications)
@@ -531,58 +541,108 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                         Notificar(notif.Tipo, notif.Mensagem, notif.NomeCampo);
                     }
                 }
-                else if (!ObterNotificacoesParaResposta().Any())
+                else // Se não há notificações específicas, usa uma genérica
                 {
-                    Notificar("Erro", "Falha ao registrar usuário. Verifique os dados informados.");
+                    Notificar("Erro", "Falha ao registrar usuário no Identity. Verifique os dados informados.");
                 }
-                _logger.LogError($"Falha ao registrar usuário '{email}'.");
+                _logger.LogError($"Falha ao registrar usuário '{email}' no Identity.");
                 return false;
             }
 
-            var newUser = await _identityService.GetUserByEmailAsync(email);
-            if (newUser == null)
+            // Se o registro no IdentityService foi bem-sucedido, o usuário já está no AspNetUsers.
+            // Agora, tentamos criar o Apostador e persistir.
+            Usuario newUser = null; // Declarado aqui para ser acessível no bloco catch
+            try
             {
-                Notificar("Erro", "Usuário recém-criado não encontrado no Identity após registro. Contate o suporte.");
-                _logger.LogError($"Usuário '{email}' criado mas não encontrado no Identity após registro.");
-                return false;
-            }
-
-            var apostador = new Apostador
-            {
-                Id = Guid.NewGuid(),
-                UsuarioId = newUser.Id,
-                NomeCompleto = apelido,
-                Status = StatusApostador.AguardandoAssociacao
-            };
-
-            apostador.Saldo = new Saldo(apostador.Id, 0.00M);
-
-            _apostadorRepository.Adicionar(apostador);
-
-            if (await CommitAsync())
-            {
-                var emailSent = await _identityService.SendConfirmationEmailAsync(newUser, scheme, host);
-
-                if (emailSent)
+                newUser = await _identityService.GetUserByEmailAsync(email);
+                if (newUser == null)
                 {
-                    Notificar("Sucesso", "Registro realizado com sucesso! Um e-mail de confirmação foi enviado.");
-                    _logger.LogInformation($"Usuário '{email}' registrado e e-mail de confirmação enviado.");
-                    return true;
+                    Notificar("Erro", "Usuário recém-criado não encontrado no Identity após registro. Contate o suporte.");
+                    _logger.LogError($"Usuário '{email}' criado mas não encontrado no Identity após registro.");
+                    // Se o usuário não for encontrado aqui, é um estado inconsistente grave.
+                    // Não há como fazer rollback sem o ID, mas o erro já é crítico.
+                    return false;
                 }
-                else
+
+                var apostador = new Apostador
                 {
-                    Notificar("Erro", "Usuário registrado, mas falha ao enviar e-mail de confirmação. Contate o suporte.");
-                    _logger.LogError($"Usuário '{email}' registrado, mas falha ao enviar e-mail de confirmação.");
+                    Id = Guid.NewGuid(),
+                    UsuarioId = newUser.Id, // Associa ao ID do usuário Identity
+                    NomeCompleto = apelido,
+                    Status = StatusApostador.AguardandoAssociacao
+                };
+
+                apostador.Saldo = new Saldo(apostador.Id, 0.00M);
+
+                _apostadorRepository.Adicionar(apostador);
+
+                // 3. Tenta persistir o Apostador e o Saldo (via UnitOfWork)
+                if (await CommitAsync())
+                {
+                    // 4. Somente AGORA (APÓS O COMMIT DA TRANSAÇÃO DO APOSTADOR) tenta enviar o e-mail de confirmação
+                    var emailSent = await _identityService.SendConfirmationEmailAsync(newUser, scheme, host);
+
+                    if (emailSent)
+                    {
+                        Notificar("Sucesso", "Registro realizado com sucesso! Um e-mail de confirmação foi enviado.");
+                        _logger.LogInformation($"Usuário '{email}' registrado e e-mail de confirmação enviado.");
+                        return true;
+                    }
+                    else
+                    {
+                        Notificar("Erro", "Usuário registrado, mas falha ao enviar e-mail de confirmação. Contate o suporte.");
+                        _logger.LogError($"Usuário '{email}' registrado, mas falha ao enviar e-mail de confirmação.");
+                        return false;
+                    }
+                }
+                else // Falha ao persistir o Apostador (CommitAsync falhou)
+                {
+                    Notificar("Erro", "Não foi possível persistir o registro do apostador. Tente novamente.");
+                    _logger.LogError($"Falha ao persistir registro do apostador para '{email}'.");
+
+                    // <<-- ROLLBACK: Tenta deletar o usuário recém-criado do Identity -->>
+                    if (newUser != null)
+                    {
+                        var deleteResult = await _userManager.DeleteAsync(newUser);
+                        if (!deleteResult.Succeeded)
+                        {
+                            _logger.LogError($"Falha ao reverter criação do usuário '{email}' após falha na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
+                            Notificar("Erro", "Falha na reversão do usuário Identity. Contate o suporte.");
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"Usuário '{email}' revertido com sucesso após falha na criação do apostador.");
+                            Notificar("Alerta", "Registro de usuário revertido devido a falha na criação do apostador.");
+                        }
+                    }
                     return false;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Notificar("Erro", "Não foi possível persistir o registro do apostador. Tente novamente.");
-                _logger.LogError($"Falha ao persistir registro do apostador para '{email}'.");
+                Notificar("Erro", $"Ocorreu um erro inesperado durante o registro do apostador: {ex.Message}");
+                _logger.LogError(ex, $"EXCEÇÃO NO REGISTRO DO APOSTADOR (RegistrarNovoUsuario): {ex.Message}");
+
+                // <<-- ROLLBACK EM CASO DE EXCEÇÃO: Tenta deletar o usuário recém-criado do Identity -->>
+                if (newUser != null)
+                {
+                    var deleteResult = await _userManager.DeleteAsync(newUser);
+                    if (!deleteResult.Succeeded)
+                    {
+                        _logger.LogError($"Falha ao reverter criação do usuário '{email}' após exceção na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
+                        Notificar("Erro", "Falha na reversão do usuário Identity após exceção. Contate o suporte.");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Usuário '{email}' revertido com sucesso após exceção na criação do apostador.");
+                        Notificar("Alerta", "Registro de usuário revertido devido a exceção na criação do apostador.");
+                    }
+                }
                 return false;
             }
         }
+
+
 
         public async Task<UsuarioLoginResult> Login(string email, string password, bool rememberMe)
         {

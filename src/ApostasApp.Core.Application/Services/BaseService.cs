@@ -1,4 +1,6 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+﻿// Localização: ApostasApp.Core.Application.Services/BaseService.cs
+
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Notificacoes; // Usar a classe Notificacao do Domain
 using System.Collections.Generic;
 using System.Linq;
@@ -24,10 +26,28 @@ namespace ApostasApp.Core.Application.Services
 
         // Método para registrar uma notificação.
         // Ele cria uma instância de Notificacao (do domínio) e a passa para o notificador.
+        // Este método é genérico e será chamado pelos métodos específicos abaixo.
         protected void Notificar(string tipo, string mensagem, string nomeCampo = null)
         {
             _notificador.Handle(new Notificacao(null, tipo, mensagem, nomeCampo));
         }
+
+        // NOVOS MÉTODOS: Métodos específicos para notificar erros, sucessos e alertas
+        protected void NotificarErro(string mensagem, string codigo = null, string nomeCampo = null)
+        {
+            Notificar("Erro", mensagem, nomeCampo);
+        }
+
+        protected void NotificarSucesso(string mensagem, string codigo = null, string nomeCampo = null)
+        {
+            Notificar("Sucesso", mensagem, nomeCampo);
+        }
+
+        protected void NotificarAlerta(string mensagem, string codigo = null, string nomeCampo = null)
+        {
+            Notificar("Alerta", mensagem, nomeCampo);
+        }
+
 
         // Método para obter as notificações registradas no notificador.
         // Ele mapeia as notificações do domínio (Notificacao) para DTOs de notificação (NotificationDto)
@@ -52,14 +72,12 @@ namespace ApostasApp.Core.Application.Services
         protected async Task<bool> CommitAsync()
         {
             // Se o notificador tem notificações do tipo "Erro", não permite o commit.
-            // A lógica de TemNotificacao() no Notificador.cs foi ajustada para verificar apenas "Erro".
-            if (_notificador.TemNotificacao())
+            if (_notificador.ObterNotificacoes().Any(n => n.Tipo == "Erro")) // Verifica se há notificações de erro
             {
                 return false;
             }
 
             // Realiza o commit da UnitOfWork.
-            // Se o commit falhar, uma exceção será lançada e capturada pelo bloco catch no serviço chamador.
             return await _uow.CommitAsync();
         }
 

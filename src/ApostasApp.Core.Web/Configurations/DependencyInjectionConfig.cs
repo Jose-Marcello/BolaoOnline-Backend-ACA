@@ -5,6 +5,7 @@ using ApostasApp.Core.Application.Services.Financeiro;
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
+using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
 using ApostasApp.Core.Application.Services.Interfaces.Palpites;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
@@ -20,16 +21,20 @@ using ApostasApp.Core.Domain.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Jogos;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
 using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.Infrastructure.Data.Repository.Apostas;
 using ApostasApp.Core.Infrastructure.Data.Repository.Jogos;
 using ApostasApp.Core.Infrastructure.Identity;
 using ApostasApp.Core.Infrastructure.Notificacoes;
+using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
 using ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos;
 using ApostasApp.Core.InfraStructure.Data.Repository.Financeiro;
 using ApostasApp.Core.InfraStructure.Data.Repository.Rodadas;
+using Microsoft.Extensions.Options;
+using SendGrid;
 
 
 namespace ApostasApp.Web.Configurations
@@ -44,6 +49,9 @@ namespace ApostasApp.Web.Configurations
             
             services.AddScoped<INotificador, Notificador>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // <<-- CORREÇÃO: REGISTRO DO SERVIÇO DE E-MAIL SENDGRID EXISTENTE -->>
+            
 
             services.AddScoped<IApostadorRepository, ApostadorRepository>();
             services.AddScoped<IApostaRodadaRepository, ApostaRodadaRepository>();

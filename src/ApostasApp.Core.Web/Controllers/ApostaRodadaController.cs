@@ -37,14 +37,14 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
         /// Busca o status da aposta de uma rodada para um apostador.
         /// </summary>
         /// <param name="rodadaId">ID da rodada.</param>
-        /// <param name="apostadorCampeamentoId">ID do apostador no campeonato.</param>
+        /// <param name="apostadorCampeonatoId">ID do apostador no campeonato.</param>
         /// <returns>ApiResponse contendo o status da aposta da rodada.</returns>
         [HttpGet("StatusAposta")]
-        public async Task<IActionResult> StatusAposta([FromQuery] Guid rodadaId, [FromQuery] Guid apostadorCampeamentoId)
+        public async Task<IActionResult> StatusAposta([FromQuery] Guid rodadaId, [FromQuery] Guid apostadorCampeonatoId)
         {
             try
             {
-                var statusResponse = await _apostaRodadaService.ObterStatusApostaRodadaParaUsuario(rodadaId, apostadorCampeamentoId);
+                var statusResponse = await _apostaRodadaService.ObterStatusApostaRodadaParaUsuario(rodadaId, apostadorCampeonatoId);
 
                 // Usa CustomResponse para retornar a ApiResponse do serviço de forma consistente
                 return CustomResponse(statusResponse);

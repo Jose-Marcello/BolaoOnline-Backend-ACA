@@ -1,6 +1,7 @@
 ﻿// RegisterRequestDto.cs
 // DTO para a requisição de registro de usuário
 
+using ApostasApp.Core.Application.Utils;
 using System.ComponentModel.DataAnnotations;
 
 namespace ApostasApp.Core.Application.DTOs.Usuarios
@@ -21,8 +22,14 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
         [Required(ErrorMessage = "O apelido é obrigatório.")]
         public string Apelido { get; set; }
 
+        private string _cpf;
+
         [Required(ErrorMessage = "O CPF é obrigatório.")]
-        public string Cpf { get; set; }
+        public string Cpf
+        {
+            get => _cpf;
+            set => _cpf = value.CleanNumbers(); // <<-- APLICA A LIMPEZA AQUI
+        }
 
         [Required(ErrorMessage = "O celular é obrigatório.")]
         public string Celular { get; set; }
@@ -31,6 +38,11 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
         public string Scheme { get; set; }
         public string Host { get; set; }
         public bool SendConfirmationEmail { get; set; } = true; // Por padrão, enviar e-mail de confirmação
+
+
+        
+
+
 
     }
 }

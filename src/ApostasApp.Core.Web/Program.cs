@@ -3,8 +3,11 @@
 // Usings para componentes do ASP.NET Core
 // Usings para seus projetos e namespaces específicos
 using ApostasApp.Core.Application.MappingProfiles;
+using ApostasApp.Core.Application.Services.Interfaces.Email;
+using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identity
 using ApostasApp.Core.Infrastructure.Identity.Seed;
+using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.InfraStructure.Data.Context;
 using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
 using ApostasApp.Web.Configurations;
@@ -13,13 +16,22 @@ using Microsoft.AspNetCore.Http; // Necessário para IHttpContextAccessor
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SendGrid;
 using Swashbuckle.AspNetCore.SwaggerGen; // Necessário para AddSwaggerGen
 using Swashbuckle.AspNetCore.SwaggerUI; // Necessário para UseSwaggerUI
 using System; // Para TimeSpan, Guid, etc.
 using System.Collections.Generic; // Para List
 using System.Text; // Para Encoding
+using Microsoft.AspNetCore.Identity.UI.Services; // Para a interface IEmailSender
+using SendGrid; // Para ISendGridClient
+using Microsoft.Extensions.Options; // Para IOptions<SendGridSettings>
+using ApostasApp.Core.Domain.Models.Configuracoes; // Para SendGridSettings
+using ApostasApp.Core.Infrastructure.Services.Email;
+using IEmailSender = Microsoft.AspNetCore.Identity.UI.Services.IEmailSender; // Para SendGridEmailSender
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,15 +45,15 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 // ===================================================================================================
 // Configuração do Banco de Dados de Identidade (IdentityDbContext)
 // ===================================================================================================
-builder.Services.AddDbContext<IdentityDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
+//builder.Services.AddDbContext<IdentityDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
 
 // ===================================================================================================
 // Configuração do ASP.NET Core Identity
 // ===================================================================================================
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
+    options.SignIn.RequireConfirmedAccount = false; // true;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -82,6 +94,22 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.ResolveDependencies();
+
+// <<-- NOVO: CONFIGURAÇÃO E REGISTRO DO SENDGRID E EMAILSENDER AQUI -->>
+// Configurações do SendGrid (lê do appsettings.json)
+builder.Services.Configure<SendGridSettings>(builder.Configuration.GetSection("SendGrid"));
+
+// Registra o cliente SendGrid
+builder.Services.AddTransient<ISendGridClient>(s =>
+{
+    var apiKey = s.GetRequiredService<IOptions<SendGridSettings>>().Value.ApiKey;
+    return new SendGridClient(apiKey);
+});
+
+// Registra sua implementação de IEmailSender (usando a interface padrão do Identity UI)
+builder.Services.AddTransient<IEmailSender, SendGridEmailSender>();
+
+
 
 
 // ===================================================================================================
@@ -143,6 +171,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
 // ===================================================================================================
 // Configuração CORS
 // ===================================================================================================
@@ -188,6 +217,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowSpecificOrigin"); // Usar a política CORS definida
+//app.UseCors(); // Usar a política CORS definida
 
 app.UseAuthentication(); // Deve vir antes de UseAuthorization
 app.UseAuthorization();

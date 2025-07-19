@@ -1,21 +1,22 @@
 // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
-using Microsoft.AspNetCore.Identity;
+using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
 using ApostasApp.Core.Domain.Models.Notificacoes; // AGORA USAR Notificacao
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
-using ApostasApp.Core.Domain.Interfaces.Identity;
-using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Infrastructure.Identity
@@ -28,11 +29,14 @@ namespace ApostasApp.Core.Infrastructure.Identity
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<IdentityService> _logger;
+        private readonly IEmailSender _emailSender;
+        private readonly string _apiBaseUrl; // Propriedade para a URL base da API
 
         public IdentityService(
             UserManager<Usuario> userManager,
             SignInManager<Usuario> signInManager,
             INotificador notificador,
+            IEmailSender emailSender,
             IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor,
             ILogger<IdentityService> logger)
@@ -40,9 +44,18 @@ namespace ApostasApp.Core.Infrastructure.Identity
             _userManager = userManager;
             _signInManager = signInManager;
             _notificador = notificador;
+            _emailSender = emailSender;
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+
+
+            // <<-- CORREÇÃO FINAL: Atribuição correta da URL base da API -->>
+            _apiBaseUrl = _configuration["ApiSettings:BaseUrl"];
+            if (string.IsNullOrEmpty(_apiBaseUrl))
+            {
+                _logger.LogError("ApiSettings:BaseUrl não configurado no appsettings.json. O link de confirmação pode estar incorreto.");
+            }
         }
 
         public async Task<Usuario> GetLoggedInUserAsync()
@@ -59,8 +72,21 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
         public async Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular)
         {
-            var user = new Usuario { UserName = email, Email = email, Apelido = apelido, CPF = cpf, Celular = celular, EmailConfirmed = false, RegistrationDate = DateTime.Now };
-            var result = await _userManager.CreateAsync(user, password);
+            var user = new Usuario
+            {
+                UserName = email,
+                Email = email,
+                Apelido = apelido,
+                CPF = cpf,
+                Celular = celular,
+                EmailConfirmed = true, // false,
+                RegistrationDate = DateTime.Now,
+                // <<-- INICIALIZAÇÃO DO REFRESH TOKEN E EXPIRATION TIME AQUI -->>
+                RefreshToken = Guid.NewGuid().ToString(), // Gera um GUID único
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)// Expira em 7 dias (ajuste conforme sua política)               
+            };   
+
+        var result = await _userManager.CreateAsync(user, password);
 
             if (!result.Succeeded)
             {
@@ -79,11 +105,28 @@ namespace ApostasApp.Core.Infrastructure.Identity
         public async Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host)
         {
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var confirmationLink = $"{scheme}://{host}/Account/ConfirmEmail?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            // Passa Notificacao para o notificador
-            _notificador.Handle(new Notificacao(null, "Sucesso", $"Link de confirmação de e-mail gerado para {user.Email}: {confirmationLink}", null));
-            _logger.LogInformation($"Link de confirmação de e-mail para {user.Email}: {confirmationLink}");
-            return true;
+
+            // <<-- CORREÇÃO CRÍTICA: USA A URL BASE DA API E A ROTA CORRETA DO CONTROLADOR -->>
+            var confirmationLink = $"{_apiBaseUrl}/confirm-email?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+            // A rota do seu AccountController é [HttpGet("confirm-email")]
+
+            try
+            {
+                var subject = "Confirme seu e-mail - Bolão Online";
+                var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Por favor, confirme sua conta clicando neste link:</p><p><a href='{confirmationLink}'>Confirmar E-mail</a></p><p>Se você não solicitou este e-mail, por favor, ignore-o.</p>";
+
+                await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
+
+                _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de confirmação enviado para {user.Email}.", null));
+                _logger.LogInformation($"E-mail de confirmação enviado para {user.Email}. Link: {confirmationLink}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de confirmação para {user.Email}: {ex.Message}", null));
+                _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL DE CONFIRMAÇÃO para {user.Email}.");
+                return false;
+            }
         }
 
         public async Task<Usuario> GetUserByEmailAsync(string email)

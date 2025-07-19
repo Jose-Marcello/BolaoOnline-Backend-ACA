@@ -1,6 +1,8 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
+
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
+// using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Verifique se esta interface é realmente necessária ou se é um using antigo - REMOVIDO SE NÃO USADO
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces;
@@ -12,8 +14,7 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostas; // Para ApostaRodada e Palpite
 using ApostasApp.Core.Domain.Models.Campeonatos; // Importado para usar o modelo de domínio Campeonato
 using ApostasApp.Core.Domain.Models.Financeiro; // Para TipoTransacao
-using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Verifique se esta interface é realmente necessária ou se é um using antigo
-using ApostasApp.Core.Domain.Models.Notificacoes; // Para NotificationDto (DTO de notificação)
+using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
 using AutoMapper;
 using Microsoft.Extensions.Logging;
@@ -77,7 +78,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar campeonato.");
-                Notificar("Erro", $"Erro interno ao adicionar campeonato: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao adicionar campeonato: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 return false;
             }
         }
@@ -93,7 +94,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar campeonato.");
-                Notificar("Erro", $"Erro interno ao atualizar campeonato: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao atualizar campeonato: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 return false;
             }
         }
@@ -108,7 +109,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao remover campeonato.");
-                Notificar("Erro", $"Erro interno ao remover campeonato: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao remover campeonato: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 return false;
             }
         }
@@ -123,7 +124,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter campeonato por ID.");
-                Notificar("Erro", $"Erro interno ao obter campeonato por ID: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter campeonato por ID: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 return null;
             }
         }
@@ -138,14 +139,14 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter todos os campeonatos.");
-                Notificar("Erro", $"Erro interno ao obter todos os campeonatos: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter todos os campeonatos: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 return Enumerable.Empty<CampeonatoDto>();
             }
         }
 
         public async Task<ApiResponse<IEnumerable<CampeonatoDto>>> GetAvailableCampeonatos(string? userId)
         {
-            var apiResponse = new ApiResponse<IEnumerable<CampeonatoDto>>(); // Instanciação direta
+            var apiResponse = new ApiResponse<IEnumerable<CampeonatoDto>>();
             try
             {
                 HashSet<string> campeonatosAderidosIds = new HashSet<string>();
@@ -175,7 +176,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
 
                 if (!campeonatosDto.Any())
                 {
-                    Notificar("Alerta", "Nenhum campeonato disponível encontrado na base de dados."); // Notificar com 2 argumentos
+                    NotificarAlerta("Nenhum campeonato disponível encontrado na base de dados."); // CORRIGIDO: Usando NotificarAlerta
                     apiResponse.Success = true; // Pode ser sucesso com dados vazios e alerta
                     apiResponse.Data = new List<CampeonatoDto>();
                 }
@@ -190,7 +191,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter campeonatos disponíveis.");
-                Notificar("Erro", $"Erro interno ao obter campeonatos disponíveis: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter campeonatos disponíveis: {ex.Message}"); // CORRIGIDO: Usando NotificarErro
                 apiResponse.Success = false; // Em caso de exceção, é um erro
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                 apiResponse.Data = Enumerable.Empty<CampeonatoDto>(); // Garante que Data não é nula
@@ -198,63 +199,73 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             }
         }
 
-        // Substitua o seu método AderirCampeonatoAsync existente por este:
+        // Método AderirCampeonatoAsync CORRIGIDO
         public async Task<ApiResponse<bool>> AderirCampeonatoAsync(Guid apostadorId, Guid campeonatoId)
         {
-            var apiResponse = new ApiResponse<bool>(); // Instanciação direta
+            var apiResponse = new ApiResponse<bool>();
             try
             {
+                // 1. Validar Campeonato
                 var campeonato = await _campeonatoRepository.ObterPorId(campeonatoId);
                 if (campeonato == null)
                 {
-                    Notificar("Erro", "Campeonato não encontrado."); // Notificar com 2 argumentos
-                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                    NotificarErro("Campeonato não encontrado.");
                     apiResponse.Success = false;
                     apiResponse.Data = false;
+                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                     return apiResponse;
                 }
 
+                // 2. Validar Adesão Existente
                 var adesaoExistente = await _apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(apostadorId, campeonatoId);
                 if (adesaoExistente != null)
                 {
-                    Notificar("Alerta", "Você já aderiu a este campeonato."); // Notificar com 2 argumentos
-                    apiResponse.Success = true;
+                    NotificarAlerta("Você já aderiu a este campeonato.");
+                    apiResponse.Success = true; // É um sucesso, mas com alerta
                     apiResponse.Data = true;
                     apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                     return apiResponse;
                 }
 
-                var apostador = await _apostadorRepository.ObterPorId(apostadorId); // Este é o ID da entidade Apostador
+                // 3. Validar Apostador
+                var apostador = await _apostadorRepository.ObterPorId(apostadorId);
                 if (apostador == null)
                 {
-                    Notificar("Erro", "Apostador não encontrado."); // Notificar com 2 argumentos
-                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                    NotificarErro("Apostador não encontrado.");
                     apiResponse.Success = false;
                     apiResponse.Data = false;
+                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                     return apiResponse;
                 }
 
+                // INÍCIO DA TRANSAÇÃO (se aplicável ao seu UoW)
+                // Se seu IUnitOfWork suporta transações explícitas, inicie aqui.
+                // Ex: _uow.BeginTransaction();
+
+                // 4. Débito de Saldo (se houver custo de adesão)
                 if (campeonato.CustoAdesao.HasValue && campeonato.CustoAdesao.Value > 0)
                 {
                     var debitoResponse = await _financeiroService.DebitarSaldoAsync(
-                        apostadorId, // <<-- Aqui é o ID da entidade Apostador
+                        apostadorId,
                         campeonato.CustoAdesao.Value,
                         TipoTransacao.AdesaoCampeonato,
                         $"Adesão ao campeonato: {campeonato.Nome}");
 
                     if (!debitoResponse.Success)
                     {
-                        // Propaga as notificações do FinanceiroService
+                        // Se o débito falhar, propaga as notificações de erro do FinanceiroService
+                        // E NÃO CONTINUA A OPERAÇÃO
                         apiResponse.Notifications = debitoResponse.Notifications.ToList();
                         apiResponse.Success = false;
                         apiResponse.Data = false;
+                        // Se houver transação, faça o rollback aqui: _uow.RollbackTransaction();
                         return apiResponse;
                     }
-                    // A limpeza de notificações deve ser feita no Notificador ou no ciclo de vida da requisição,
-                    // não diretamente aqui. Removido o acesso direto a _notificador.LimparNotificacoes();
+                    // Se o débito foi um sucesso, as notificações de sucesso do FinanceiroService
+                    // já foram adicionadas ao notificador. Elas serão coletadas no final.
                 }
 
-                // 1. Criar o registro de ApostadorCampeonato
+                // 5. Criar o registro de ApostadorCampeonato
                 var novaAdesao = new ApostadorCampeonato(apostadorId, campeonato.Id)
                 {
                     DataInscricao = DateTime.Now,
@@ -262,27 +273,22 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                 };
                 _apostadorCampeonatoRepository.Adicionar(novaAdesao);
 
-                // 2. Encontrar a Rodada "Em Apostas" para este campeonato
+                // 6. Encontrar a Rodada "Em Apostas" para este campeonato e criar ApostaRodada e Palpites
                 var rodadasEmApostas = await _rodadaRepository.ObterRodadasEmApostaPorCampeonato(campeonato.Id);
-                var rodadaParaApostaInicial = rodadasEmApostas?.FirstOrDefault(); // Pega a primeira, se houver
+                var rodadaParaApostaInicial = rodadasEmApostas?.FirstOrDefault();
 
                 if (rodadaParaApostaInicial == null)
                 {
-                    Notificar("Alerta", "Nenhuma rodada 'Em Apostas' encontrada para este campeonato. A aposta inicial não será criada."); // Notificar com 2 argumentos
-                    // Neste caso, a adesão ainda é válida, mas a aposta inicial não pode ser criada.
-                    // O fluxo continua para o commit apenas da adesão e débito.
+                    NotificarAlerta("Nenhuma rodada 'Em Apostas' encontrada para este campeonato. A aposta inicial não será criada.");
+                    // A adesão e o débito (se houver) ainda são válidos, então a operação principal continua como sucesso.
                 }
                 else
                 {
-                    // 3. Criar a ApostaRodada para o apostador e esta rodada
-                    // <<-- CORREÇÃO PRINCIPAL AQUI: Usar novaAdesao.Id para ApostadorCampeonatoId -->>
                     var apostaRodada = new ApostaRodada(novaAdesao.Id, rodadaParaApostaInicial.Id);
                     _apostaRodadaRepository.Adicionar(apostaRodada);
 
-                    // 4. Obter todos os jogos dessa rodada
                     var jogosDaRodada = await _jogoRepository.ObterJogosDaRodada(rodadaParaApostaInicial.Id);
 
-                    // 5. Criar Palpites iniciais para cada jogo
                     if (jogosDaRodada != null && jogosDaRodada.Any())
                     {
                         foreach (var jogo in jogosDaRodada)
@@ -300,48 +306,56 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                     }
                     else
                     {
-                        Notificar("Alerta", "Nenhum jogo encontrado para a rodada 'Em Apostas'. Palpites iniciais não serão criados."); // Notificar com 2 argumentos
+                        NotificarAlerta("Nenhum jogo encontrado para a rodada 'Em Apostas'. Palpites iniciais não serão criados.");
                     }
                 }
 
-                // CommitAsync() MOVIDO PARA O FINAL DE TODAS AS OPERAÇÕES
+                // 7. Commit de todas as operações pendentes
                 var saved = await CommitAsync();
 
                 if (saved)
                 {
                     apiResponse.Success = true;
                     apiResponse.Data = true;
-                    Notificar("Sucesso", "Adesão ao campeonato e preparação para apostas realizada com sucesso!"); // Notificar com 2 argumentos
+                    NotificarSucesso("Adesão ao campeonato e preparação para apostas realizada com sucesso!");
+                    // Se houver transação, faça o commit aqui: _uow.CommitTransaction();
                 }
                 else
                 {
-                    Notificar("Erro", "Não foi possível vincular o apostador ao campeonato ou preparar as apostas."); // Notificar com 2 argumentos
+                    // Se o commit falhar, notifica um erro genérico de persistência
+                    NotificarErro("Não foi possível persistir as alterações para vincular o apostador ao campeonato ou preparar as apostas.");
+                    apiResponse.Success = false;
+                    apiResponse.Data = false;
+                    // Se houver transação, faça o rollback aqui: _uow.RollbackTransaction();
                 }
+
+                // Coleta as notificações acumuladas (sucesso, alerta ou erro do commit)
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
                 return apiResponse;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro interno ao aderir ao campeonato.");
-                Notificar("Erro", $"Erro interno ao aderir ao campeonato: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao aderir ao campeonato: {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = false;
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                // Se houver transação, faça o rollback aqui: _uow.RollbackTransaction();
                 return apiResponse;
             }
         }
 
         public async Task<ApiResponse<CampeonatoDto?>> GetDetalhesCampeonato(Guid id)
         {
-            var apiResponse = new ApiResponse<CampeonatoDto?>(); // Instanciação direta
+            var apiResponse = new ApiResponse<CampeonatoDto?>();
             try
             {
                 var campeonato = await _campeonatoRepository.ObterPorId(id);
 
                 if (campeonato == null)
                 {
-                    Notificar("Alerta", $"Campeonato com ID '{id}' não encontrado."); // Notificar com 2 argumentos
-                    apiResponse.Success = false;
+                    NotificarAlerta($"Campeonato com ID '{id}' não encontrado.");
+                    apiResponse.Success = false; // Se o item não foi encontrado, isso é uma falha específica
                     apiResponse.Data = null;
                 }
                 else
@@ -355,7 +369,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter detalhes do campeonato.");
-                Notificar("Erro", $"Erro interno ao obter detalhes do campeonato: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter detalhes do campeonato: {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = null;
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
@@ -365,14 +379,14 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
 
         public async Task<ApiResponse<IEnumerable<Rodada>>> GetRodadasCorrentes(Guid campeonatoId)
         {
-            var apiResponse = new ApiResponse<IEnumerable<Rodada>>(); // Instanciação direta
+            var apiResponse = new ApiResponse<IEnumerable<Rodada>>();
 
             try
             {
                 var rodadas = await _rodadaRepository.ObterRodadasCorrentePorCampeonato(campeonatoId);
                 if (rodadas == null || !rodadas.Any())
                 {
-                    Notificar("Alerta", "Nenhuma rodada 'Corrente' encontrada para este campeonato."); // Notificar com 2 argumentos
+                    NotificarAlerta("Nenhuma rodada 'Corrente' encontrada para este campeonato.");
                     apiResponse.Success = true; // Pode ser sucesso com dados vazios e alerta
                     apiResponse.Data = Enumerable.Empty<Rodada>();
                 }
@@ -387,7 +401,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter rodadas correntes.");
-                Notificar("Erro", $"Erro interno ao obter rodada(s) corrente(s): {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter rodada(s) corrente(s): {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = Enumerable.Empty<Rodada>(); // Garante que Data não é nula
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
@@ -397,13 +411,13 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
 
         public async Task<ApiResponse<IEnumerable<Rodada>>> GetRodadasEmApostas(Guid campeonatoId)
         {
-            var apiResponse = new ApiResponse<IEnumerable<Rodada>>(); // Instanciação direta
+            var apiResponse = new ApiResponse<IEnumerable<Rodada>>();
             try
             {
                 var rodadas = await _rodadaRepository.ObterRodadasEmApostaPorCampeonato(campeonatoId);
                 if (rodadas == null || !rodadas.Any())
                 {
-                    Notificar("Alerta", "Nenhuma rodada 'Em Apostas' encontrada para este campeonato."); // Notificar com 2 argumentos
+                    NotificarAlerta("Nenhuma rodada 'Em Apostas' encontrada para este campeonato.");
                     apiResponse.Success = true; // Pode ser sucesso com dados vazios e alerta
                     apiResponse.Data = Enumerable.Empty<Rodada>();
                 }
@@ -418,7 +432,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao obter rodadas em apostas.");
-                Notificar("Erro", $"Erro interno ao obter rodadas em apostas: {ex.Message}"); // Notificar com 2 argumentos
+                NotificarErro($"Erro interno ao obter rodadas em apostas: {ex.Message}");
                 apiResponse.Success = false;
                 apiResponse.Data = Enumerable.Empty<Rodada>(); // Garante que Data não é nula
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();

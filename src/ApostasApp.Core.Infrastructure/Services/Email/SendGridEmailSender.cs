@@ -1,32 +1,39 @@
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Options;
+// Localização: ApostasApp.Core.Infrastructure.Services.Email/SendGridEmailSender.cs
+
+using Microsoft.AspNetCore.Identity.UI.Services; // Usando a interface padrão do Identity UI
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using System;
 using System.Threading.Tasks;
-using ApostasApp.Core.Domain.Models.Configuracoes;
 
 namespace ApostasApp.Core.Infrastructure.Services.Email
 {
     public class SendGridEmailSender : IEmailSender
     {
         private readonly ISendGridClient _sendGridClient;
-        private readonly SendGridSettings _sendGridSettings;
+        private readonly IConfiguration _configuration; // Injetar IConfiguration para ler settings
+        private readonly ILogger<SendGridEmailSender> _logger; // Injetar ILogger
 
-        public SendGridEmailSender(ISendGridClient sendGridClient, IOptions<SendGridSettings> sendGridSettingsAccessor)
+        public SendGridEmailSender(ISendGridClient sendGridClient, IConfiguration configuration, ILogger<SendGridEmailSender> logger)
         {
             _sendGridClient = sendGridClient;
-            _sendGridSettings = sendGridSettingsAccessor.Value;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            var fromEmail = _sendGridSettings.FromEmail;
-            var fromName = _sendGridSettings.FromName;
-            var apiKey = _sendGridSettings.ApiKey;
+            var fromEmail = _configuration["SendGrid:FromEmail"];
+            var fromName = _configuration["SendGrid:FromName"];
+            var apiKey = _configuration["SendGrid:ApiKey"]; // Embora não usado para instanciar client aqui, é bom ter acesso para logs/verificação
 
             if (string.IsNullOrEmpty(fromEmail) || string.IsNullOrEmpty(fromName) || string.IsNullOrEmpty(apiKey))
             {
-                System.Console.WriteLine("SendGrid settings are not fully configured (FromEmail, FromName, or ApiKey missing). Cannot send email.");
+                var errorMessage = "SendGrid settings are not fully configured (FromEmail, FromName, or ApiKey missing). Cannot send email.";
+                _logger.LogError(errorMessage);
+                System.Console.WriteLine(errorMessage); // Para visualização rápida no console de debug
                 return;
             }
 
@@ -40,17 +47,30 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
 
             msg.SetClickTracking(false, false);
 
-            var response = await _sendGridClient.SendEmailAsync(msg);
+            try
+            {
+                // <<-- COLOQUE UM BREAKPOINT NESSA LINHA ABAIXO -->>
+                var response = await _sendGridClient.SendEmailAsync(msg);
 
-            if (response.StatusCode != System.Net.HttpStatusCode.Accepted &&
-                response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
-                var responseBody = await response.Body.ReadAsStringAsync();
-                System.Console.WriteLine($"Erro ao enviar email via SendGrid. Status: {response.StatusCode}, Body: {responseBody}");
+                // <<-- NOVO: LER O CORPO DA RESPOSTA AQUI -->>
+                var responseBody = await response.Body.ReadAsStringAsync(); // Esta variável conterá o corpo da resposta
+
+                if (response.StatusCode != System.Net.HttpStatusCode.Accepted &&
+                    response.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    _logger.LogError($"Falha ao enviar email via SendGrid. Status: {response.StatusCode}, Body: {responseBody}");
+                    System.Console.WriteLine($"Erro ao enviar email via SendGrid. Status: {response.StatusCode}, Body: {responseBody}");
+                }
+                else
+                {
+                    _logger.LogInformation($"Email enviado com sucesso para {email}. Status: {response.StatusCode}, Body: {responseBody}");
+                    System.Console.WriteLine($"Email enviado com sucesso para {email}. Status: {response.StatusCode}, Body: {responseBody}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                System.Console.WriteLine($"Email enviado com sucesso para {email}.");
+                _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL VIA SENDGRID para {email}.");
+                System.Console.WriteLine($"EXCEÇÃO NO ENVIO DE E-MAIL VIA SENDGRID para {email}: {ex.Message}");
             }
         }
     }
