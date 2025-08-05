@@ -1,1 +1,87 @@
 /* You can add global styles to this file, and also import other style files */
+
+@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+/* Importação do Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos globais para o body e html para garantir que o fundo cubra tudo */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  /* Fundo da imagem principal aplicado ao body para cobrir tudo */
+  background-image: url('/assets/images/fundo_bolao.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  overflow-x: hidden; /* Evita rolagem horizontal indesejada */
+}
+
+/* Cores personalizadas do Bolão para uso com Tailwind */
+:root {
+  --bolao-blue-dark: #3F51B5; /* Azul escuro (primário) */
+  --bolao-blue-medium: #5C6BC0; /* Azul médio */
+  --bolao-blue-light: #C5CAE9; /* Azul claro */
+  --bolao-green-dark: #4CAF50; /* Verde escuro (sucesso) */
+  --bolao-green-light: #81C784; /* Verde claro */
+  --bolao-accent: #FFC107; /* Amarelo (accent) */
+  --bolao-warn: #F44336; /* Vermelho (aviso/erro) */
+  --bolao-text-black: #212121; /* Texto preto */
+  --bolao-text-gray: #757575; /* Texto cinza */
+}
+
+/* Classes utilitárias Tailwind personalizadas para as cores */
+.bg-bolao-blue-dark { background-color: var(--bolao-blue-dark); }
+.hover\:bg-bolao-blue-dark\/90:hover { background-color: rgba(var(--bolao-blue-dark), 0.9); }
+.bg-bolao-green-dark { background-color: var(--bolao-green-dark); }
+.hover\:bg-bolao-green-dark\/90:hover { background-color: rgba(var(--bolao-green-dark), 0.9); }
+.bg-bolao-accent { background-color: var(--bolao-accent); }
+.hover\:bg-bolao-accent\/90:hover { background-color: rgba(var(--bolao-accent), 0.9); }
+.bg-bolao-warn { background-color: var(--bolao-warn); }
+.hover\:bg-bolao-warn\/90:hover { background-color: rgba(var(--bolao-warn), 0.9); }
+.text-bolao-text-black { color: var(--bolao-text-black); }
+.text-bolao-text-gray { color: var(--bolao-text-gray); }
+.bg-bolao-green-light { background-color: var(--bolao-green-light); }
+.border-bolao-green-dark { border-color: var(--bolao-green-dark); }
+.text-bolao-green-dark { color: var(--bolao-green-dark); }
+.border-bolao-warn { border-color: var(--bolao-warn); }
+.text-bolao-warn { color: var(--bolao-warn); }
+.bg-bolao-accent { background-color: var(--bolao-accent); }
+.border-bolao-accent { border-color: var(--bolao-accent); }
+.text-bolao-accent { color: var(--bolao-accent); }
+
+
+/* Classes para snackbar */
+.snackbar-success {
+  background-color: var(--bolao-green-dark) !important;
+  color: white !important;
+}
+
+.snackbar-error {
+  background-color: var(--bolao-warn) !important;
+  color: white !important;
+}
+
+.snackbar-warning {
+  background-color: #FFEB3B !important; /* Amarelo mais vibrante para aviso */
+  color: #333 !important;
+}
+
+.snackbar-info {
+  background-color: var(--bolao-blue-dark) !important;
+  color: white !important;
+}
+
+/* <<-- FORÇANDO CORES DE FUNDO DOS CARDS E WRAPPER AQUI COM MAIS ESPECIFICIDADE -->> */
+/* Usando seletores de elementos do Material Design */
+.cards-container-wrapper {
+  background-color: rgba(245, 245, 245, 0.068) !important; /* Cinza claro com leve transparência, forçado */
+}
+
+mat-card.mat-mdc-card { /* Seletor mais específico para o card do Material Design */
+  background-color: #e0e0e0f3 !important; /* Um cinza um pouco mais escuro para os cards, forçado */
+  border: 1px solid #04188d !important; /* Borda forçada */
+}

@@ -1,13 +1,26 @@
-import { Component } from '@angular/core';
+// Localização: src/app/app.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [
+    CommonModule,
+    RouterOutlet
+  ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  title = 'BolaoObnlineAppV5';
+export class AppComponent implements OnInit {
+  title = 'BolaoOnlineAppV5';
+
+  constructor() { }
+
+  ngOnInit(): void {
+    // Nesta fase inicial, não precisamos de lógica complexa aqui.
+    // Apenas garantimos que o router-outlet está pronto para exibir as rotas.
+    console.log('[AppComponent] Iniciado.');
+  }
 }

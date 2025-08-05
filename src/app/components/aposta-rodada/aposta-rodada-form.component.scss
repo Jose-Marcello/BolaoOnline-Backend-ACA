@@ -1,0 +1,71 @@
+/* Localização: src/app/aposta-rodada/aposta-rodada-form/aposta-rodada-form.component.scss */
+
+.cards-container-wrapper {
+  background-color: rgba(245, 245, 245, 0.068) !important; /* Cinza claro com leve transparência, forçado */
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(179, 177, 177, 0.925);
+  width: 100%;
+  max-width: 96rem; /* Largura máxima para o conteúdo */
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+mat-card.mat-mdc-card {
+  background-color: #e0e0e0f3 !important; /* Um cinza um pouco mais escuro para os cards, forçado */
+  border: 1px solid #04188d !important; /* Borda forçada */
+}
+
+.dashboard-button {
+  width: 100%;
+  font-weight: 600; /* Semibold */
+  border-radius: 0.5rem; /* Rounded-md */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+  transition: all 0.3s ease-in-out;
+  padding: 0.75rem 1rem; /* Padding para botões maiores */
+  height: auto; /* Permite que o conteúdo determine a altura */
+  line-height: normal; /* Garante que o texto não seja cortado */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 0.875rem; /* Fonte menor para os botões */
+}
+
+/* Estilos para os cards de jogo individuais */
+.jogo-card {
+  background-color: #f5f5f5 !important; /* Fundo mais claro para os jogos */
+  border: 1px solid #ccc !important;
+  transition: transform 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .flex.items-center.justify-between {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .mat-form-field {
+    width: 100px; /* Largura fixa para os campos de placar */
+  }
+}
+
+/* Ajustes para os campos de input de placar */
+mat-form-field {
+  .mat-mdc-form-field-wrapper {
+    padding-bottom: 0 !important; /* Remove padding extra */
+  }
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none; /* Oculta a área de erro padrão para controlar com mat-error */
+  }
+}

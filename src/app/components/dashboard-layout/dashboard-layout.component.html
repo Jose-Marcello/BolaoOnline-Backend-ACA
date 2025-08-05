@@ -1,0 +1,76 @@
+<!-- Localização: src/app/components/dashboard-layout/dashboard-layout.component.html -->
+
+<mat-sidenav-container class="h-full w-full">
+  <!-- Sidenav -->
+  <mat-sidenav #sidenav mode="over" [(opened)]="isSidenavOpen" class="w-64 bg-gray-800 text-white shadow-lg">
+    <div class="p-6 text-center border-b border-gray-700">
+      <!-- Logo no Sidenav (caminho corrigido se necessário, mantendo o seu original) -->
+      <img src="/assets/images/logobolao.png" alt="Logo Bolão Online" class="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-primary-500">
+      <h2 class="text-xl font-semibold text-primary-300">Bolão Online</h2>
+      <!-- Exibe o apelido do usuário logado de forma segura -->
+      <p class="text-sm text-gray-400 mt-2">Olá, {{ (loggedInUser$ | async)?.apelido || 'Convidado' }}!</p>
+    </div>
+    <mat-nav-list class="p-2">
+      <a mat-list-item routerLink="/dashboard" (click)="toggleSidenav()" class="flex items-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200">
+        <mat-icon class="mr-3 text-primary-300">dashboard</mat-icon>
+        Dashboard
+      </a>
+      <a mat-list-item routerLink="/meus-palpites" (click)="toggleSidenav()" class="flex items-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200">
+        <mat-icon class="mr-3 text-primary-300">edit</mat-icon>
+        Meus Palpites
+      </a>
+      <a mat-list-item routerLink="/financeiro" (click)="toggleSidenav()" class="flex items-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200">
+        <mat-icon class="mr-3 text-primary-300">account_balance_wallet</mat-icon>
+        Financeiro
+      </a>
+      <a mat-list-item routerLink="/ranking" (click)="toggleSidenav()" class="flex items-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200">
+        <mat-icon class="mr-3 text-primary-300">leaderboard</mat-icon>
+        Ranking
+      </a>
+      <a mat-list-item routerLink="/configuracoes" (click)="toggleSidenav()" class="flex items-center py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200">
+        <mat-icon class="mr-3 text-primary-300">settings</mat-icon>
+        Configurações
+      </a>
+      <mat-divider class="my-4 border-gray-700"></mat-divider>
+      <button mat-list-item (click)="logout()" class="flex items-center py-3 px-4 rounded-lg hover:bg-red-700 transition-colors duration-200 text-red-300">
+        <mat-icon class="mr-3 text-red-300">logout</mat-icon>
+        Sair
+      </button>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="h-full flex flex-col" style="background-image: url('/assets/images/fundobolao.png'); background-size: cover; background-position: center; background-attachment: fixed;">
+    <!-- Toolbar -->
+    <mat-toolbar class="bg-gray-900 text-white shadow-md">
+      <button mat-icon-button (click)="toggleSidenav()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <!-- Logo ao lado do título (ajustado para ser menor e alinhado) -->
+      <img src="/assets/images/logobolao.png" alt="Logo Bolão Online" class="w-8 h-8 ml-4 mr-2">
+      <span class="text-xl font-bold">Bolão Online</span>
+      <span class="flex-grow"></span> <!-- Spacer -->
+      
+      <!-- Menu de Usuário -->
+      <button mat-icon-button [matMenuTriggerFor]="userMenu">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <!-- Exibe o apelido do usuário logado de forma segura -->
+        <button mat-menu-item disabled class="text-gray-500">
+          <mat-icon>person</mat-icon>
+          <span>{{ (loggedInUser$ | async)?.apelido || 'Carregando...' }}</span>
+        </button>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sair</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <!-- Router Outlet for content -->
+    <div class="flex-grow p-6 overflow-auto">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

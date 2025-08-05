@@ -1,0 +1,58 @@
+/* Localização: src/app/components/dashboard-layout/dashboard-layout.component.scss */
+
+/*
+.sidenav-container {
+  height: 100vh;
+  background-color: transparent; /i Permite que o fundo do body/html apareça 
+}
+
+mat-sidenav {
+  width: 250px; /* Largura padrão do sidenav 
+  background-color: #263238 !important; // <<-- COR DE FUNDO DO SIDENAV (CINZA ESCURO) -->> 
+  color: white;
+  padding-top: 64px; /* Espaço para a toolbar fixa 
+}
+
+mat-toolbar {
+  background-color: #3F51B5 !important; // Cor primária do Material Design (azul escuro), forçada 
+  color: white !important; // Texto branco, forçado 
+  height: 64px; /* Altura padrão da toolbar 
+}
+
+.main-content-area {
+  min-height: calc(100vh - 64px); /* Garante que o conteúdo ocupe o restante da tela abaixo da toolbar 
+  box-sizing: border-box; // Inclui padding na altura //
+  background-color: transparent;
+  position: relative;
+}
+
+/* Estilo para o texto "Olá, Zé Marcello!" //
+mat-toolbar span.text-white {
+  color: #FFC107 !important; /* Cor amarela para o texto "Olá, Apelido!", forçada //
+}
+
+/* Ajustes para o logo //
+mat-toolbar img {
+  height: 40px; /* Altura do logo //
+}
+
+/* Estilo para os itens do sidenav //
+mat-nav-list a {
+  color: white !important;
+  padding: 12px 16px !important; /* <<-- ESPAÇAMENTO DOS ITENS DO SIDENAV -->> //
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* Leve hover branco transparente //
+  }
+}
+
+/* Estilo para os ícones no sidenav //
+mat-nav-list mat-icon {
+  color: white !important;
+  margin-right: 8px; /* Espaçamento entre ícone e texto //
+}
+
+/* Estilo para o botão de sair na toolbar (para garantir que o ícone apareça) //
+.mat-toolbar button.mat-icon-button {
+  color: white !important; /* Garante que os ícones da toolbar sejam brancos //
+}
+*/

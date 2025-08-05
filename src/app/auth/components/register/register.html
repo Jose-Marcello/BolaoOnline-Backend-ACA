@@ -1,0 +1,158 @@
+<!-- Localização: src/app/auth/register/register.html -->
+<div class="h-screen w-screen flex items-center justify-center" style="background-image: url('/assets/images/fundobolao.png'); background-size: cover; background-position: center; background-attachment: fixed;">
+  <div class="max-w-md w-full bg-bolao-card-bg p-8 rounded-lg shadow-xl space-y-6 text-bolao-text-light mx-auto">
+    <div class="text-center">
+      <!-- Logo Bolão Online -->
+      <img src="/assets/images/logobolao.png" alt="Logo Bolão Online" class="w-24 h-24 mx-auto mb-4 rounded-full border-2 border-bolao-green-light">
+      <h2 class="text-3xl font-extrabold text-bolao-green-light">
+        Bolão Online
+      </h2>
+      <p class="mt-2 text-center text-xl font-extrabold text-bolao-green-light">
+        Crie sua conta
+      </p>
+    </div>
+
+    <!-- Seção de Notificações/Mensagens de Erro -->
+    <div *ngIf="notifications.length > 0" class="mt-4">
+      <div *ngFor="let notif of notifications"
+        [ngClass]="{
+          'bg-green-700 bg-opacity-20 border-green-400 text-green-300': notif.tipo === 'Sucesso',
+          'bg-red-700 bg-opacity-20 border-red-400 text-red-300': notif.tipo === 'Erro',
+          'bg-yellow-700 bg-opacity-20 border-yellow-400 text-yellow-300': notif.tipo === 'Alerta',
+          'bg-blue-700 bg-opacity-20 border-blue-400 text-blue-300': notif.tipo === 'Info'
+        }"
+        class="px-4 py-3 rounded relative mb-2 border">
+        <span class="block sm:inline">{{ notif.mensagem }}</span>
+      </div>
+    </div>
+    <div *ngIf="errorMessage && notifications.length === 0"
+      class="bg-red-700 bg-opacity-20 border-red-400 text-red-300 px-4 py-3 rounded relative mb-2 border mt-2">
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <!-- Email -->
+        <div>
+          <label for="email" class="sr-only">Endereço de Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required
+                 formControlName="email"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="Endereço de Email">
+          <div *ngIf="registerForm.get('email')?.invalid && (registerForm.get('email')?.dirty || registerForm.get('email')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('email')?.errors?.['required']">Email é obrigatório.</span>
+            <span *ngIf="registerForm.get('email')?.errors?.['email']">Email inválido.</span>
+          </div>
+        </div>
+
+        <!-- Apelido -->
+        <div>
+          <label for="apelido" class="sr-only">Apelido</label>
+          <input id="apelido" name="apelido" type="text" autocomplete="nickname" required
+                 formControlName="apelido"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="Apelido">
+          <div *ngIf="registerForm.get('apelido')?.invalid && (registerForm.get('apelido')?.dirty || registerForm.get('apelido')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('apelido')?.errors?.['required']">Apelido é obrigatório.</span>
+          </div>
+        </div>
+
+        <!-- CPF -->
+        <div>
+          <label for="cpf" class="sr-only">CPF</label>
+          <input id="cpf" name="cpf" type="text" required
+                 formControlName="cpf"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="CPF (apenas números)">
+          <div *ngIf="registerForm.get('cpf')?.invalid && (registerForm.get('cpf')?.dirty || registerForm.get('cpf')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('cpf')?.errors?.['required']">CPF é obrigatório.</span>
+            <span *ngIf="registerForm.get('cpf')?.errors?.['pattern']">CPF inválido (apenas 11 números).</span>
+          </div>
+        </div>
+
+        <!-- Celular -->
+        <div>
+          <label for="celular" class="sr-only">Celular</label>
+          <input id="celular" name="celular" type="text" required
+                 formControlName="celular"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="Celular (apenas números)">
+          <div *ngIf="registerForm.get('celular')?.invalid && (registerForm.get('celular')?.dirty || registerForm.get('celular')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('celular')?.errors?.['required']">Celular é obrigatório.</span>
+            <span *ngIf="registerForm.get('celular')?.errors?.['pattern']">Celular inválido (10 ou 11 números).</span>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="relative">
+          <label for="password" class="sr-only">Senha</label>
+          <input id="password" name="password" [type]="hidePassword ? 'password' : 'text'" autocomplete="new-password" required
+                 formControlName="password"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="Senha">
+          <button type="button" mat-icon-button (click)="togglePasswordVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-bolao-green-light">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <div *ngIf="registerForm.get('password')?.invalid && (registerForm.get('password')?.dirty || registerForm.get('password')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('password')?.errors?.['required']">Senha é obrigatória.</span>
+            <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Senha deve ter no mínimo 6 caracteres.</span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="relative">
+          <label for="confirmPassword" class="sr-only">Confirmar Senha</label>
+          <input id="confirmPassword" name="confirmPassword" [type]="hideConfirmPassword ? 'password' : 'text'" autocomplete="new-password" required
+                 formControlName="confirmPassword"
+                 class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-bolao-text-light bg-bolao-card-bg-light focus:outline-none focus:ring-bolao-green-light focus:border-bolao-green-light focus:z-10 sm:text-sm"
+                 placeholder="Confirmar Senha">
+          <button type="button" mat-icon-button (click)="toggleConfirmPasswordVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-bolao-green-light">
+            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <div *ngIf="registerForm.get('confirmPassword')?.invalid && (registerForm.get('confirmPassword')?.dirty || registerForm.get('confirmPassword')?.touched)"
+               class="text-red-500 text-sm mt-1">
+            <span *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">Confirmação de senha é obrigatória.</span>
+            <span *ngIf="registerForm.get('confirmPassword')?.errors?.['passwordMismatch']">Senhas não conferem.</span>
+          </div>
+        </div>
+
+       
+      </div>
+
+      <!-- Checkbox Send Confirmation Email -->
+      <div class="flex items-center">
+        <input id="sendConfirmationEmail" name="sendConfirmationEmail" type="checkbox"
+               formControlName="sendConfirmationEmail"
+               class="h-4 w-4 text-bolao-green-light focus:ring-bolao-green-light border-gray-300 rounded">
+        <label for="sendConfirmationEmail" class="ml-2 block text-sm text-bolao-text-light">
+          Enviar E-mail de Confirmação
+        </label>
+      </div>
+
+      <div>
+        <button type="submit"
+          [disabled]="registerForm.invalid || isLoading"
+          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-bolao-green-dark hover:bg-bolao-green-dark/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bolao-green-dark">
+          <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+            <svg class="h-5 w-5 text-bolao-green-light group-hover:text-bolao-green-light/80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+          </span>
+          Registrar
+        </button>
+      </div>
+    </form>
+
+    <div class="text-center text-sm">
+      Já tem conta?
+      <a routerLink="/login" class="font-medium text-bolao-green-light hover:text-bolao-green-light/80">
+        Faça login aqui
+      </a>
+    </div>
+  </div>
+</div>
