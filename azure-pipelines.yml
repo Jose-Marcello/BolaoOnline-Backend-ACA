@@ -1,0 +1,41 @@
+trigger:
+- main # Substitua 'main' pelo nome da sua branch principal se for diferente
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  displayName: 'Build and package artifacts'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build job'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install
+        npm run build
+      workingDirectory: '$(Build.SourcesDirectory)/frontend'
+      displayName: 'Install dependencies and build frontend'
+      
+    - script: |
+        npm install
+      workingDirectory: '$(Build.SourcesDirectory)/backend'
+      displayName: 'Install dependencies for backend'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+      displayName: 'Archive files'
+
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'drop'
+      displayName: 'Publish artifacts'
