@@ -13,7 +13,7 @@ stages:
     steps:
     - script: |
         echo "Listing files in the source directory:"
-        ls -R
+        dir /s
       displayName: 'List all files for debugging'
 
     - task: NodeTool@0
