@@ -1,5 +1,5 @@
 trigger:
-- main # Substitua 'main' pelo nome da sua branch principal se for diferente
+- main
 
 pool:
   name: MyAgentPool
@@ -11,6 +11,10 @@ stages:
   - job: BuildJob
     displayName: 'Build job'
     steps:
+    - script: |
+        dir /s /b
+      displayName: 'List all files'
+
     - task: NodeTool@0
       inputs:
         versionSpec: '18.x'
