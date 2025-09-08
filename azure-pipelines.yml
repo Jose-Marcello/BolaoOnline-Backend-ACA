@@ -12,8 +12,9 @@ stages:
     displayName: 'Build job'
     steps:
     - script: |
-        dir /s /b
-      displayName: 'List all files'
+        echo "Listing files in the source directory:"
+        ls -R
+      displayName: 'List all files for debugging'
 
     - task: NodeTool@0
       inputs:
@@ -28,7 +29,7 @@ stages:
       
     - script: |
         npm install
-      workingDirectory: '$(Build.SourcesDirectory)/backend'
+      workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
 
     - task: ArchiveFiles@2
