@@ -1,18 +1,19 @@
-// Localização: src/app/models/aposta/salvar-aposta-request.model.ts
+// Localização: src/app/models/aposta/salvar-aposta-request-dto.model.ts
 
-export interface SalvarApostaRequestDto {
-  id?: string; // Adicionado para permitir atualização de aposta existente
-  campeonatoId: string;
-  rodadaId: string;
-  apostadorCampeonatoId: string; // <<-- PADRONIZADO PARA 'o' AQUI -->>
-  ehApostaIsolada: boolean;
-  identificadorAposta: string;
-  apostasJogos: ApostaJogoRequest[];
-  ehCampeonato: boolean; // <<-- CORRIGIDO: Propriedade ehCampeonato -->>
+// ** O nome deste DTO é ApostaJogoRequest e ele é necessário para o SalvarApostaRequestDto **
+export interface ApostaJogoRequest {
+  jogoId: string;
+  placarCasa: number;
+  placarVisitante: number;
 }
 
-export interface ApostaJogoRequest {
-  jogoId: string;
-  placarCasa: number;
-  placarVisitante: number;
+export interface SalvarApostaRequestDto {
+  id?: string; // Adicionado para permitir atualização de aposta existente
+  campeonatoId: string; 
+  rodadaId: string;
+  apostadorCampeonatoId: string;
+  ehApostaIsolada: boolean;
+  identificadorAposta: string;
+  apostasJogos: ApostaJogoRequest[]; // Agora usa o DTO recém-criado
+  ehCampeonato: boolean;
 }

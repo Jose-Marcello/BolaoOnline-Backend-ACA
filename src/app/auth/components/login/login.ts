@@ -1,25 +1,24 @@
-// Localização: src/app/auth/components/login/login.component.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 
 import { AuthService } from '@auth/auth.service';
+import { NotificationsService } from '@services/notifications.service';
 import { LoginRequestDto } from '@auth/models/login-request.model';
 import { LoginResponse } from '@auth/models/login-response.model';
 import { ApiResponse, isPreservedCollection } from '@models/common/api-response.model';
-import { NotificationDto } from '@models/common/notification.model';
+import { environment } from '@environments/environment'; // Importe o ambiente
 
 @Component({
   selector: 'app-login',
@@ -32,130 +31,148 @@ import { NotificationDto } from '@models/common/notification.model';
     MatButtonModule,
     MatFormFieldModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule,
     RouterLink,
-    MatIconModule // <<-- ADICIONADO AQUI -->>
+    MatIconModule
   ],
   templateUrl: './login.html',
   styleUrls: ['./login.scss']
 })
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm!: FormGroup;
+  resendForm!: FormGroup; // <-- Declaração da propriedade
   isLoading: boolean = false;
   private authSubscription: Subscription | null = null;
-
-  // <<-- PROPRIEDADES ADICIONADAS AQUI -->>
-  notifications: NotificationDto[] = [];
-  errorMessage: string | null = null;
-  hidePassword = true;
-
+  hidePassword = true; 
+  
+  showResendEmailModal = false;
+  isProduction = environment.production; // Adicione esta linha
+  
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private router: Router
-  ) {
-    console.log('[LoginComponent] Constructor.');
-  }
+    private router: Router,
+    private notificationsService: NotificationsService,
+    private route: ActivatedRoute,
+    private http: HttpClient
+  ) {}
 
   ngOnInit(): void {
-    console.log('[LoginComponent] ngOnInit: Inicializando formulário de login.');
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', Validators.required]
+    });
+    
+    // AQUI ONDE DECLARAMOS E INICIALIZAMOS O FORMGROUP DO MODAL
+    this.resendForm = this.fb.group({
+      emailToResend: ['', [Validators.required, Validators.email]]
+    });
+    
+    this.authSubscription = this.authService.isAuthenticated$.subscribe(isAuthenticated => {
+      if (isAuthenticated && !this.isAuthRoute()) {
+        this.router.navigate(['/dashboard']);
+      }
     });
 
-    this.authSubscription = this.authService.isAuthenticated$.subscribe(isAuthenticated => {
-      if (isAuthenticated) {
-        console.log('[LoginComponent] Usuário já autenticado, redirecionando para o dashboard.');
-        this.router.navigate(['/dashboard']);
+    this.route.queryParams.subscribe(params => {
+      if (params['status'] && params['message']) {
+        const status = params['status'];
+        const message = params['message'];
+        this.notificationsService.showNotification(message, status === 'success' ? 'sucesso' : 'erro');
       }
     });
   }
 
   ngOnDestroy(): void {
-    console.log('[LoginComponent] ngOnDestroy: Desinscrevendo do authSubscription.');
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
   }
 
-  // <<-- MÉTODO ADICIONADO AQUI -->>
   togglePasswordVisibility(): void {
     this.hidePassword = !this.hidePassword;
   }
 
   onSubmit(): void {
-    console.log('[LoginComponent] onSubmit chamado.');
-    this.notifications = []; // Limpa notificações anteriores
-    this.errorMessage = null; // Limpa mensagens de erro anteriores
-
     if (this.loginForm.invalid) {
-      this.showSnackBar('Por favor, preencha o e-mail e a senha corretamente.', 'Fechar', 'error');
+      this.notificationsService.showNotification('Por favor, preencha o e-mail e a senha corretamente.', 'alerta');
       this.loginForm.markAllAsTouched();
       return;
     }
-
+    
     this.isLoading = true;
     const loginRequest: LoginRequestDto = this.loginForm.value;
 
     this.authService.login(loginRequest).pipe(
-      finalize(() => {
-        this.isLoading = false;
-        console.log('[LoginComponent] Finalize do login. isLoading agora é:', this.isLoading);
-      })
+      finalize(() => this.isLoading = false)
     ).subscribe({
       next: (response: ApiResponse<LoginResponse>) => {
         const loginResponseData = isPreservedCollection<LoginResponse>(response.data) ? response.data.$values[0] : response.data;
-
         if (response.success && loginResponseData?.loginSucesso) {
-          console.log('[LoginComponent] Login bem-sucedido na resposta da API, aguardando redirecionamento do AuthService.');
-          this.showSnackBar('Login realizado com sucesso!', 'Fechar', 'success');
-          // O redirecionamento é feito no AuthService.tap
+          this.authService.setSession(loginResponseData);
+          this.notificationsService.showNotification('Login realizado com sucesso!', 'sucesso');
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 50);
         } else {
-          let errorMessage = response.message || '';
-          if (response.errors) {
-            errorMessage += (errorMessage ? '; ' : '') + (Array.isArray(response.errors) ? response.errors.join('; ') : response.errors);
-          }
-          if (loginResponseData?.erros) {
-              errorMessage += (errorMessage ? '; ' : '') + (typeof loginResponseData.erros === 'string' ? loginResponseData.erros : (Array.isArray(loginResponseData.erros) ? loginResponseData.erros.join('; ') : ''));
-          }
-          if (!errorMessage) {
-            errorMessage = 'Credenciais inválidas. Tente novamente.';
-          }
-          this.errorMessage = errorMessage; // Define a mensagem de erro para ser exibida no HTML
-          this.showSnackBar(errorMessage, 'Fechar', 'error');
-          this.notifications.push({ mensagem: errorMessage, tipo: 'Erro', codigo: '' }); // Adiciona como notificação também
-          console.error('[LoginComponent] Falha no login (resposta da API):', response);
+          const errorMessage = response.message || 'Credenciais inválidas. Tente novamente.';
+          this.notificationsService.showNotification(errorMessage, 'erro');
         }
       },
-      error: (err) => {
-        const errorMessage = err.message || 'Erro de conexão. Verifique sua rede.';
-        this.errorMessage = errorMessage; // Define a mensagem de erro para ser exibida no HTML
-        this.showSnackBar(errorMessage, 'Fechar', 'error');
-        this.notifications.push({ mensagem: errorMessage, tipo: 'Erro', codigo: '' }); // Adiciona como notificação também
-        console.error('[LoginComponent] Erro no processo de login:', err);
+      error: (err: HttpErrorResponse) => {
+        let errorMessage = 'Ocorreu um erro desconhecido. Por favor, tente novamente mais tarde.';
+        this.notificationsService.showNotification(errorMessage, 'erro');
       }
     });
   }
 
-  private showSnackBar(message: string, action: string = 'Fechar', type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
-    let panelClass: string[] = [];
-    if (type === 'success') {
-      panelClass = ['snackbar-success'];
-    } else if (type === 'error') {
-      panelClass = ['snackbar-error'];
-    } else if (type === 'warning') {
-      panelClass = ['snackbar-warning'];
-    } else if (type === 'info') {
-      panelClass = ['snackbar-info'];
-    }
+  openResendEmailModal(): void {
+    this.showResendEmailModal = true;
+  }
 
-    this.snackBar.open(message, action, {
-      duration: 5000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass: panelClass
-    });
+  closeResendEmailModal(): void {
+    this.showResendEmailModal = false;
+    this.resendForm.reset();
+  }
+
+  resendEmail(): void {
+    if (this.resendForm.valid) {
+      this.isLoading = true;
+      const email = this.resendForm.get('emailToResend')?.value;
+
+      this.authService.resendConfirmationEmail(email).subscribe({
+        next: (response) => {
+          // Se não estiver em produção, redireciona para a tela de mock
+          if (!this.isProduction) {
+            this.router.navigate(['/testes/email'], {
+              queryParams: { email: email }
+            });
+            this.notificationsService.showNotification('Redirecionando para a tela de testes...', 'sucesso');
+          } else {
+            // Em produção, exibe a notificação normal
+            this.notificationsService.showNotification(response.message || 'Seu pedido de reenvio foi processado.', 'sucesso');
+          }
+          this.closeResendEmailModal();
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Erro ao reenviar e-mail:', err);
+          this.notificationsService.showNotification('Falha ao reenviar e-mail. Tente novamente mais tarde.', 'erro');
+          this.isLoading = false;
+        }
+      });
+    } else {
+      this.notificationsService.showNotification('Por favor, digite um e-mail válido.', 'alerta');
+      this.resendForm.get('emailToResend')?.markAsTouched();
+    }
+  }
+
+  isAuthRoute(): boolean {
+    const currentUrl = this.router.url;
+    return currentUrl.includes('/login') ||
+           currentUrl.includes('/register') ||
+           currentUrl.includes('/forgot-password') ||
+           currentUrl.includes('/reset-password') ||
+           currentUrl.includes('/confirm-email') ||
+           currentUrl.includes('/resposta-confirmacao');
   }
 }

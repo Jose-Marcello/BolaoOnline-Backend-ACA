@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
+  "start": "ng serve --proxy-config proxy.conf.json",
   "private": true,
   "dependencies": {
     "@angular/animations": "^17.3.0",
@@ -20,9 +21,12 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
+    "ngx-clipboard": "^16.0.0",
+    "ngx-mask": "^20.0.3",
     "ngx-toastr": "^19.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
+    "xlsx": "^0.18.5",
     "zone.js": "~0.14.3"
   },
   "devDependencies": {

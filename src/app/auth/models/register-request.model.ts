@@ -5,15 +5,17 @@
      */
     export interface RegisterRequestDto {
       apelido: string;
-      email: string;
+      email: string;     
       password: string;
       confirmPassword: string;
       cpf: string;
-      celular: string;
-      // <<-- ADICIONADAS AS NOVAS PROPRIEDADES -->>
+      fotoPerfil: string;
+      nomeCompleto:string;
+      celular: string;      
       scheme: string;
       host: string;
       sendConfirmationEmail: boolean;
+      termsAccepted: boolean;
       // Adicione outras propriedades que seu backend espera para o registro
     }
     

@@ -1,103 +1,179 @@
-// Localização: src/app/auth/register/register.ts
+// Localização: src/app/auth/components/register/register.component.ts
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidatorFn } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
-import { MatIconModule } from '@angular/material/icon';
-
 import { AuthService } from '@auth/auth.service';
+import { NotificationsService } from '@services/notifications.service';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { NgxMaskDirective } from 'ngx-mask';
 import { RegisterRequestDto } from '@auth/models/register-request.model';
-import { LoginResponse } from '@auth/models/login-response.model';
-import { ApiResponse, isPreservedCollection } from '@models/common/api-response.model';
-import { NotificationDto } from '@models/common/notification.model';
+import { RegisterResponse } from '@auth/models/register-response.model';
+import { ApiResponse } from '@models/common/api-response.model';
+import { HttpErrorResponse } from '@angular/common/http';
+import { finalize } from 'rxjs';
+import { MatIconModule } from '@angular/material/icon';
+import { FileUploadService } from '@services/file-upload.service';
+import { environment } from '@environments/environment'; // Importe o ambiente
 
 @Component({
   selector: 'app-register',
+  templateUrl: './register.html',
+  styleUrls: ['./register.scss'],
   standalone: true,
   imports: [
+    MatSnackBarModule,
+    MatButtonModule,
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule,
-    MatInputModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
+    NgxMaskDirective,
     RouterLink,
     MatIconModule
   ],
-  templateUrl: './register.html',
-  styleUrls: ['./register.scss']
 })
-export class RegisterComponent implements OnInit, OnDestroy {
+export class RegisterComponent implements OnInit {
   registerForm!: FormGroup;
-  isLoading: boolean = false;
-  private authSubscription: Subscription | null = null;
-
-  notifications: NotificationDto[] = [];
-  errorMessage: string | null = null;
+  isLoading = false;
+  errorMessage = "";
   hidePassword = true;
   hideConfirmPassword = true;
+  notifications: any[] = [];
+  profilePhotoPreview: string | ArrayBuffer | null = null;
+  selectedFile: File | null = null;
+  private readonly fotoPerfilMaxFileSize = 5242880;
+  isRegistered = false;
+  registrationSuccess = false;  
+  isProduction = environment.production;  
+  registeredUserEmail: string;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private snackBar: MatSnackBar,
-    private router: Router
-  ) {
-    console.log('[RegisterComponent] Constructor.');
-  }
+    private router: Router,
+    private notificationsService: NotificationsService,
+    private fileUploadService: FileUploadService
+  ) { }
 
   ngOnInit(): void {
-    console.log('[RegisterComponent] ngOnInit: Inicializando formulário de registro.');
     this.registerForm = this.fb.group({
+      profilePhoto: [''],
       email: ['', [Validators.required, Validators.email]],
+      nomeCompleto: ['', Validators.required],
       apelido: ['', Validators.required],
-      cpf: ['', [Validators.required, Validators.pattern(/^\d{11}$/)]],
-      celular: ['', [Validators.required, Validators.pattern(/^\d{10,11}$/)]],
+      cpf: ['', [Validators.required, CpfValidator]],
+      celular: ['', [Validators.required, CelularValidator]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
-      // Removidos scheme e host
-      sendConfirmationEmail: [false]
+      terms: [false, Validators.requiredTrue]
     }, { validators: this.passwordMatchValidator });
+  }
+onSubmit(): void {
+    this.notifications = [];
+    this.errorMessage = null;
+    this.registrationSuccess = true;
+    this.registeredUserEmail = this.registerForm.get('email').value;
+
+    if (this.registerForm.invalid) {
+      this.notificationsService.showNotification('Por favor, preencha o formulário corretamente.', 'Alerta');
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading = true;
+
+    const registrationData: RegisterRequestDto = {
+      email: this.registerForm.get('email')?.value,
+      password: this.registerForm.get('password')?.value,
+      confirmPassword: this.registerForm.get('confirmPassword')?.value,
+      apelido: this.registerForm.get('apelido')?.value,
+      nomeCompleto: this.registerForm.get('nomeCompleto')?.value,
+      cpf: this.registerForm.get('cpf')?.value,
+      celular: this.registerForm.get('celular')?.value,
+      fotoPerfil: '',
+      termsAccepted: this.registerForm.get('terms')?.value,
+      host: window.location.host,
+      scheme: window.location.protocol.slice(0, -1),
+      sendConfirmationEmail: true
+    };
     
-    this.authSubscription = this.authService.isAuthenticated$.subscribe(isAuthenticated => {
-      if (isAuthenticated) {
-        console.log('[RegisterComponent] Usuário já autenticado, redirecionando para o dashboard.');
-        this.router.navigate(['/dashboard']);
+    this.authService.register(registrationData).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe(
+      (response: ApiResponse<RegisterResponse>) => {
+        if (response.success) {
+          const mensagem = response.message || 'Registro realizado com sucesso! Um e-mail de confirmação foi enviado.';
+          this.notificationsService.showNotification(mensagem, 'sucesso');
+          
+          // <<-- AQUI ESTÁ A CORREÇÃO PRINCIPAL -->>
+          // A navegação de teste ágil só ocorre em ambiente de desenvolvimento
+          if (!this.isProduction) {
+            const userId = response.data?.userId;
+            const email = this.registeredUserEmail;
+            this.router.navigate(['/testes/email'], { queryParams: { userId, email } });
+          } else {
+            // Se estiver em produção, segue o fluxo normal
+            this.isRegistered = true;
+            if (this.selectedFile && response.data?.userId) {
+              this.uploadProfilePhoto(response.data.userId);
+            }
+          }
+        } else {
+          let errorMessage = 'Ocorreu um erro no registro. Por favor, tente novamente.';
+          if (response.notifications && (response.notifications as any).$values?.length > 0) {
+            errorMessage = (response.notifications as any).$values[0].mensagem;
+          } else if (response.message) {
+            errorMessage = response.message;
+          }
+          this.notificationsService.showNotification(errorMessage, 'erro');
+        }
+      },
+      (errorResponse: HttpErrorResponse) => {
+        let message = 'Erro de conexão. Verifique sua rede e tente novamente.';
+        if (errorResponse.error) {
+          if ((errorResponse.error as any).notifications?.$values?.length > 0) {
+            message = (errorResponse.error as any).notifications.$values[0].mensagem;
+          } else if ((errorResponse.error as any).message) {
+            message = (errorResponse.error as any).message;
+          }
+        }
+        this.notificationsService.showNotification(message, 'erro');
+      },
+      () => { }
+    );
+  }
+
+
+  private uploadProfilePhoto(userId: string): void {
+    if (!this.selectedFile) return;
+
+    this.isLoading = true;
+    this.fileUploadService.uploadFile(this.selectedFile).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: (url: string) => {
+        this.notificationsService.showNotification('Foto de perfil enviada com sucesso.', 'sucesso');
+      },
+      error: (error: any) => {
+        console.error('Erro no upload do arquivo:', error);
+        this.notificationsService.showNotification('Erro no upload da foto. Por favor, tente novamente.', 'erro');
       }
     });
   }
 
-  ngOnDestroy(): void {
-    console.log('[RegisterComponent] ngOnDestroy: Desinscrevendo do authSubscription.');
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
+// Novo método para navegação
+  navigateToMockEmail() {
+    this.router.navigate(['/testes/email'], {
+      queryParams: { email: this.registeredUserEmail }
+    });
   }
 
-  passwordMatchValidator: ValidatorFn = (control: AbstractControl): { [key: string]: boolean } | null => {
-    const password = control.get('password');
-    const confirmPassword = control.get('confirmPassword');
-
-    if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ passwordMismatch: true });
-      return { passwordMismatch: true };
-    } else if (confirmPassword && confirmPassword.hasError('passwordMismatch') && password.value === confirmPassword.value) {
-      confirmPassword.setErrors(null);
-    }
-    return null;
-  };
-
+  passwordMatchValidator(g: FormGroup) {
+    return g.get('password')?.value === g.get('confirmPassword')?.value
+      ? null : { 'mismatch': true };
+  }
+  
   togglePasswordVisibility(): void {
     this.hidePassword = !this.hidePassword;
   }
@@ -106,99 +182,55 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.hideConfirmPassword = !this.hideConfirmPassword;
   }
 
-  onSubmit(): void {
-    console.log('[RegisterComponent] onSubmit chamado.');
-    this.notifications = [];
-    this.errorMessage = null;
-
-    if (this.registerForm.invalid) {
-      this.showSnackBar('Por favor, preencha todos os campos corretamente, incluindo a confirmação de senha.', 'Fechar', 'error');
-      this.registerForm.markAllAsTouched();
-      return;
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.profilePhotoPreview = e.target?.result;
+      };
+      reader.readAsDataURL(this.selectedFile);
     }
+  }
 
+  resendConfirmationEmail(): void {
     this.isLoading = true;
-    const registerRequest: RegisterRequestDto = this.registerForm.value;
+    const email = this.registerForm.get('email')?.value;
+    const host = window.location.host;
+    const scheme = window.location.protocol.slice(0, -1);
 
-    this.authService.register(registerRequest).pipe(
-      finalize(() => {
-        this.isLoading = false;
-        console.log('[RegisterComponent] Finalize do registro. isLoading agora é:', this.isLoading);
-      })
-    ).subscribe({
-      next: (response: ApiResponse<LoginResponse>) => {
-        const loginResponseData = isPreservedCollection<LoginResponse>(response.data) ? response.data.$values[0] : response.data;
-
-        if (response.success && loginResponseData?.loginSucesso) {
-          this.showSnackBar('Registro realizado! Faça login para continuar.', 'Fechar', 'success');
-          console.log('[RegisterComponent] Registro bem-sucedido. Redirecionando para /login.');
-          this.router.navigate(['/login']);
-        } else {
-          let messageToDisplay = response.message || '';
-          if (response.errors) {
-            messageToDisplay += (messageToDisplay ? '; ' : '') + (Array.isArray(response.errors) ? response.errors.join('; ') : response.errors);
+    if (email) {
+      this.authService.resendConfirmationEmail(email).pipe(
+        finalize(() => this.isLoading = false)
+      ).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.notificationsService.showNotification('Novo e-mail de confirmação enviado. Verifique sua caixa de entrada.', 'sucesso');
+          } else {
+            this.notificationsService.showNotification(response.message || 'Erro ao reenviar e-mail de confirmação.', 'erro');
           }
-          if (loginResponseData?.erros) {
-              messageToDisplay += (messageToDisplay ? '; ' : '') + (typeof loginResponseData.erros === 'string' ? loginResponseData.erros : (Array.isArray(loginResponseData.erros) ? loginResponseData.erros.join('; ') : ''));
-          }
-          if (!messageToDisplay) {
-            messageToDisplay = 'Erro ao registrar.';
-          }
-          this.handleApiResponseError(messageToDisplay, 'Erro ao registrar.');
+        },
+        error: () => {
+          this.notificationsService.showNotification('Erro de rede ao tentar reenviar o e-mail.', 'erro');
         }
-      },
-      error: (errorResponse: any) => {
-        this.isLoading = false;
-        let message = 'Erro de conexão ou dados inválidos.';
-        if (errorResponse && errorResponse.message) {
-          message = errorResponse.message;
-        }
-        this.errorMessage = message;
-        this.showSnackBar(message, 'Fechar', 'error');
-        console.error('[RegisterComponent] Erro no processo de registro:', errorResponse);
-      }
-    });
-  }
-
-  private handleApiResponseError(backendErrors: any, defaultMessage: string): void {
-    let messageToDisplay = defaultMessage;
-    if (backendErrors) {
-      if (typeof backendErrors === 'string') {
-        messageToDisplay = backendErrors;
-      } else if (Array.isArray(backendErrors)) {
-        messageToDisplay = backendErrors.join('; ');
-      } else if (typeof backendErrors === 'object') {
-        const errorMessages = Object.values(backendErrors)
-          .flat()
-          .filter(err => typeof err === 'string')
-          .join('; ');
-        if (errorMessages) {
-          messageToDisplay = errorMessages;
-        }
-      }
+      });
     }
-    this.errorMessage = messageToDisplay;
-    this.showSnackBar(messageToDisplay, 'Fechar', 'error');
-    this.notifications.push({ mensagem: messageToDisplay, tipo: 'Erro', codigo: '' });
   }
+}
 
-  private showSnackBar(message: string, action: string = 'Fechar', type: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
-    let panelClass: string[] = [];
-    if (type === 'success') {
-      panelClass = ['snackbar-success'];
-    } else if (type === 'error') {
-      panelClass = ['snackbar-error'];
-    } else if (type === 'warning') {
-      panelClass = ['snackbar-warning'];
-    } else if (type === 'info') {
-      panelClass = ['snackbar-info'];
-    }
-
-    this.snackBar.open(message, action, {
-      duration: 5000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass: panelClass
-    });
+export function CpfValidator(control: AbstractControl): { [key: string]: any } | null {
+  const rawCpf = (control.value || '').replace(/\D/g, '');
+  if (rawCpf.length !== 11) {
+    return { 'invalidCpfLength': true };
   }
+  return null;
+}
+
+export function CelularValidator(control: AbstractControl): { [key: string]: any } | null {
+  const rawCelular = (control.value || '').replace(/\D/g, '');
+  if (rawCelular.length !== 10 && rawCelular.length !== 11) {
+    return { 'invalidCelularLength': true };
+  }
+  return null;
 }

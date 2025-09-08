@@ -8,5 +8,7 @@ export interface RegisterResponse {
   userId: string;
   email: string;
   apelido: string;
+  fotoPerfil: string;
+  termsAccepted: boolean;
   // Adicione outras propriedades que seu backend retorna após um registro bem-sucedido
 }

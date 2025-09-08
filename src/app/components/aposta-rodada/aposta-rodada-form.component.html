@@ -1,174 +1,167 @@
-<!-- Localização: src/app/aposta-rodada/aposta-rodada-form/aposta-rodada-form.component.html -->
-<div class="flex flex-col h-full bg-gray-900 text-white rounded-lg shadow-lg p-4 sm:p-6">
-  <!-- Header da Tela (Ajustado) -->
-  <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-700">
-    <!-- 1a caixa (1 linha) -> Aposta no: NOME DO CAMPEONATO -->
-    <h1 class="font-bold text-blue-400 min-w-0 flex-shrink-0 text-lg sm:text-xl"
-        style="font-size: clamp(0.9rem, 3.5vw, 1.25rem);"> <!-- Font size ajustada para ser menor -->
-      Aposta no: <span class="text-blue-300">{{ rodadaSelecionada?.campeonato.nome || 'Carregando...' }}</span>
-      <!-- Alterado de rodadasEmAposta[0]?.campeonato?.nome para rodadaSelecionada?.campeonatoNome -->
+<style>
+  /* Solução definitiva para remover a sombra do Material Design */
+  .mat-card, .mat-expansion-panel, .mat-expansion-panel-header {
+    box-shadow: none !important;
+  }
+</style>
+
+<div class="flex flex-col h-full bg-cover bg-center text-gray-900 rounded-lg shadow-lg p-4 sm:p-6"
+  style="background-image: url('assets/images/fundobolao.png');">
+
+  <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-400">
+    <h1 class="font-bold text-slate-800 min-w-0 flex-shrink-0 text-lg sm:text-xl"
+      style="font-size: clamp(0.9rem, 3.5vw, 1.25rem);">
+      <span class="fonte-subtit">{{ rodadaSelecionada?.campeonato?.nome || 'Carregando...' }}</span>
     </h1>
-    <button mat-raised-button color="primary" routerLink="/dashboard"
-            class="px-3 py-1 text-sm sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 ml-2">
-      <mat-icon>arrow_back</mat-icon> Voltar
+    <button mat-raised-button color="primary" (click)="goBackToDashboard()"
+      class="px-3 py-1 text-sm sm:px-4 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 ml-2">
+      <mat-icon>arrow_back</mat-icon>
+      Voltar
     </button>
   </div>
 
-  <!-- Indicador de Carregamento -->
   <div *ngIf="isLoading" class="flex flex-col items-center justify-center p-8">
     <mat-spinner color="accent"></mat-spinner>
-    <p class="mt-4 text-lg text-gray-400">Carregando dados da rodada...</p>
+    <p class="mt-4 text-lg text-gray-600">Carregando dados da rodada...</p>
   </div>
 
-  <!-- Mensagem de Erro/Alerta -->
-  <div *ngIf="errorMessage && !isLoading" class="bg-red-800 text-white p-3 sm:p-4 rounded-lg shadow-md mb-4 text-center">
+  <div *ngIf="errorMessage && !isLoading" class="bg-red-500 text-white p-3 sm:p-4 rounded-lg shadow-md mb-4 text-center">
     <p class="font-semibold text-md sm:text-lg">{{ errorMessage }}</p>
-    <!-- O botão "Tentar Novamente" foi removido pois o método reloadComponent() não existe mais. -->
   </div>
 
-  <!-- Notificações da API -->
   <div *ngIf="hasNotifications && notifications.length > 0" class="mb-4">
-    <div *ngFor="let notif of notifications"
-          [ngClass]="{
-            'bg-red-700': notif.tipo === 'Erro',
-            'bg-yellow-700': notif.tipo === 'Alerta',
-            'bg-green-700': notif.tipo === 'Sucesso',
-            'bg-blue-700': notif.tipo === 'Info'
-          }"
-          class="text-white p-3 rounded-lg shadow-md mb-2">
+    <div *ngFor="let notif of notifications" [ngClass]="{
+          'bg-red-400': notif.tipo === 'Erro',
+          'bg-yellow-400': notif.tipo === 'Alerta',
+          'bg-green-400': notif.tipo === 'Sucesso',
+          'bg-blue-400': notif.tipo === 'Info'
+        }" class="text-white p-3 rounded-lg shadow-md mb-2">
       <p class="font-semibold">{{ notif.mensagem }}</p>
     </div>
   </div>
 
-  <!-- Conteúdo Principal (visível apenas se não estiver carregando e sem erro) -->
   <div *ngIf="!isLoading && !errorMessage" class="flex-grow flex flex-col">
 
-    <!-- 2a Caixa (simulando um datatables) - Grid de Rodadas Compacto -->
-    <div *ngIf="rodadasEmAposta.length > 0" class="bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-      <!-- Cabeçalho do "Datatables" -->
-      <div class="grid grid-cols-4 gap-2 p-3 border-b border-gray-700 text-gray-400 font-semibold text-xs sm:text-sm">
+    <h2 class="text-xl font-bold text-slate-800 mb-3 fonte-subtit">Rodadas em Aposta</h2>
+
+    <div *ngIf="rodadasEmAposta.length > 0" class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="grid grid-cols-5 gap-2 p-3 border-b border-gray-300 text-gray-600 font-semibold text-xs sm:text-sm">
+        <span class="text-center"></span>
         <span class="text-center">Rodada</span>
         <span class="text-center">Início</span>
         <span class="text-center">Fim</span>
         <span class="text-center">Custo (R$)</span>
       </div>
-      <!-- Linhas do "Datatables" (Cards de Rodada) -->
       <div class="flex flex-col">
-        <mat-card *ngFor="let rodada of rodadasEmAposta"
-                  (click)="onRodadaSelected(rodada.id!)"
-                  [ngClass]="{
-                    'bg-gray-700 hover:bg-gray-600': rodadaSelecionada?.id !== rodada.id,
-                    'bg-indigo-700 border-l-4 border-indigo-400 shadow-lg': rodadaSelecionada?.id === rodada.id
-                  }"
-                  class="rounded-none shadow-none p-3 cursor-pointer transition duration-200 ease-in-out relative">
-          <div class="grid grid-cols-4 gap-2 items-center text-xs sm:text-sm">
-            <span class="font-bold text-center text-blue-200">{{ rodada.numeroRodada }}</span>
-            <span class="text-center">{{ rodada.dataInic | date:'dd/MM/yy' }}</span>
-            <!-- Alterado de rodada.dataInic para rodada.dataHoraEncerramentoApostas -->
-            <span class="text-center">{{ rodada.dataFim | date:'dd/MM/yy' }}</span>
-            <!-- Alterado de rodada.dataFim para rodada.dataHoraEncerramentoApostas -->
-            <span class="text-center font-semibold text-green-300">{{ rodada.custoApostaRodada | currency:'BRL':'symbol':'1.2-2' }}</span>
-            <mat-icon *ngIf="rodadaSelecionada?.id === rodada.id" class="text-green-400 absolute left-2 top-1/2 -translate-y-1/2">check_circle</mat-icon>
+        <mat-card
+  *ngFor="let rodada of rodadasEmAposta" 
+  (click)="onRodadaSelected(rodada.id)"
+  [ngClass]="{
+    'bg-gray-100 hover:bg-gray-200': rodadaSelecionada?.id !== rodada.id,
+    'bg-indigo-100 border-l-4 border-indigo-400 shadow-lg': rodadaSelecionada?.id === rodada.id
+  }" class="rounded-none shadow-none p-3 cursor-pointer transition duration-200 ease-in-out relative">
+          <div class="grid grid-cols-5 gap-2 items-center text-xs sm:text-sm">
+            <div class="flex justify-center">
+              <svg *ngIf="rodadaSelecionada?.id === rodada.id" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-circle text-indigo-600 transition-transform duration-200 hover:scale-110">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12h8" />
+                <path d="m12 16 4-4-4-4" />
+              </svg>
+              <div *ngIf="rodadaSelecionada?.id !== rodada.id" class="w-6 h-6"></div>
+            </div>
+            <span class="font-bold text-center text-gray-900">{{ rodada.numeroRodada }}</span>
+            <span class="text-center text-gray-700">{{ rodada.dataInic | date:'dd/MM/yy' }}</span>
+            <span class="text-center text-gray-700">{{ rodada.dataFim | date:'dd/MM/yy' }}</span>
+            <span class="text-center font-semibold text-green-600">{{ rodada.custoApostaRodada | currency:'BRL':'symbol':'1.2-2' }}</span>
           </div>
         </mat-card>
       </div>
     </div>
-    <div *ngIf="rodadasEmAposta.length === 0" class="bg-yellow-800 text-white p-3 rounded-lg shadow-md mb-4">
+    <div *ngIf="rodadasEmAposta.length === 0" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg shadow-md mb-4">
       <p>Nenhuma rodada disponível para apostar neste campeonato.</p>
     </div>
 
-    <!-- Seletor de Aposta (Grid de Cards Compacto) - Nível 2 -->
-    <h2 class="text-xl font-bold text-blue-300 mb-3">Minhas Apostas para esta Rodada:</h2>
-    <div *ngIf="apostasUsuarioRodada.length > 0" class="bg-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-      <!-- Cabeçalho do "Datatables" de Apostas -->
-      <div class="grid grid-cols-4 gap-2 p-3 border-b border-gray-700 text-gray-400 font-semibold text-xs sm:text-sm">
-        <span class="text-center">IDENT</span>
-        <span class="text-center">DT ENVIO</span>
-        <span class="text-center">VAL PG</span>
-        <span class="text-center">É CAMP</span>
+    <h2 class="text-xl font-bold text-slate-800 mb-3 fonte-subtit">Minhas Apostas para esta Rodada:</h2>
+
+    <div *ngIf="apostadorCampeonatoId && apostasUsuarioRodada.length > 0" class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div class="grid grid-cols-5 gap-2 p-3 border-b border-gray-300 text-gray-600 font-semibold text-xs sm:text-sm">
+        <span class="text-center"></span>
+        <span class="text-center">Ident</span>
+        <span class="text-center">Dt Envio</span>
+        <span class="text-center">Val Pg</span>
+        <span class="text-center">TIPO</span>
       </div>
-      <!-- Linhas do "Datatables" (Cards de Aposta) -->
       <div class="flex flex-col">
-        <mat-card *ngFor="let aposta of apostasUsuarioRodada"
-                  (click)="onApostaSelected(aposta.id!)"
-                  [ngClass]="{
-                    'bg-gray-700 hover:bg-gray-600': apostaAtual?.id !== aposta.id,
-                    'bg-teal-700 border-l-4 border-teal-400 shadow-lg': apostaAtual?.id === aposta.id
-                  }"
-                  class="rounded-none shadow-none p-3 cursor-pointer transition duration-200 ease-in-out relative">
-          <div class="grid grid-cols-4 gap-2 items-center text-xs sm:text-sm">
-            <span class="font-bold text-center text-teal-200">{{ aposta.identificadorAposta || 'N/A' }}</span>
-            <span class="text-center">{{ aposta.dataHoraSubmissao ? (aposta.dataHoraSubmissao | date:'dd/MM/yy') : 'N/A' }}</span>
-            <span class="text-center font-semibold text-green-300">{{ aposta.custoPagoApostaRodada !== null ? (aposta.custoPagoApostaRodada | currency:'BRL':'symbol':'1.2-2') : 'R$ 0,00' }}</span>
-            <span class="text-center">{{ aposta.ehApostaCampeonato ? 'SIM' : 'NÃO' }}</span>
-            <mat-icon *ngIf="apostaAtual?.id === aposta.id" class="text-green-400 absolute left-2 top-1/2 -translate-y-1/2">check_circle</mat-icon>
+        <mat-card *ngFor="let aposta of apostasUsuarioRodada" (click)="onApostaSelected(aposta.id!)" [ngClass]="{
+              'bg-gray-100 hover:bg-gray-200': apostaAtual?.id !== aposta.id,
+              'bg-teal-100 border-l-4 border-teal-400 shadow-lg': apostaAtual?.id === aposta.id
+            }" class="rounded-none shadow-none p-3 cursor-pointer transition duration-200 ease-in-out relative">
+          <div class="grid grid-cols-5 gap-2 items-center text-xs sm:text-sm">
+            <div class="flex justify-center">
+              <svg *ngIf="apostaAtual?.id === aposta.id" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-circle text-teal-600 transition-transform duration-200 hover:scale-110">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12h8" />
+                <path d="m12 16 4-4-4-4" />
+              </svg>
+              <div *ngIf="apostaAtual?.id !== aposta.id" class="w-6 h-6"></div>
+            </div>
+            <span class="font-bold text-center text-gray-900">{{ aposta.identificadorAposta || 'N/A' }}</span>
+            <span class="text-center text-gray-700">{{ aposta.dataHoraSubmissao ? (aposta.dataHoraSubmissao | date:'dd/MM/yy') : 'N/A' }}</span>
+            <span class="text-center font-semibold text-green-600">{{ aposta.custoPagoApostaRodada !== null ? (aposta.custoPagoApostaRodada | currency:'BRL':'symbol':'1.2-2') : 'R$ 0,00' }}</span>
+            <span class="text-center text-gray-700">{{ aposta.ehApostaCampeonato ? 'Campeonato' : 'Avulsa' }}</span>
           </div>
         </mat-card>
       </div>
     </div>
-    <div *ngIf="apostasUsuarioRodada.length === 0" class="bg-yellow-800 text-white p-3 rounded-lg shadow-md mb-4">
+    <div *ngIf="!apostadorCampeonatoId" class="bg-blue-100 text-blue-800 p-3 rounded-lg shadow-md mb-4">
+      <p>Você ainda não aderiu a este campeonato. Aposte na rodada e adira ao campeonato!</p>
+    </div>
+    <div *ngIf="apostadorCampeonatoId && apostasUsuarioRodada.length === 0" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg shadow-md mb-4">
       <p>Você ainda não tem apostas para esta rodada. Clique em "Criar Nova Aposta Avulsa" para começar!</p>
     </div>
 
-    <!-- Botão Criar Nova Aposta Avulsa (Movido para baixo do grid de apostas) -->
-    <button mat-raised-button color="accent" (click)="onClickCriarNovaAposta()"
-            class="mt-4 mb-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center">
+    <button mat-raised-button color="accent" (click)="onClickCriarNovaAposta()" [disabled]="!apostadorCampeonatoId"
+      [ngClass]="{'opacity-50 cursor-not-allowed': !apostadorCampeonatoId}"
+      class="mt-4 mb-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center">
       <mat-icon class="mr-2">add_circle_outline</mat-icon> Criar Nova Aposta Avulsa
     </button>
 
-    <!-- Formulário de Palpites (Jogos) - Nível 3 -->
-    <h2 class="text-xl font-bold text-blue-300 mb-3">Palpites para a Aposta Selecionada:</h2>
+    <h2 class="text-xl font-bold text-slate-800 mb-3 fonte-subtit">Palpites para a Aposta Selecionada:</h2>
     <form [formGroup]="apostaForm" (ngSubmit)="salvarApostas()" class="w-full">
       <div formArrayName="palpites" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <mat-card *ngFor="let palpiteGroup of palpites.controls; let i = index" [formGroupName]="i"
-                  class="bg-gray-800 rounded-xl shadow-md p-3 flex flex-col justify-between">
-          <!-- Estádio, Data (Dia Semana) e Hora -->
-          <div class="text-center text-blue-300 text-sm mb-3 font-semibold">
+          class="bg-white rounded-xl shadow-md p-3 flex flex-col justify-between">
+          <div class="text-center text-slate-800 text-sm mb-3 font-semibold">
             <p *ngIf="jogosDaApostaAtual[i]?.estadioNome">{{ jogosDaApostaAtual[i]?.estadioNome }}</p>
-            <p>{{ jogosDaApostaAtual[i]?.dataJogo | date:'dd/MM/yy':'pt-BR' }}</p>
-            <p>{{ jogosDaApostaAtual[i]?.horaJogo | date:'pt-BR' }}</p>
-            <!-- Alterado de dataJogo e horaJogo para dataHoraJogo -->
+            <p>{{ jogosDaApostaAtual[i]?.dataCompleta | date:'dd/MM/yy - HH:mm':'pt-BR' }}</p>
           </div>
-
-          <!-- Nomes e Escudos dos Times com Inputs de Placar Integrados -->
           <div class="flex items-center justify-center w-full mb-3">
             <div class="flex items-center flex-col text-center w-1/4">
               <img [src]="baseUrlImagens + jogosDaApostaAtual[i]?.escudoMandante" alt="Escudo Mandante" class="w-10 h-10 mb-1 rounded-full"
-                   onerror="this.onerror=null;this.src='https://placehold.co/40x40/FF0000/FFFFFF?text=X';">
-              <span class="font-bold text-sm text-white">{{ jogosDaApostaAtual[i]?.equipeMandante }}</span>
-              <!-- Alterado de escudoMandante e equipeMandante para timeCasaEscudoUrl e timeCasaNome -->
+                onerror="this.onerror=null;this.src='https://placehold.co/40x40/FF0000/FFFFFF?text=X';">
+              <span class="font-bold text-sm text-gray-900">{{ jogosDaApostaAtual[i]?.equipeMandante }}</span>
             </div>
-            
-            <!-- Input para Palpite Casa -->
             <mat-form-field appearance="outline" class="w-20 h-16 text-center mx-1">
-              <input matInput type="number" formControlName="apostaCasa" min="0" class="text-center text-white text-lg font-bold">
-              <mat-error *ngIf="palpiteGroup.get('apostaCasa')?.invalid && palpiteGroup.get('apostaCasa')?.touched">
-                !
-              </mat-error>
+              <input matInput type="number" formControlName="placarApostaCasa" min="0" class="text-center text-gray-900 text-lg font-bold">
+              <mat-error *ngIf="palpiteGroup.get('placarApostaCasa')?.invalid && palpiteGroup.get('placarApostaCasa')?.touched">!</mat-error>
             </mat-form-field>
-
-            <span class="text-2xl font-extrabold text-blue-400 mx-1">X</span>
-
-            <!-- Input para Palpite Fora -->
+            <span class="text-2xl font-extrabold text-gray-900 mx-1">X</span>
             <mat-form-field appearance="outline" class="w-20 h-16 text-center mx-1">
-              <input matInput type="number" formControlName="apostaVisitante" min="0" class="text-center text-white text-lg font-bold">
-              <mat-error *ngIf="palpiteGroup.get('apostaVisitante')?.invalid && palpiteGroup.get('apostaVisitante')?.touched">
-                !
-              </mat-error>
+              <input matInput type="number" formControlName="placarApostaVisita" min="0" class="text-center text-gray-900 text-lg font-bold">
+              <mat-error *ngIf="palpiteGroup.get('placarApostaVisita')?.invalid && palpiteGroup.get('placarApostaVisita')?.touched">!</mat-error>
             </mat-form-field>
-
             <div class="flex items-center flex-col text-center w-1/4">
               <img [src]="baseUrlImagens + jogosDaApostaAtual[i]?.escudoVisitante" alt="Escudo Visitante" class="w-10 h-10 mb-1 rounded-full"
-                   onerror="this.onerror=null;this.src='https://placehold.co/40x40/0000FF/FFFFFF?text=Y';">
-              <span class="font-bold text-sm text-white">{{ jogosDaApostaAtual[i]?.equipeVisitante }}</span>
-              <!-- Alterado de escudoVisitante e equipeVisitante para timeVisitanteEscudoUrl e timeVisitanteNome -->
+                onerror="this.onerror=null;this.src='https://placehold.co/40x40/0000FF/FFFFFF?text=Y';">
+              <span class="font-bold text-sm text-gray-900">{{ jogosDaApostaAtual[i]?.equipeVisitante }}</span>
             </div>
           </div>
         </mat-card>
       </div>
 
-      <button type="submit" mat-raised-button color="primary" [disabled]="isSaving || apostaForm.invalid"
-              class="w-full mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+      <button type="submit" mat-raised-button color="primary" [disabled]="isSaving || apostaForm.invalid || !apostadorCampeonatoId"
+        [ngClass]="{'opacity-50 cursor-not-allowed': !apostadorCampeonatoId}"
+        class="w-full mt-6 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
         <mat-icon *ngIf="isSaving">loop</mat-icon>
         {{ isSaving ? 'Salvando...' : 'Salvar Apostas' }}
       </button>

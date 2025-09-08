@@ -1,13 +1,26 @@
-// Localização: src/app/models/apostador-dto.model.ts
-import { SaldoDto } from '@models/apostador/saldo.model'; // Assumindo que você tem um SaldoDto
-import { ApostadorCampeonatoDto } from '@models/apostador-campeonato/apostador-campeonato-dto.model'; // Importa ApostadorCampeonatoDto
+
+import { SaldoDto } from '@models/apostador/saldo.model';
+import { ApostadorCampeonatoDto } from '@models/apostador-campeonato/apostador-campeonato-dto.model';
 import { PreservedCollection } from '@models/common/api-response.model';
 
 export interface ApostadorDto {
-  id: string;
+  
+  id: string; // <<-- A propriedade 'id' foi adicionada aqui para resolver o erro -->>
   usuarioId: string;
+  fotoPerfil: string; 
   apelido: string;
+  celular:string;
   email: string;
-  saldo: SaldoDto;
+  saldo: SaldoDto; 
+  
+  /*
+  usuario: {
+     apelido: string;
+     celular ;string;
+     fotoPerfil: string;
+     email:string;
+      };
+      */
+    
   campeonatosAderidos?: PreservedCollection<ApostadorCampeonatoDto> | ApostadorCampeonatoDto[];
 }

@@ -1,262 +1,112 @@
+// Localização: src/app/components/dashboard/dashboard.component.scss
+
+// Estilos para o painel de expansão, garantindo que o rótulo posicione corretamente
+::ng-deep .mat-expansion-panel {
+  position: relative; // Essencial para o 'position: absolute' do rótulo
+  overflow: visible; // Garante que o rótulo não seja cortado
+}
+
+// 1. AFASTAR NOME E ESCUDO DO TOPO DO CARD
+// Usamos ::ng-deep para atingir o elemento interno do mat-expansion-panel
+// Aumentamos o min-height para criar mais espaço vertical no cabeçalho
+// Adicionamos padding para empurrar o conteúdo para baixo
+::ng-deep .mat-expansion-panel-header {
+  min-height: 120px !important;
+  padding: 15px !important;
+}
+
+// 2. FONTE MENOR EM AZUL ESCURO NEGRITO
+// O seletor .mat-panel-title é o contêiner direto do nome e escudo
+// A classe .campeonato-nome no seu HTML já é mais específica, então podemos usá-la
+::ng-deep .campeonato-nome {
+  font-size: 1rem !important; /* Fonte menor, 16px */
+  font-weight: bold !important; /* Negrito */
+  color: #1e3a8a !important; /* Cor azul escuro */
+}
+
+// 3. MOVENDO O RÓTULO PARA O CENTRO (À DIREITA)
+// A classe `campeonato-status-label` é o seletor do seu rótulo
+// Usamos position: absolute em relação ao painel e ajustamos top e transform
+::ng-deep .campeonato-status-label {
+  position: absolute !important;
+  top: 50% !important;
+  right: 15px !important;
+  transform: translateY(-50%) rotate(6deg) !important;
+  white-space: nowrap !important;
+  z-index: 10 !important;
+}
+
+// Estilos para a barra de rolagem horizontal
+.horizontal-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.botao_aposta_rodada{
+  background-color: #699168;
+  color:  #0a0101;
+  font-size: 0.7rem !important; /* Fonte menor, 16px */
+  font-weight: bold !important;
+}
+
+.botao_resultado_rodada{
+  background-color: #4e9fb8;
+  color:  #0a0101;
+  font-size: 0.7rem !important; /* Fonte menor, 16px */
+  font-weight: bold !important;
+}
+
+.botao_rodadas_finalizadas{
+  background-color: #646262;
+  color:  #070606;
+  font-size: 0.7rem !important; /* Fonte menor, 16px */
+  font-weight: bold !important;
+}
+
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #4a5568;
+  border-radius: 4px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-track {
+  background-color: #2d3748;
+}
+
+.button-padrao-dashboard {
+    @apply w-full px-4 py-2 text-sm font-semibold rounded-lg shadow-md transition duration-300 ease-in-out;
+}
+
+
 /* Localização: src/app/components/dashboard/dashboard.component.scss */
 
-/* Estilos para a frase "Vamos Jogar?" */
-.vamos-jogar-label {
-  background-color: #eeb30f !important; /* Verde vibrante, forçado */
-  color: white !important; /* Texto branco, forçado */
-  font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 9999px; /* Para um formato de pílula */
-  font-size: 0.75rem; /* Texto menor */
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Sombra sutil */
-}
+/* Sobrescreve as regras de estilo do Angular Material */
+::ng-deep .mat-expansion-panel-header {
+  padding: 0 16px !important; // Reduz o padding horizontal
+  min-height: 48px !important; // Define uma altura mínima menor
 
-/* Estilos para os botões de ação */
-.dashboard-button {
-  width: 100%;
-  font-weight: 600; /* Semibold */
-  border-radius: 0.5rem; /* Rounded-md */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
-  transition: all 0.3s ease-in-out;
-  padding: 0.75rem 1rem; /* Padding para botões maiores */
-  height: auto; /* Permite que o conteúdo determine a altura */
-  line-height: normal; /* Garante que o texto não seja cortado */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  font-size: 0.875rem; /* Fonte menor para os botões */
-}
-
-.dashboard-button.mat-raised-button.mat-primary {
-  background-color: #673AB7 !important; /* Cor primária do Material, forçada */
-  &:hover {
-    background-color: #5E35B1 !important;
+  .mat-expansion-panel-header-title,
+  .mat-expansion-panel-header-description {
+    margin: 0 !important; // Remove a margem interna
+    padding: 0 !important; // Remove o padding interno
   }
 }
 
-/* Ajustes de fonte para os subtítulos do dashboar */
-.dashboard-subtitles {
-  font-size: 1.1rem !important; /* FONTE DO SUBTÍTULOS do DASHBOARD  */
-  font-weight: bold;
-  color: #96beca !important; /* Cor mais escura para o título, forçado */
+/* Ajusta o painel quando expandido */
+::ng-deep .mat-expansion-panel-header.mat-expanded {
+  min-height: 48px !important;
 }
 
-
-.dashboard-button.mat-raised-button.mat-accent {
-  background-color: #ff4107 !important; /* Cor accent do Material (amarelo), forçada */
-  color: #333 !important; /* Texto escuro para contraste, forçado */
-  &:hover {
-    background-color: #ff0800 !important;
-  }
+/* Ajusta o corpo do painel quando expandido */
+::ng-deep .mat-expansion-panel-body {
+  padding: 0 !important;
 }
 
-.dashboard-button.mat-raised-button.mat-warn {
-  background-color: #F44336 !important; /* Cor warn do Material (vermelho), forçada */
-  &:hover {
-    background-color: #E53935 !important;
-  }
+/* Ajusta o conteúdo do card interno para espaçamento */
+.card-content-compact {
+  padding: 8px 16px; // Adiciona um padding controlado
 }
 
-.dashboard-button.mat-stroked-button.mat-basic {
-  border-color: #9E9E9E !important; /* Cinza mais claro, forçado */
-  color: #424242 !important; /* Texto mais escuro, forçado */
-  &:hover {
-    background-color: #EEEEEE !important;
-  }
-}
-
-/* Estilo para o fundo com imagem */
-.dashboard-background {
-  background-image: url('/assets/images/fundobolao.png') !important; /* FORÇADO AQUI */
-  background-size: cover !important; /* Cobre toda a área, forçado */
-  background-position: center !important; /* Centraliza a imagem, forçado */
-  background-attachment: fixed !important; /* Fixa a imagem de fundo, forçado */
-  min-height: 100vh !important; /* Garante que o fundo cubra toda a altura da viewport, forçado */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-  width: 100%; /* Garante que o fundo ocupe toda a largura */
-}
-
-/* Estilo para o container principal dos cards, com fundo cinza e transparência */
-.cards-container-wrapper {
-  background-color: rgba(245, 245, 245, 0.068) !important; /* Cinza claro com leve transparência, forçado */
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(179, 177, 177, 0.925);
-  width: 100%;
-  max-width: 96rem; /* Largura máxima para o conteúdo */
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-}
-
-/* Ajustes para o card individual */
-mat-card {
-  background-color: #e0e0e0f3 !important; /* Um cinza um pouco mais escuro para os cards, forçado */
-  border: 1px solid #04188d;
-  position: relative; /* Mantém relative para os filhos, se necessário, mas o rótulo não será absolute */
-  overflow: visible !important;
-}
-
-/* Estilo específico para o card de saldo */
-.saldo-card {
-  .mat-mdc-card-content {
-    /* Ajustes para o layout compacto */
-    display: flex;
-    flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha em telas pequenas */
-    align-items: center;
-    justify-content: space-between; /* Espaço entre o saldo e os botões */
-    padding: 16px; /* Ajuste de padding para o conteúdo do card */
-
-    .mat-icon {
-      font-size: 32px; /* Tamanho do ícone diminuído */
-      height: 32px;
-      width: 32px;
-      line-height: 1; /* Alinhamento vertical */
-    }
-
-    h2 {
-      font-size: 1.1rem !important; /* Fonte do título diminuída */
-      margin-right: 12px; /* Espaçamento entre o título e o valor do saldo */
-      margin-bottom: 0; /* Remove margem inferior padrão */
-    }
-
-    p {
-      font-size: 1.8rem !important; /* Fonte do saldo diminuída */
-      flex-grow: 1; /* Permite que o parágrafo do saldo ocupe o espaço restante */
-      text-align: left; /* Alinha o texto do saldo à esquerda */
-      margin-bottom: 0; /* Remove margem inferior padrão */
-    }
-
-    .flex-col.sm\:flex-row {
-      flex-basis: auto; /* Permite que os botões se ajustem ao conteúdo */
-      margin-top: 0; /* Remove margem superior se houver */
-    }
-
-    @media (max-width: 639px) { /* Para telas muito pequenas, empilha os itens */
-      flex-direction: column;
-      align-items: flex-start; /* Alinha os itens à esquerda */
-
-      h2 {
-        margin-right: 0;
-        margin-bottom: 8px;
-      }
-
-      p {
-        text-align: left;
-        margin-bottom: 16px;
-      }
-
-      .flex-col.sm\:flex-row {
-        width: 100%; /* Botões ocupam a largura total */
-      }
-    }
-  }
-}
-
-
-/* Ocultar o ícone de escudo padrão do Material se você estiver usando uma imagem */
-img.mat-card-avatar {
-  display: none;
-}
-
-/* Ajustes de fonte para o título do card */
-mat-card-title {
-  font-size: 1.1rem !important; /* FONTE DO TÍTULO DO CAMPEONATO DIMINUÍDA, forçada */
-  font-weight: bold;
-  color: #333 !important; /* Cor mais escura para o título, forçado */
-}
-
-
-
-/* Ajustes de fonte para a subtítulo do card (Vamos Jogar?) */
-mat-card-subtitle {
-  font-size: 0.875rem !important; /* Fonte menor, forçada */
-  color: #666 !important; /* Cor mais suave, forçado */
-}
-
-/* Estilo para a rolagem horizontal dos cards em telas menores */
-@media (max-width: 767px) { /* Para telas pequenas (celulares) */
-  .cards-scroll-container {
-    display: flex;
-    overflow-x: auto; /* Permite rolagem horizontal */
-    scroll-snap-type: x mandatory; /* Faz com que os cards "grudem" na tela */
-    -webkit-overflow-scrolling: touch; /* Rolagem suave em iOS */
-    padding-bottom: 1rem; /* Espaço para a barra de rolagem */
-  }
-
-  .cards-scroll-container mat-card {
-    flex: 0 0 90%; /* Cada card ocupa 90% da largura da tela */
-    margin-right: 1rem; /* Espaço entre os cards */
-    scroll-snap-align: start; /* Alinha o início do card ao início da área de rolagem */
-  }
-
-  .cards-scroll-container mat-card:last-child {
-    margin-right: 0; /* Remove margem do último card */
-  }
-
-
-/* Esconder barra de rolagem para Webkit (Chrome, Safari) */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Esconder barra de rolagem para Firefox */
-.hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-
-/* Esconder barra de rolagem para Webkit (Chrome, Safari) */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Esconder barra de rolagem para Firefox */
-.hide-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-/* Estilos para o rótulo "Jogando!!" */
-.jogando-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem; /* py-1 px-3 */
-  border-radius: 9999px; /* rounded-full */
-  background-color: #10B981; /* bg-emerald-500 (um verde vibrante) */
-  color: #fff; /* text-white */
-  font-weight: 600; /* font-semibold */
-  font-size: 0.75rem; /* text-xs */
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
-.jogando-chip mat-icon {
-  margin-right: 0.25rem; /* mr-1 */
-  font-size: 1rem; /* text-base */
-}
-
-/* Estilos para o rótulo "Vamos Jogar?" */
-.vamos-jogar-label {
-  display: inline-block;
-  padding: 0.25rem 0.75rem; /* py-1 px-3 */
-  border-radius: 9999px; /* rounded-full */
-  background-color: #3B82F6; /* bg-blue-500 */
-  color: #fff; /* text-white */
-  font-weight: 600; /* font-semibold */
-  font-size: 0.75rem; /* text-xs */
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
-
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch; /* Para iOS */
+  touch-action: pan-x; /* Para Android e outros */
 }

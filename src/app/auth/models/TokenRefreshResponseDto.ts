@@ -1,14 +1,15 @@
 // Localização: src/app/models/auth/token-refresh-response-dto.model.ts
 
 /**
- * DTO para a resposta de refresh de token da API.
- * Usado quando um novo token JWT é obtido via refresh.
+ * DTO para a resposta de um refresh de token da API.
+ * Corresponde à estrutura retornada pelo endpoint de refresh-token.
  */
 export interface TokenRefreshResponseDto {
-  token: string;
+  authToken: string;
   refreshToken: string;
-  expiresIn: number; // Tempo de expiração do token em segundos (se o backend retornar assim)
-  userId: string; // O ID único do usuário no seu backend
-  // Se o seu endpoint de refresh retornar 'expiration' como string, ajuste aqui:
-  // expiration?: string;
+  expiresIn: number; // Duração em segundos
+  // Adicione outras propriedades se o seu backend retornar (ex: userId, email)
+  userId?: string;
+  email?: string;
+  userName?: string;
 }

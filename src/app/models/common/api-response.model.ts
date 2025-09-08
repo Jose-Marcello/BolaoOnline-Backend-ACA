@@ -6,6 +6,8 @@
      * Representa uma coleção de itens com metadados de serialização,
      * como $id e $values, comumente usado em serialização JSON com referência.
      */
+          
+    
     export interface PreservedCollection<T> {
       $id: string;
       $values: T[]; // O array de valores
@@ -22,7 +24,8 @@
      */
     export interface ApiResponse<T> {
       success: boolean;
-      data?: T | PreservedCollection<T>; // O dado retornado, pode ser um objeto ou uma coleção
+      //data?: T | PreservedCollection<T>; // O dado retornado, pode ser um objeto ou uma coleção
+      data?: T; // Remova o union type `| PreservedCollection<T>`
       message?: string;
       notifications?: NotificationList; // Lista de notificações ou erros
       errors?: any; // Pode ser um objeto de erros de validação ou um array de strings

@@ -1,43 +1,43 @@
-// Localização: src/app/aposta-rodada/aposta-rodada-form/aposta-rodada-form.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 
-import { Component, OnInit, OnDestroy, LOCALE_ID } from '@angular/core';
-import { CommonModule, DatePipe, registerLocaleData } from '@angular/common';
-import localePt from '@angular/common/locales/pt';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+// Angular Material Imports
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { Subscription, of } from 'rxjs';
-import { switchMap, map, tap, finalize } from 'rxjs/operators';
-import { ApostadorService } from '@services/apostador.service';
+import { Subscription, combineLatest, of, Observable } from 'rxjs';
+import { switchMap, finalize, catchError, filter, tap, take, map } from 'rxjs/operators';
 
+// Services
+import { RodadaService } from '@services/rodada.service';
 import { ApostaService } from '@services/aposta.service';
 import { CampeonatoService } from '@services/campeonato.service';
-import { RodadaService } from '@services/rodada.service'; // <<-- NOVO: Importar RodadaService -->>
-import { SalvarApostaRequestDto } from '@models/aposta/salvar-aposta-request-dto.model';
-import { NotificationDto } from '@models/common/notification.model';
-import { RodadaDto, StatusRodada } from '@models/rodada/rodada-dto.model';
-import { CampeonatoDto } from '@models/campeonato/campeonato-dto.model';
-import { ApostaJogoVisualizacaoDto } from '@models/aposta/aposta-jogo-visualizacao-dto.model';
-import { ApostaRodadaDto } from '@models/aposta/aposta-rodada-dto.model';
-import { PalpiteDto } from '@models/palpite/palpite-dto.model';
-import { environment } from '@environments/environment';
-import { ApiResponse, isPreservedCollection, PreservedCollection } from '@models/common/api-response.model';
+import { ApostadorCampeonatoService } from '@services/apostadorCampeonato.service';
+import { ApostadorService } from '@services/apostador.service';
 import { AuthService } from '@auth/auth.service';
-import { ApostadorCampeonatoDto } from '@models/apostador-campeonato/apostador-campeonato-dto.model';
+
+// Models
+import { RodadaDto } from '@models/rodada/rodada-dto.model';
+import { ApostaRodadaDto } from '@models/aposta/aposta-rodada-dto.model';
+import { ApostaJogoEdicaoDto } from '@models/aposta/aposta-jogo-edicao-dto.model';
+import { SalvarApostaRequestDto, ApostaJogoRequest } from '@models/aposta/salvar-aposta-request-dto.model';
+import { NotificationDto } from '@models/common/notification.model';
+import { ApiResponse, isPreservedCollection } from '@models/common/api-response.model';
 import { ApostadorDto } from '@models/apostador/apostador-dto.model';
+import { CampeonatoDto } from '@models/campeonato/campeonato-dto.model';
+import { CriarApostaAvulsaRequestDto } from '@models/aposta/criar-aposta-avulsa-request.Dto.model'; 
 
-registerLocaleData(localePt, 'pt-BR');
+import { environment } from '@environments/environment';
 
-const APOSTA_STATUS_NAO_ENVIADA = 0;
-const APOSTA_STATUS_ENVIADA = 1;
+import { ConfirmacaoApostaModalComponent } from '@components/confirmacao-modal/confirmacao-apostaModal.Component';
 
 @Component({
   selector: 'app-aposta-rodada-form',
@@ -45,527 +45,497 @@ const APOSTA_STATUS_ENVIADA = 1;
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
     MatCardModule,
+    MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule,
-    MatSelectModule
-  ],
-  providers: [
     DatePipe,
-    { provide: LOCALE_ID, useValue: 'pt-BR' }
+    CurrencyPipe,
+    MatDialogModule
   ],
   templateUrl: './aposta-rodada-form.component.html',
   styleUrls: ['./aposta-rodada-form.component.scss']
 })
-export class ApostarRodadaFormComponent implements OnInit, OnDestroy {
-  campeonatoId: string | null = null;
-  apostadorCampeonatoId: string | null = null;
-  rodadaId: string | null = null;
-  apostaRodadaId: string | null = null;
-
-  rodadasEmAposta: RodadaDto[] = [];
-  rodadaSelecionada: RodadaDto | null = null;
-
-  apostasUsuarioRodada: ApostaRodadaDto[] = [];
-
-  apostaAtual: ApostaRodadaDto = this.getEmptyApostaRodadaDto();
-
-  jogosDaApostaAtual: ApostaJogoVisualizacaoDto[] = [];
-
+export class ApostaRodadaFormComponent implements OnInit, OnDestroy {
   isLoading: boolean = true;
   isSaving: boolean = false;
   errorMessage: string | null = null;
+  notifications: NotificationDto[] = [];
+  hasNotifications: boolean = false;
+
+  campeonatoId: string | null = null;
+  rodadaId: string | null = null;
+  apostadorCampeonatoId: string | null = null;
+  apostaRodadaId: string | null = null;
+  
+  userId: string | null = null;
+  apostadorSaldo: number | null = null;
+  custoAposta: number = 0;
+  isApostadorReady: boolean = false;
+
+  campeonatoSelecionado: CampeonatoDto | null = null;
+  rodadasEmAposta: RodadaDto[] = [];
+  rodadaSelecionada: RodadaDto | null = null;
+  apostasUsuarioRodada: ApostaRodadaDto[] = [];
+  apostaAtual: ApostaRodadaDto | null = null;
+  jogosDaApostaAtual: ApostaJogoEdicaoDto[] = [];
 
   apostaForm!: FormGroup;
   baseUrlImagens: string = environment.imagesUrl;
 
-  hasNotifications: boolean = false;
-  notifications: NotificationDto[] = [];
-
-  readonly APOSTA_STATUS_NAO_ENVIADA = APOSTA_STATUS_NAO_ENVIADA;
-  readonly APOSTA_STATUS_ENVIADA = APOSTA_STATUS_ENVIADA;
-  public StatusRodada = StatusRodada;
-
   private subscriptions: Subscription = new Subscription();
-  apostador: ApostadorDto | null = null; // Mantido para outras lógicas se necessário
 
   constructor(
     private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private rodadaService: RodadaService,
     private apostaService: ApostaService,
     private campeonatoService: CampeonatoService,
     private apostadorService: ApostadorService,
-    private rodadaService: RodadaService, // <<-- NOVO: Injetar RodadaService -->>
     private authService: AuthService,
     private snackBar: MatSnackBar,
-    private route: ActivatedRoute,
-    private router: Router,
-    private datePipe: DatePipe
+    private dialog: MatDialog
   ) {
     this.apostaForm = this.fb.group({
       palpites: this.fb.array([])
     });
+    console.log('[ApostarRodadaFormComponent] Constructor: Formulário inicializado.');
   }
 
   ngOnInit(): void {
+    console.log('[ApostarRodadaFormComponent] ngOnInit: Iniciado.');
+
     this.subscriptions.add(
-      this.route.paramMap.pipe(
-        tap(params => {
+      combineLatest([
+        this.route.paramMap,
+        this.route.queryParamMap
+      ]).pipe(
+        tap(([params, queryParams]) => {
           this.campeonatoId = params.get('campeonatoId');
-          this.rodadaId = params.get('rodadaId'); // Pode ser nulo
+          this.rodadaId = params.get('rodadaId');
           this.apostaRodadaId = params.get('apostaRodadaId');
-          
-          console.log('[DEBUG] ngOnInit: Parâmetros da URL (paramMap) - CampeonatoId:', this.campeonatoId, 'RodadaId:', this.rodadaId, 'ApostaRodadaId:', this.apostaRodadaId);
+          this.apostadorCampeonatoId = queryParams.get('apostadorCampeonatoId');
+          console.log(`[ApostarRodadaFormComponent] Parâmetros da rota: CampeonatoId=${this.campeonatoId}, RodadaId=${this.rodadaId}, ApostadorCampeonatoId=${this.apostadorCampeonatoId}, ApostaRodadaId=${this.apostaRodadaId}`);
         }),
-        switchMap(() => this.route.queryParamMap),
-        tap(queryParams => {
-          const apostadorCampeonatoIdFromQuery = queryParams.get('apostadorCampeonatoId');
-          this.apostadorCampeonatoId = apostadorCampeonatoIdFromQuery === 'null' ? null : apostadorCampeonatoIdFromQuery;
-          console.log('[DEBUG] ngOnInit: QueryParams - ApostadorCampeonatoId (da query):', this.apostadorCampeonatoId);
-        }),
-        switchMap(() => {
-          if (!this.campeonatoId) {
-            this.errorMessage = 'ID do campeonato não fornecido na URL.';
-            this.isLoading = false;
-            return of(null);
-          }
-          return this.apostadorService.getDadosApostador().pipe(
-            tap(apostadorResponse => {
-              if (apostadorResponse.success && apostadorResponse.data) {
-                this.apostador = isPreservedCollection<ApostadorDto>(apostadorResponse.data) 
-                                ? (apostadorResponse.data.$values && apostadorResponse.data.$values.length > 0 ? apostadorResponse.data.$values[0] : null)
-                                : apostadorResponse.data as ApostadorDto;
-                console.log('[DEBUG] ngOnInit: Apostador carregado (para referência):', this.apostador);
-              } else {
-                console.warn('[WARN] ngOnInit: Falha ao carregar dados do apostador para referência.');
-                this.apostador = null;
-              }
-            }),
-            map(() => ({
-              campeonatoId: this.campeonatoId,
-              rodadaId: this.rodadaId,
-              apostadorCampeonatoId: this.apostadorCampeonatoId,
-              apostaRodadaId: this.apostaRodadaId
-            }))
-          );
-        })
-      ).subscribe(data => {
-        if (data && data.campeonatoId) {
-          this.loadAllIntegratedData(data.campeonatoId, data.rodadaId, data.apostadorCampeonatoId, data.apostaRodadaId);
-        } else {
-          this.errorMessage = this.errorMessage || 'Não foi possível carregar informações essenciais para a aposta.';
+        filter(() => !!this.campeonatoId && !!this.rodadaId),
+        switchMap(() => this.loadAllIntegratedData())
+      ).subscribe({
+        next: () => {
           this.isLoading = false;
+          console.log('[ApostarRodadaFormComponent] Carregamento inicial de dados concluído.');
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = 'Erro ao carregar dados da rodada ou apostas.';
+          console.error('[ApostarRodadaFormComponent] Erro no carregamento inicial:', err);
+          this.showSnackBar(this.errorMessage, 'Fechar', 'error');
         }
       })
     );
   }
 
   ngOnDestroy(): void {
+    console.log('[ApostarRodadaFormComponent] ngOnDestroy: Desinscrevendo todas as subscriptions.');
     this.subscriptions.unsubscribe();
   }
 
-  get palpites(): FormArray<FormGroup> {
-    return this.apostaForm.get('palpites') as FormArray<FormGroup>;
-  }
-
-  private getEmptyApostaRodadaDto(): ApostaRodadaDto {
-    return {
-      id: '',
-      apostadorCampeonatoId: '', 
-      rodadaId: '', 
-      identificadorAposta: 'Nova Aposta Avulsa',
-      statusAposta: APOSTA_STATUS_NAO_ENVIADA,
-      ehApostaCampeonato: false,
-      ehApostaIsolada: true,
-      custoPagoApostaRodada: 0,
-      pontuacaoTotalRodada: 0,
-      enviada: false, 
-      numJogosApostados: 0, 
-      apostadorCampeonato: null, 
-      dataHoraSubmissao: null
-    };
-  }
-
-  getStatusRodadaText(status: StatusRodada): string {
-    switch (status) {
-      case StatusRodada.EmAposta: return 'Em Aposta';
-      case StatusRodada.Corrente: return 'Corrente';
-      case StatusRodada.Finalizada: return 'Finalizada';
-      case StatusRodada.NaoIniciada: return 'Não Iniciada';
-      default: return 'Desconhecido';
-    }
-  }
-
-  private async loadAllIntegratedData(campeonatoId: string, initialRodadaId: string | null, apostadorCampeonatoId: string | null, initialApostaRodadaId: string | null): Promise<void> {
+  private loadAllIntegratedData(): Observable<any> {
     this.isLoading = true;
-    this.hasNotifications = false;
+    this.errorMessage = null;
     this.notifications = [];
-    this.errorMessage = null;
+    this.hasNotifications = false;
 
-    console.log('[DEBUG] loadAllIntegratedData - CampeonatoId:', campeonatoId, 'RodadaId:', initialRodadaId, 'ApostadorCampeonatoId (param):', apostadorCampeonatoId, 'ApostaRodadaId:', initialApostaRodadaId);
+    console.log(`[ApostarRodadaFormComponent] loadAllIntegratedData - CampeonatoId: ${this.campeonatoId}, RodadaId: ${this.rodadaId}`);
 
+    const rodadas$ = this.rodadaService.getRodadasEmAposta(this.campeonatoId!).pipe(
+        map(response => {
+            let rodadasExtraidas: any[] = [];
+            if (response.success && response.data) {
+                rodadasExtraidas = (response.data as any).$values || (Array.isArray(response.data) ? response.data : []);
+            }
+            return rodadasExtraidas as RodadaDto[];
+        })
+    );
 
-    try {
-      // <<-- ATUALIZADO: Usando RodadaService -->>
-      const rodadasResponse = await this.rodadaService.getRodadasEmAposta(campeonatoId).toPromise();
-      if (rodadasResponse?.success && rodadasResponse.data) {
-        this.rodadasEmAposta = isPreservedCollection<RodadaDto>(rodadasResponse.data)
-                                 ? rodadasResponse.data.$values
-                                 : Array.isArray(rodadasResponse.data) ? rodadasResponse.data : [];
-        console.log('[DEBUG] Rodadas em aposta carregadas:', this.rodadasEmAposta);
+    const apostasDoUsuario$ = this.apostadorCampeonatoId
+        ? this.apostaService.getApostasPorRodadaEApostadorCampeonato(this.rodadaId!, this.apostadorCampeonatoId!).pipe(
+            map(response => {
+                let apostasExtraidas: any[] = [];
+                if (response?.success && response.data) {
+                    apostasExtraidas = (response.data as any).$values || (Array.isArray(response.data) ? response.data : []);
+                }
+                return apostasExtraidas as ApostaRodadaDto[];
+            }),
+            catchError(error => {
+                console.error('[ApostarRodadaFormComponent] Erro ao carregar lista de apostas. Prosseguindo...', error);
+                return of([]);
+            })
+        )
+        : of([]);
 
-        if (this.rodadasEmAposta.length === 0) {
-          this.errorMessage = 'Nenhuma rodada disponível para apostar neste campeonato.';
-          this.isLoading = false;
-          return;
-        }
+    const apostador$ = this.apostadorService.getDadosApostador().pipe(
+        map(response => response.data as ApostadorDto)
+    );
 
-        this.rodadaSelecionada = this.rodadasEmAposta.find(r => r.id === initialRodadaId) || null;
-        if (!this.rodadaSelecionada) {
-          this.rodadaSelecionada = this.rodadasEmAposta.length > 0 ? this.rodadasEmAposta[0] : null;
-        }
-        
-        if (this.rodadaSelecionada) {
-          this.rodadaId = this.rodadaSelecionada.id;
-          await this.loadApostasUsuarioRodada(this.rodadaId, apostadorCampeonatoId, initialApostaRodadaId);
-        } else {
-          this.errorMessage = 'Rodada inicial não encontrada e nenhuma rodada alternativa disponível para apostar.';
-          this.isLoading = false;
-          return;
-        }
+    return combineLatest([rodadas$, apostador$, apostasDoUsuario$]).pipe(
+        tap(([rodadas, apostador, apostasList]) => {
+            // Processa os dados de Rodadas
+            this.rodadasEmAposta = rodadas;
+            this.rodadaSelecionada = this.rodadasEmAposta.find(r => r.id === this.rodadaId!) || null;
+            if (this.rodadaSelecionada) {
+                this.custoAposta = this.rodadaSelecionada.custoApostaRodada;
+            }
 
-        console.log('[DEBUG] Rodada selecionada para exibição:', this.rodadaSelecionada);
+            // Processa os dados do Apostador
+            if (apostador) {
+                this.userId = apostador.id;
+                this.apostadorSaldo = apostador.saldo?.valor || 0;
+                this.isApostadorReady = true;
+            }
 
-      } else {
-        this.handleApiResponseNotifications(rodadasResponse!);
-        this.errorMessage = this.errorMessage || 'Falha ao carregar rodadas em aposta.';
-      }
-    } catch (error: any) {
-      console.error('Erro geral ao carregar dados da aposta:', error);
-      this.errorMessage = error.message || 'Erro ao carregar dados da aposta.';
-    } finally {
-      this.isLoading = false;
-    }
+            // Processa a lista de Apostas do Usuário
+            this.apostasUsuarioRodada = apostasList;
+            
+            // LÓGICA DE SELEÇÃO INICIAL
+            if (this.apostasUsuarioRodada.length > 0) {
+                let apostaDeCampeonato = this.apostasUsuarioRodada.find(a => a.ehApostaCampeonato === true);
+                if (apostaDeCampeonato) {
+                    this.apostaAtual = apostaDeCampeonato;
+                } else {
+                    this.apostaAtual = this.apostasUsuarioRodada[0];
+                }
+            } else {
+                this.apostaAtual = this.criarNovaApostaAvulsaObjeto();
+            }
+            this.apostaRodadaId = this.apostaAtual.id;
+        }),
+        switchMap(() => {
+            // Agora que a aposta atual está definida, carregamos os palpites dela
+            if (this.apostaAtual && this.apostaAtual.id) {
+                return this.loadJogosDaApostaAtual(this.apostaAtual.id);
+            } else {
+                this.inicializarFormularioPalpites();
+                return of([]);
+            }
+        }),
+        tap(() => {
+            console.log('[ApostarRodadaFormComponent] Palpites da aposta atual carregados.');
+        }),
+        finalize(() => this.isLoading = false),
+        catchError(error => {
+            this.isLoading = false;
+            this.errorMessage = 'Erro ao carregar dados essenciais. Verifique sua conexão e tente novamente.';
+            this.showSnackBar(this.errorMessage, 'Fechar', 'error');
+            console.error('[ApostarRodadaFormComponent] Erro em loadAllIntegratedData:', error);
+            return of(null);
+        })
+    );
   }
 
-  async loadApostasUsuarioRodada(rodadaId: string, apostadorCampeonatoId: string | null, initialApostaRodadaId: string | null): Promise<void> {
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.apostasUsuarioRodada = [];
+private loadJogosDaApostaAtual(apostaRodadaId: string): Observable<ApostaJogoEdicaoDto[]> {
+    console.log(`[ApostarRodadaFormComponent] loadJogosDaApostaAtual - rodadaId: ${this.rodadaId}, apostaRodadaId: ${apostaRodadaId}`);
 
-    console.log('[DEBUG] loadApostasUsuarioRodada - RodadaId:', rodadaId, 'ApostadorCampeonatoId (param):', apostadorCampeonatoId, 'InitialApostaRodadaId:', initialApostaRodadaId);
-
-    if (!rodadaId || !apostadorCampeonatoId) {
-      this.errorMessage = 'IDs de rodada ou apostador do campeonato faltando para carregar apostas. Exibindo estado inicial.';
-      this.isLoading = false;
-      console.warn('[WARN] loadApostasUsuarioRodada - IDs de rodada ou apostador do campeonato faltando. Não buscando apostas do usuário. RodadaId:', rodadaId, 'ApostadorCampeonatoId:', apostadorCampeonatoId);
-      this.apostasUsuarioRodada = [];
-      this.apostaAtual = this.getEmptyApostaRodadaDto();
-      this.jogosDaApostaAtual = [];
-      this.palpites.clear();
-      this.buildForm();
-      return;
+    if (!this.rodadaId || !apostaRodadaId) {
+        this.showSnackBar('IDs de rodada ou aposta não disponíveis para carregar jogos.', 'Fechar', 'error');
+        return of([]);
     }
-
-    try {
-      const apostasResponse = await this.apostaService.getApostasPorRodadaEUsuario(rodadaId, apostadorCampeonatoId).toPromise();
-      if (apostasResponse?.success && apostasResponse.data) {
-        this.apostasUsuarioRodada = isPreservedCollection<ApostaRodadaDto>(apostasResponse.data)
-                                         ? apostasResponse.data.$values
-                                         : Array.isArray(apostasResponse.data) ? apostasResponse.data : [];
-        console.log('[DEBUG] Apostas do usuário para a rodada (getApostasPorRodadaEUsuario):', this.apostasUsuarioRodada);
-
-        if (initialApostaRodadaId) {
-          this.apostaAtual = this.apostasUsuarioRodada.find(a => a.id === initialApostaRodadaId) || this.getEmptyApostaRodadaDto();
-        } else {
-          this.apostaAtual = this.apostasUsuarioRodada.find(a => a.ehApostaCampeonato) || (this.apostasUsuarioRodada.length > 0 ? this.apostasUsuarioRodada[0] : this.getEmptyApostaRodadaDto());
-        }
-        console.log('[DEBUG] Aposta Atual Selecionada (após getApostasPorRodadaEUsuario):', this.apostaAtual);
-
-      } else {
-        this.handleApiResponseNotifications(apostasResponse!);
-        this.errorMessage = this.errorMessage || 'Falha ao carregar suas apostas para esta rodada.';
-        this.apostaAtual = this.getEmptyApostaRodadaDto();
-      }
-    } catch (error: any) {
-      console.error('Erro ao carregar apostas do usuário para a rodada:', error);
-      this.errorMessage = error.message || 'Erro ao carregar suas apostas para esta rodada.';
-      this.apostaAtual = this.getEmptyApostaRodadaDto();
-    } finally {
-      await this.loadJogosDaApostaAtual(this.rodadaId!, this.apostaAtual.id);
-      this.isLoading = false;
-    }
-  }
-
-  async loadJogosDaApostaAtual(rodadaId: string, apostaRodadaId: string): Promise<void> {
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.jogosDaApostaAtual = [];
-    this.palpites.clear();
-
-    console.log(`[DEBUG] loadJogosDaApostaAtual - rodadaId: ${rodadaId}, apostaRodadaId (param): ${apostaRodadaId}`);
-    console.log(`[DEBUG] loadJogosDaApostaAtual - this.apostadorCampeonatoId (component property, da rota): ${this.apostadorCampeonatoId}`);
-    console.log(`[DEBUG] loadJogosDaApostaAtual - this.apostaAtual.id: ${this.apostaAtual.id}, this.apostaAtual.apostadorCampeonatoId: ${this.apostaAtual.apostadorCampeonatoId}`);
-
-    const apostadorCampeonatoIdToUse = this.apostadorCampeonatoId; 
-
-    if (!rodadaId || !apostadorCampeonatoIdToUse) {
-      this.errorMessage = 'IDs de rodada ou apostador do campeonato faltando para carregar jogos. Exibindo estado inicial.';
-      this.isLoading = false;
-      console.warn('[WARN] loadJogosDaApostaAtual - IDs de rodada ou apostador do campeonato faltando. Não buscando jogos para aposta. RodadaId:', rodadaId, 'apostadorCampeonatoIdToUse:', apostadorCampeonatoIdToUse);
-      this.jogosDaApostaAtual = [];
-      this.palpites.clear();
-      this.buildForm();
-      return;
-    }
-
-    try {
-      const jogosResponse = await this.apostaService.getApostasParaEdicao(rodadaId, apostadorCampeonatoIdToUse).toPromise();
-      
-      if (jogosResponse?.success && jogosResponse.data) {
-        this.jogosDaApostaAtual = isPreservedCollection<ApostaJogoVisualizacaoDto>(jogosResponse.data)
-                                 ? jogosResponse.data.$values
-                                 : Array.isArray(jogosResponse.data) ? jogosResponse.data : [];
-
-        console.log('[DEBUG] Dados recebidos de getApostasParaEdicao (ApostaJogoVisualizacaoDto):', this.jogosDaApostaAtual);
-
-        if (apostaRodadaId === '') {
-          this.jogosDaApostaAtual.forEach(jogo => {
-            jogo.placarApostaCasa = null; 
-            jogo.placarApostaVisita = null; 
-          });
-          console.log('[DEBUG] Jogos carregados para nova aposta (palpites limpos no frontend):', this.jogosDaApostaAtual);
-        } else {
-          console.log('[DEBUG] Jogos da aposta atual carregados:', this.jogosDaApostaAtual);
-        }
-        
-        this.buildForm();
-      } else {
-        this.handleApiResponseNotifications(jogosResponse!);
-        this.errorMessage = this.errorMessage || 'Falha ao carregar os jogos da aposta.';
-      }
-    } catch (error: any) {
-      console.error('Erro ao carregar jogos da aposta atual:', error);
-      this.errorMessage = error.message || 'Erro ao carregar os jogos da aposta.';
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  onClickCriarNovaAposta(): void {
-    this.apostaAtual = this.getEmptyApostaRodadaDto();
-    if (this.rodadaId && this.apostadorCampeonatoId) {
-      this.loadJogosDaApostaAtual(this.rodadaId, ''); 
-    } else {
-      this.showNotification('IDs de rodada ou apostador do campeonato não disponíveis para criar nova aposta.', 'warning');
-    }
-  }
-
-  async onRodadaSelected(selectedRodadaId: string): Promise<void> {
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.rodadaSelecionada = this.rodadasEmAposta.find(r => r.id === selectedRodadaId) || null;
-
-    if (this.rodadaSelecionada) {
-      this.rodadaId = this.rodadaSelecionada.id;
-      this.apostaAtual = this.getEmptyApostaRodadaDto(); 
-      await this.loadApostasUsuarioRodada(this.rodadaId, this.apostadorCampeonatoId, null);
-    } else {
-      this.showNotification('Rodada selecionada não encontrada.', 'warning');
-      this.isLoading = false;
-    }
-  }
-
-  async onApostaSelected(apostaId: string): Promise<void> {
-    console.log('[DEBUG] onApostaSelected chamado com apostaId:', apostaId);
-    this.apostaAtual = this.apostasUsuarioRodada.find(a => a.id === apostaId) || this.getEmptyApostaRodadaDto();
-    console.log('[DEBUG] onApostaSelected - Aposta Atual selecionada:', this.apostaAtual);
     
-    if (this.apostaAtual.id !== '') {
-      this.apostaRodadaId = this.apostaAtual.id;
-      this.apostadorCampeonatoId = this.apostaAtual.apostadorCampeonatoId; 
-      if (this.rodadaId && this.apostadorCampeonatoId) {
-        await this.loadJogosDaApostaAtual(this.rodadaId, this.apostaAtual.id); 
-      } else {
-        this.showNotification('IDs de rodada ou apostador do campeonato não disponíveis para carregar jogos.', 'warning');
-      }
-    } else {
-      this.onClickCriarNovaAposta();
-    }
-  }
+    return this.apostaService.getApostasParaEdicao(this.rodadaId!, apostaRodadaId).pipe(
+        map(jogosResponse => {
+            let jogosExtraidos: ApostaJogoEdicaoDto[] = [];
+            if (jogosResponse?.success && jogosResponse.data) {
+                // <<-- CORREÇÃO FINAL: Lidar com o PreservedCollection -->>
+                jogosExtraidos = isPreservedCollection<ApostaJogoEdicaoDto>(jogosResponse.data) 
+                    ? jogosResponse.data.$values 
+                    : jogosResponse.data as ApostaJogoEdicaoDto[];
+            }
+            return jogosExtraidos;
+        }),
+        tap(jogos => {
+            this.jogosDaApostaAtual = jogos;
+            console.log('[ApostarRodadaFormComponent] Jogos carregados para a aposta atual:', this.jogosDaApostaAtual);
+            this.inicializarFormularioPalpites();
+        }),
+        catchError(error => {
+            this.jogosDaApostaAtual = [];
+            this.showSnackBar('Erro ao carregar jogos da aposta atual.', 'Fechar', 'error');
+            console.error('[ApostarRodadaFormComponent] Erro ao carregar jogos da aposta atual:', error);
+            return of([]);
+        })
+    );
+}
 
-  private buildForm(): void {
-    console.log('[DEBUG] Construindo formulário com', this.jogosDaApostaAtual.length, 'jogos.');
+
+
+  private inicializarFormularioPalpites(): void {
     while (this.palpites.length !== 0) {
       this.palpites.removeAt(0);
     }
 
-    this.jogosDaApostaAtual.forEach(jogo => {
-      this.palpites.push(this.fb.group({
-        id: [jogo.id || null],
-        idJogo: [jogo.idJogo, Validators.required],
-        apostaCasa: [jogo.placarApostaCasa, [Validators.required, Validators.min(0)]], 
-        apostaVisitante: [jogo.placarApostaVisita, [Validators.required, Validators.min(0)]] 
-      }));
-    });
-    console.log('[DEBUG] Formulário construído. Palpites length:', this.palpites.length);
-    this.palpites.controls.forEach((control, index) => {
-      console.log(`[DEBUG] Palpite ${index}: Casa=${control.get('apostaCasa')?.value}, Fora=${control.get('apostaVisitante')?.value}`);
+    if (this.jogosDaApostaAtual && this.jogosDaApostaAtual.length > 0) {
+      this.jogosDaApostaAtual.forEach(jogo => {
+        this.palpites.push(this.fb.group({
+          idJogo: [jogo.idJogo, Validators.required],
+          placarApostaCasa: [jogo.placarApostaCasa, [Validators.required, Validators.min(0)]],
+          placarApostaVisita: [jogo.placarApostaVisita, [Validators.required, Validators.min(0)]]
+        }));
+      });
+      console.log(`[ApostarRodadaFormComponent] Formulário construído com ${this.palpites.length} jogos.`);
+    } else {
+      console.warn('[ApostarRodadaFormComponent] Nenhum jogo para construir o formulário de palpites.');
+    }
+  }
+
+  get palpites(): FormArray {
+    return this.apostaForm.get('palpites') as FormArray;
+  }
+
+  private criarNovaApostaAvulsaObjeto(): ApostaRodadaDto {
+    return {
+      id: '',
+      apostadorCampeonatoId: this.apostadorCampeonatoId || '',
+      rodadaId: this.rodadaId || '',
+      identificadorAposta: 'Nova Aposta Avulsa',
+      dataHoraSubmissao: null,
+      ehApostaCampeonato: false,
+      ehApostaIsolada: true,
+      custoPagoApostaRodada: 0,
+      pontuacaoTotalRodada: 0,
+      statusAposta: 0,
+      enviada: false,
+      numJogosApostados: 0,
+      apostadorCampeonato: null,
+      palpites: { $id: 'temp', '$values': [] }
+    };
+  }
+
+  onRodadaSelected(rodadaId: string): void {
+    if (this.rodadaSelecionada?.id === rodadaId) {
+      return;
+    }
+    this.rodadaSelecionada = this.rodadasEmAposta.find(r => r.id === rodadaId) || null;
+    if (this.rodadaSelecionada) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { rodadaId: this.rodadaSelecionada.id, apostadorCampeonatoId: this.apostadorCampeonatoId },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+      console.log(`[ApostarRodadaFormComponent] Rodada ${rodadaId} selecionada. Recarregando dados.`);
+      
+      this.loadAllIntegratedData().subscribe();
+    }
+  }
+
+  onApostaSelected(apostaId: string): void {
+    if (this.apostaAtual?.id === apostaId) {
+      return;
+    }
+    this.apostaAtual = this.apostasUsuarioRodada.find(a => a.id === apostaId) || null;
+    if (this.apostaAtual) {
+      this.apostaRodadaId = this.apostaAtual.id;
+      console.log(`[ApostarRodadaFormComponent] Aposta ${apostaId} selecionada. Recarregando jogos.`);
+      
+      this.loadJogosDaApostaAtual(this.apostaAtual.id).subscribe();
+    }
+  }
+
+  onClickCriarNovaAposta(): void {
+    if (this.apostaForm.dirty || this.apostaForm.touched) {
+      this.dialog.open(ConfirmacaoApostaModalComponent, {
+        data: {
+          mensagem: 'Você tem alterações não salvas. Deseja criar uma nova aposta e descartar as alterações?'
+        }
+      }).afterClosed().subscribe(result => {
+        if (result) {
+          this.processarCriacaoApostaAvulsa();
+        }
+      });
+    } else {
+      this.processarCriacaoApostaAvulsa();
+    }
+  }
+  
+  private processarCriacaoApostaAvulsa(): void {
+    if (!this.isApostadorReady) {
+      this.showSnackBar('Aguardando carregamento dos dados do apostador.', 'Fechar', 'info');
+      return;
+    }
+    
+    if (this.apostadorSaldo !== null && this.apostadorSaldo < this.custoAposta) {
+        this.showSnackBar('Saldo insuficiente para criar uma nova aposta avulsa.', 'Fechar', 'error');
+        return;
+    }
+    
+    this.dialog.open(ConfirmacaoApostaModalComponent, {
+        data: {
+            mensagem: `Deseja criar uma nova aposta avulsa? Este valor será debitado do seu saldo.`,
+            valorAposta: this.custoAposta
+        }
+    }).afterClosed().subscribe(result => {
+        if (result) {
+            this.criarNovaApostaAvulsa();
+        }
     });
   }
 
   salvarApostas(): void {
-    console.log('[DEBUG] Tentando salvar apostas. Formulário válido:', this.apostaForm.valid);
     if (this.apostaForm.invalid) {
-      this.showNotification('Por favor, preencha todos os placares corretamente.', 'warning');
+      this.showSnackBar('Por favor, preencha todos os campos obrigatórios corretamente.', 'Fechar', 'error');
       this.apostaForm.markAllAsTouched();
       return;
     }
 
-    this.isSaving = true;
-    const request: SalvarApostaRequestDto = {
-      rodadaId: this.rodadaId!,
-      apostadorCampeonatoId: this.apostadorCampeonatoId!, 
-      ehCampeonato: this.apostaAtual?.ehApostaCampeonato || false,
-      ehApostaIsolada: this.apostaAtual?.ehApostaIsolada || false,
-      campeonatoId: this.rodadaSelecionada?.campeonatoId!,
-      identificadorAposta: this.apostaAtual?.identificadorAposta || 'Aposta Padrão',
-      apostasJogos: this.palpites.controls.map(control => ({
-        jogoId: control.get('idJogo')?.value,
-        placarCasa: control.get('apostaCasa')?.value,
-        placarVisitante: control.get('apostaVisitante')?.value
-      }))
-    };
-
-    if (this.apostaAtual.id !== '') {
-      (request as any).apostaRodadaId = this.apostaAtual.id;
+    if (!this.apostaAtual || !this.apostaAtual.rodadaId || !this.apostadorCampeonatoId) {
+      this.showSnackBar('Erro: Dados da aposta ou do apostador-campeonato não disponíveis.', 'Fechar', 'error');
+      return;
     }
 
-    console.log('[DEBUG] Request de salvar apostas:', request);
+    this.isSaving = true;
+    this.notifications = [];
+    this.hasNotifications = false;
 
-    this.apostaService.salvarApostas(request).subscribe({
+    const apostasJogosParaSalvar: ApostaJogoRequest[] = this.palpites.controls.map(control => {
+      const jogoId = control.get('idJogo')?.value;
+      const placarCasa = control.get('placarApostaCasa')?.value;
+      const placarVisita = control.get('placarApostaVisita')?.value;
+
+      return {
+        jogoId: jogoId,
+        placarCasa: placarCasa,
+        placarVisitante: placarVisita
+      } as ApostaJogoRequest;
+    });
+
+    const request: SalvarApostaRequestDto = {
+      id: this.apostaAtual.id,
+      campeonatoId: this.campeonatoId!,
+      rodadaId: this.apostaAtual.rodadaId,
+      apostadorCampeonatoId: this.apostadorCampeonatoId!,
+      identificadorAposta: this.apostaAtual.identificadorAposta,
+      ehApostaIsolada: this.apostaAtual.ehApostaIsolada,
+      apostasJogos: apostasJogosParaSalvar,
+      ehCampeonato: this.apostaAtual.ehApostaCampeonato
+    };
+
+    console.log('[ApostarRodadaFormComponent] Enviando requisição para salvar apostas:', request);
+
+    this.apostaService.salvarApostas(request).pipe(
+      finalize(() => this.isSaving = false)
+    ).subscribe({
       next: (response) => {
-        console.log('[DEBUG] Resposta do backend ao salvar:', response);
-        if (response.success) {
-          this.showNotification('Apostas salvas com sucesso!', 'success');
-          if (this.rodadaId && this.apostadorCampeonatoId) {
-            const newApostaId = isPreservedCollection<ApostaRodadaDto>(response.data) 
-                                ? (response.data.$values && response.data.$values.length > 0 ? response.data.$values[0]?.id : null)
-                                : (response.data as ApostaRodadaDto)?.id;
-            this.loadApostasUsuarioRodada(this.rodadaId, this.apostadorCampeonatoId, newApostaId || null); 
-          } else {
-            this.showNotification('Erro: IDs de rodada ou apostador do campeonato não disponíveis após salvar.', 'error');
-          }
+        if (response?.success) {
+          this.showSnackBar('Apostas salvas com sucesso!', 'Fechar', 'success');
+          this.apostaForm.markAsPristine();
+          this.loadAllIntegratedData().subscribe();
         } else {
-          this.handleApiResponseNotifications(response);
+          const msg = response?.message || 'Erro ao salvar apostas.';
+          this.showSnackBar(msg, 'Fechar', 'error');
+          if (response?.notifications) {
+            this.notifications = isPreservedCollection<NotificationDto>(response.notifications) ? response.notifications.$values : response.notifications as NotificationDto[];
+            this.hasNotifications = this.notifications.length > 0;
+          }
+          console.error('[ApostarRodadaFormComponent] Falha ao salvar apostas:', response);
         }
       },
-      error: (err: any) => {
-        console.error('DEBUG (salvarApostas): Erro ao salvar apostas:', err);
-        const notifications = err.notifications || [];
-        if (notifications.length > 0) {
-          notifications.forEach((notif: NotificationDto) => {
-            this.showNotification(notif.mensagem, notif.tipo === 'Erro' ? 'error' : (notif.tipo === 'Alerta' ? 'warning' : 'info'));
-          });
-        } else {
-          this.showNotification(err.message || 'Erro desconhecido ao salvar apostas.', 'error');
-        }
+      error: (error) => {
+        this.showSnackBar('Erro de conexão ao salvar apostas.', 'Fechar', 'error');
+        console.error('[ApostarRodadaFormComponent] Erro ao salvar apostas:', error);
       }
-    }).add(() => {
-      this.isSaving = false;
-      console.log('DEBUG (salvarApostas): Salvamento finalizado. isSaving:', this.isSaving);
     });
   }
 
-  private handleApiResponseNotifications(response: ApiResponse<any>): void {
-    console.log('DEBUG (handleApiResponseNotifications): Tratando notificações da API. Resposta:', response);
-    let notificationsToDisplay: NotificationDto[] = [];
-
-    if (response.errors && Array.isArray(response.errors)) {
-      notificationsToDisplay = response.errors.map(msg => ({
-        codigo: 'BackendError',
-        tipo: 'Erro',
-        mensagem: msg,
-        nomeCampo: undefined
-      }));
-    }
-    else if (response.notifications) {
-      if (isPreservedCollection<NotificationDto>(response.notifications)) {
-        notificationsToDisplay = response.notifications.$values;
-      }
-      else if (Array.isArray(response.notifications)) {
-        notificationsToDisplay = response.notifications as NotificationDto[];
-      }
-    }
-
-    if (notificationsToDisplay.length > 0) {
-      this.notifications = notificationsToDisplay;
-      this.notifications.forEach(notif => {
-        let toastType: 'success' | 'error' | 'warning' | 'info' = 'info';
-        if (notif.tipo === 'Erro') {
-          toastType = 'error';
-        } else if (notif.tipo === 'Alerta') {
-          toastType = 'warning';
-        } else if (notif.tipo === 'Sucesso') {
-          toastType = 'success';
+  goBackToDashboard(): void {
+    if (this.apostaForm.dirty || this.apostaForm.touched) {
+      this.dialog.open(ConfirmacaoApostaModalComponent, {
+        data: {
+          mensagem: 'Você tem alterações não salvas. Deseja sair e descartar as alterações?'
         }
-        this.showNotification(notif.mensagem, toastType);
+      }).afterClosed().subscribe(result => {
+        if (result) {
+          this.router.navigate(['/dashboard']);
+        }
       });
-      this.hasNotifications = true;
-      console.log('DEBUG (handleApiResponseNotifications): Notificações exibidas:', this.notifications);
-    } else if (response.message) {
-      this.showNotification(response.message, response.success ? 'success' : 'error');
-      this.notifications.push({ tipo: response.success ? 'Sucesso' : 'Erro', mensagem: response.message, codigo: null, nomeCampo: null });
-      this.hasNotifications = true;
-      console.log('DEBUG (handleApiResponseNotifications): Nenhuma notificação específica, exibindo mensagem geral.');
     } else {
-      this.showNotification('Erro desconhecido da API.', 'error');
-      this.notifications.push({ tipo: 'Erro', mensagem: 'Erro desconhecido da API.', codigo: null, nomeCampo: null });
-      this.hasNotifications = true;
-      console.log('DEBUG (handleApiResponseNotifications): Nenhuma notificação específica, exibindo erro genérico.');
+      this.router.navigate(['/dashboard']);
     }
   }
 
-  private showNotification(message: string, type: 'success' | 'error' | 'warning' | 'info'): void {
+  private showSnackBar(message: string, action: string = 'Fechar', type: 'success' | 'error' | 'warning' | 'info' | 'default' = 'default'): void {
     let panelClass: string[] = [];
-    let duration: number | undefined = 5000;
-    let action: string | undefined = 'Fechar';
-
     if (type === 'success') {
       panelClass = ['snackbar-success'];
     } else if (type === 'error') {
       panelClass = ['snackbar-error'];
-      duration = undefined;
     } else if (type === 'warning') {
       panelClass = ['snackbar-warning'];
     } else if (type === 'info') {
       panelClass = ['snackbar-info'];
     }
-
-    if (this.snackBar) {
-      this.snackBar.open(message, action, {
-        duration: duration,
-        panelClass: panelClass,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-      });
-    } else {
-      console.warn(`[showNotification] MatSnackBar não está disponível. Mensagem: ${message}, Tipo: ${type}`);
-      if (type === 'error') {
-        console.error(`ERRO: ${message}`);
-      } else if (type === 'warning') {
-        console.warn(`ALERTA: ${message}`);
-      } else {
-        console.log(`INFO: ${message}`);
-      }
-    }
+    this.snackBar.open(message, action, {
+      duration: 3000,
+      panelClass: panelClass
+    });
   }
 
-  goBackToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+
+  private criarNovaApostaAvulsa(): void {
+    if (!this.campeonatoId || !this.rodadaId || !this.userId) {
+      this.showSnackBar('Não foi possível criar a aposta. Dados incompletos.', 'Fechar', 'error');
+      return;
+    }
+
+    const request: CriarApostaAvulsaRequestDto = {
+      campeonatoId: this.campeonatoId,
+      rodadaId: this.rodadaId,
+      apostadorId: this.userId,
+      custoAposta: this.custoAposta
+    };
+
+    this.isLoading = true;
+
+    this.apostaService.criarNovaApostaAvulsa(request).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          let apostaCriada: ApostaRodadaDto;
+          if (isPreservedCollection<ApostaRodadaDto>(response.data)) {
+            apostaCriada = response.data.$values[0];
+          } else {
+            apostaCriada = response.data;
+          }
+          
+          this.apostaAtual = apostaCriada;
+          this.apostasUsuarioRodada.push(this.apostaAtual);
+          this.apostadorCampeonatoId = apostaCriada.apostadorCampeonatoId;
+          this.apostaRodadaId = apostaCriada.id;
+          this.apostaForm.markAsPristine();
+          this.showSnackBar('Nova aposta avulsa criada com sucesso! Preencha seus palpites.', 'Fechar', 'success');
+          this.loadJogosDaApostaAtual(apostaCriada.id).subscribe();
+        } else {
+          const msg = response?.message || 'Erro ao criar aposta avulsa.';
+          this.showSnackBar(msg, 'Fechar', 'error');
+        }
+      },
+      error: (error) => {
+        this.showSnackBar('Erro de conexão ao criar aposta avulsa.', 'Fechar', 'error');
+      }
+    });
+  }
+
+  private extractApostadorDto(response: ApiResponse<ApostadorDto | ApostadorDto[]>): ApostadorDto | null {
+    if (response.data) {
+        if (isPreservedCollection<ApostadorDto>(response.data)) {
+            return response.data.$values && response.data.$values.length > 0 ? response.data.$values[0] : null;
+        } else {
+            return response.data as ApostadorDto;
+        }
+    }
+    return null;
   }
 }

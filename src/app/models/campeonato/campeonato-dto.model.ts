@@ -1,6 +1,7 @@
 // Localização: src/app/models/campeonato/campeonato-dto.model.ts
 
 import { RodadaDto } from "@models/rodada/rodada-dto.model"; // Importa RodadaDto
+import { ApostasAvulsasTotaisDto } from '@models/aposta/apostas-avulsas-totais-dto.model'; // Adicione este import
 
 export interface CampeonatoDto {
   id: string;
@@ -17,4 +18,9 @@ export interface CampeonatoDto {
   rodadasEmAposta?: RodadaDto[];
   rodadasCorrentes?: RodadaDto[]; 
   rodadasFinalizadas?: RodadaDto[];
+
+// NOVOS CAMPOS
+  totaisRodadaEmAposta?: ApostasAvulsasTotaisDto;
+  totaisRodadaCorrente?: ApostasAvulsasTotaisDto;
+
 }

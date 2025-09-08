@@ -1,221 +1,127 @@
-
-
-// Localização: src/app/services/aposta.service.ts - V4+ HANDLE
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { environment } from '@environments/environment';
-import { ApiResponse, PreservedCollection } from '@models/common/api-response.model';
-import { SalvarApostaRequestDto } from '@models/aposta/salvar-aposta-request-dto.model';
-import { ApostaRodadaDto } from '@models/aposta/aposta-rodada-dto.model';
-import { ApostaJogoVisualizacaoDto } from '@models/aposta/aposta-jogo-visualizacao-dto.model'; // Importar ApostaJogoVisualizacaoDto
-
-@Injectable({
-  providedIn: 'root'
-})
-export class ApostaService {
-  // Ajuste o caminho base da sua API de apostas para o controlador ApostaRodada
-  private apiUrlApostaRodada = `${environment.apiUrl}api/ApostaRodada`; 
-  // <<-- CORRIGIDO: URL para o controlador correto -->>
-  private apiUrlAposta = `${environment.apiUrl}api/ApostadorCampeonato`; 
-
-  constructor(private http: HttpClient) { }
-
-  /**
-   * Obtém as apostas de um usuário para uma rodada específica.
-   * @param rodadaId O ID da rodada.
-   * @param apostadorCampeonatoId O ID da associação apostador-campeonato.
-   * @returns Um Observable com a resposta da API contendo as apostas da rodada do usuário.
-   */
-  getApostasPorRodadaEUsuario(rodadaId: string, apostadorCampeonatoId: string): Observable<ApiResponse<PreservedCollection<ApostaRodadaDto>>> {
-    return this.http.get<ApiResponse<PreservedCollection<ApostaRodadaDto>>>(`${this.apiUrlApostaRodada}/ListarPorRodadaEUsuario?rodadaId=${rodadaId}&apostadorCampeonatoId=${apostadorCampeonatoId}`);
-  }
-
-  /**
-   * Obtém os jogos de uma rodada com os palpites existentes para edição.
-   * @param rodadaId O ID da rodada.
-   * @param apostadorCampeonatoId O ID da associação apostador-campeonato.
-   * @returns Um Observable com a resposta da API contendo uma coleção de ApostaJogoVisualizacaoDto.
-   */
-  getApostasParaEdicao(rodadaId: string, apostadorCampeonatoId: string): Observable<ApiResponse<PreservedCollection<ApostaJogoVisualizacaoDto>>> {
-    return this.http.get<ApiResponse<PreservedCollection<ApostaJogoVisualizacaoDto>>>(`${this.apiUrlApostaRodada}/ParaEdicao?rodadaId=${rodadaId}&apostadorCampeamentoId=${apostadorCampeonatoId}`);
-  }
-
-  /**
-   * Salva ou atualiza as apostas de uma rodada.
-   * <<-- CORRIGIDO: Rota para o endpoint correto -->>
-   * @param request O DTO com os dados da aposta a serem salvos.
-   * @returns Um Observable com a resposta da API.
-   */
-  salvarApostas(request: SalvarApostaRequestDto): Observable<ApiResponse<ApostaRodadaDto>> {
-    return this.http.post<ApiResponse<ApostaRodadaDto>>(`${this.apiUrlAposta}/SalvarApostas`, request);
-  }
-
-/**
-   * Manipulador de erros HTTP genérico para o RodadaService.
-  */ 
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    console.error('[RodadaService] Erro na requisição HTTP:', error);
-    let errorMessage = 'Ocorreu um erro desconhecido ao buscar dados da rodada.';
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Erro do cliente: ${error.error.message}`;
-    } else {
-      if (error.status === 404) {
-        errorMessage = 'Recurso não encontrado.';
-      } else if (error.status === 401) {
-        errorMessage = 'Não autorizado. Faça login novamente.';
-      } else if (error.status === 403) {
-        errorMessage = 'Acesso negado. Você não tem permissão para esta ação.';
-      } else if (error.error && error.error.message) {
-        errorMessage = `Erro do servidor: ${error.error.message}`;
-      } else if (error.message) {
-        errorMessage = `Erro: ${error.message}`;
-      } else {
-        errorMessage = `Erro do servidor (Status: ${error.status}): ${error.statusText || ''}`;
-      }
-    }
-    return throwError(() => new Error(errorMessage));
-  }
-
-}
-
-
-
-// Localização: src/app/core/services/aposta/aposta.service.ts
-/*
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators'; // Re-importa 'map'
+import { catchError } from 'rxjs/operators';
 import { environment } from '@environments/environment';
-import { ApiResponse, PreservedCollection, isPreservedCollection } from '@models/common/api-response.model';
-import { SalvarApostaRequestDto } from '@models/aposta/salvar-aposta-request-dto.model';
+
+import { ApiResponse } from '@models/common/api-response.model';
 import { ApostaRodadaDto } from '@models/aposta/aposta-rodada-dto.model';
-import { ApostaJogoVisualizacaoDto } from '@models/aposta/aposta-jogo-visualizacao-dto.model';
-// REMOVIDO: import { handleApiResponse } from '@utils/api-response-handler';
+import { ApostaJogoEdicaoDto } from '@models/aposta/aposta-jogo-edicao-dto.model';
+import { ApostaJogoResultadoDto } from '@models/aposta/aposta-jogo-resultado-dto.model';
+import { ApostaRodadaResultadosDto } from '@models/aposta/aposta-rodada-resultados-dto.model'; 
+import { SalvarApostaRequestDto } from '@models/aposta/salvar-aposta-request-dto.model';
+import { CriarApostaAvulsaRequestDto } from '@models/aposta/criar-aposta-avulsa-request.Dto.model';
+import { ApostasAvulsasTotaisDto } from '@models/aposta/apostas-avulsas-totais-dto.model'; 
+import { ApostasCampeonatoTotaisDto } from '@models/campeonato/apostas-campeonato-totais-dto.model'; // <-- NOVO DTO
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApostaService {
-  private apiUrlApostaRodada = `${environment.apiUrl.endsWith('/') ? environment.apiUrl.slice(0, -1) : environment.apiUrl}/api/ApostaRodada`;
-  private apiUrlAposta = `${environment.apiUrl.endsWith('/') ? environment.apiUrl.slice(0, -1) : environment.apiUrl}/api/ApostadorCampeonato`;
+  private apiUrl = `${environment.apiUrl}/api/ApostaRodada`;
+  private apiUrlSalvarApostas = `${environment.apiUrl}/api/ApostadorCampeonato`;
+  private apiUrlCampeonato = `${environment.apiUrl}/api/Campeonato`;
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Obtém as apostas de um usuário para uma rodada específica.
-   * @param rodadaId O ID da rodada.
-   * @param apostadorCampeonatoId O ID da associação apostador-campeonato (com 'o').
-   * @returns Um Observable com a resposta da API contendo as apostas da rodada do usuário.
-   
-  getApostasPorRodadaEUsuario(rodadaId: string, apostadorCampeonatoId: string): Observable<ApiResponse<ApostaRodadaDto[]>> {
+  getApostasPorRodadaEApostadorCampeonato(rodadaId: string, apostadorCampeonatoId: string | null): Observable<ApiResponse<ApostaRodadaDto[]>> {
+    let params = new HttpParams().set('rodadaId', rodadaId);
+    if (apostadorCampeonatoId) {
+      params = params.set('apostadorCampeonatoId', apostadorCampeonatoId);
+    }
+
+    console.log('[ApostaService] Chamando ListarPorRodadaEApostadorCampeonato com URL:', `${this.apiUrl}/ListarPorRodadaEApostadorCampeonato`, 'e params:', params.toString());
+
+    return this.http.get<ApiResponse<ApostaRodadaDto[]>>(`${this.apiUrl}/ListarPorRodadaEApostadorCampeonato`, { params })
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  getApostasParaEdicao(rodadaId: string, apostaRodadaId: string): Observable<ApiResponse<ApostaJogoEdicaoDto[]>> {
+    const url = `${environment.apiUrl}/api/ApostaRodada/ParaEdicao`;
     const params = new HttpParams()
       .set('rodadaId', rodadaId)
-      .set('apostadorCampeonatoId', apostadorCampeonatoId); // Backend espera 'e' na URL
+      .set('apostaRodadaId', apostaRodadaId);
 
-    console.log(`[ApostaService] Chamando GET: ${this.apiUrlApostaRodada}/ListarPorRodadaEUsuario com params: ${params.toString()}`);
-    // Tipo de retorno esperado da API: ApiResponse<PreservedCollection<ApostaRodadaDto[]>>
-    return this.http.get<ApiResponse<PreservedCollection<ApostaRodadaDto[]>>>(`${this.apiUrlApostaRodada}/ListarPorRodadaEUsuario`, { params }).pipe(
-      map(apiResponse => {
-        let extractedData: ApostaRodadaDto[] = [];
-        if (apiResponse.success && apiResponse.data && isPreservedCollection<ApostaRodadaDto[]>(apiResponse.data)) {
-          // Extrai o array de DTOs que está dentro do $values da PreservedCollection
-          extractedData = (apiResponse.data.$values && apiResponse.data.$values.length > 0) ? apiResponse.data.$values[0] : [];
-          console.log('[ApostaService] Apostas por rodada e usuário recebidas como PreservedCollection de array. Extraindo o array interno.');
-        } else if (apiResponse.success && Array.isArray(apiResponse.data)) {
-          // Fallback caso a API retorne um array direto (sem PreservedCollection)
-          extractedData = (apiResponse.data as ApostaRodadaDto[]);
-          console.warn('[ApostaService] Dados recebidos diretamente como array (getApostasPorRodadaEUsuario), sem PreservedCollection.');
-        } else {
-          console.warn('[ApostaService] Resposta da API sem dados ou formato inesperado para ListarPorRodadaEUsuario:', apiResponse);
-        }
-
-        // Constrói um novo objeto ApiResponse com a 'data' já desempacotada para o tipo desejado
-        return {
-          ...apiResponse,
-          data: extractedData
-        } as ApiResponse<ApostaRodadaDto[]>; // Garante o tipo de retorno do Observable
-      }),
+    console.log(`[ApostaService] Chamando getApostasParaEdicao com URL: ${url} e params: ${params.toString()}`);
+    return this.http.get<ApiResponse<ApostaJogoEdicaoDto[]>>(url, { params }).pipe(
       catchError(this.handleError)
     );
   }
 
   /**
-   * Obtém os jogos de uma rodada com os palpites existentes para edição.
-   * @param rodadaId O ID da rodada.
-   * @param apostadorCampeonatoId O ID da associação apostador-campeonato (com 'o').
-   * @returns Um Observable com a resposta da API contendo uma coleção de ApostaJogoVisualizacaoDto.
-   
-  getApostasParaEdicao(rodadaId: string, apostadorCampeonatoId: string): Observable<ApiResponse<ApostaJogoVisualizacaoDto[]>> {
+   * CORREÇÃO FINAL: Assinatura do método e parâmetros corrigidos.
+   * Agora o método retorna o DTO de resultados completo, conforme o backend.
+   * A extração dos jogos será feita no componente.
+   */
+  getApostasComResultados(rodadaId: string, apostaRodadaId: string): Observable<ApiResponse<ApostaRodadaResultadosDto>> {
+    if (!rodadaId || !apostaRodadaId) {
+      return throwError(() => new Error('IDs de rodada ou aposta não podem ser nulos.'));
+    }
+
     const params = new HttpParams()
       .set('rodadaId', rodadaId)
-      .set('apostadorCampeonatoId', apostadorCampeonatoId); // Backend espera 'e' na URL
+      .set('apostaRodadaId', apostaRodadaId);
 
-    console.log(`[ApostaService] Chamando GET: ${this.apiUrlApostaRodada}/ParaEdicao com params: ${params.toString()}`);
-    // Tipo de retorno esperado da API: ApiResponse<PreservedCollection<ApostaJogoVisualizacaoDto[]>>
-    return this.http.get<ApiResponse<PreservedCollection<ApostaJogoVisualizacaoDto[]>>>(`${this.apiUrlApostaRodada}/ParaEdicao`, { params }).pipe(
-      map(apiResponse => {
-        let extractedData: ApostaJogoVisualizacaoDto[] = [];
-        if (apiResponse.success && apiResponse.data && isPreservedCollection<ApostaJogoVisualizacaoDto[]>(apiResponse.data)) {
-          // Extrai o array de DTOs que está dentro do $values da PreservedCollection
-          extractedData = (apiResponse.data.$values && apiResponse.data.$values.length > 0) ? apiResponse.data.$values[0] : [];
-          console.log('[ApostaService] Jogos para edição recebidos como PreservedCollection de array. Extraindo o array interno.');
-        } else if (apiResponse.success && Array.isArray(apiResponse.data)) {
-          // Fallback caso a API retorne um array direto (sem PreservedCollection)
-          extractedData = (apiResponse.data as ApostaJogoVisualizacaoDto[]);
-          console.warn('[ApostaService] Dados recebidos diretamente como array (getApostasParaEdicao), sem PreservedCollection.');
-        } else {
-          console.warn('[ApostaService] Resposta da API sem dados ou formato inesperado para ParaEdicao:', apiResponse);
-        }
+    console.log('[ApostaService] Chamando getApostasComResultados com URL:', `${this.apiUrl}/Resultados`, 'e params:', params.toString());
 
-        // Constrói um novo objeto ApiResponse com a 'data' já desempacotada para o tipo desejado
-        return {
-          ...apiResponse,
-          data: extractedData
-        } as ApiResponse<ApostaJogoVisualizacaoDto[]>; // Garante o tipo de retorno do Observable
-      }),
-      catchError(this.handleError)
-    );
+    return this.http.get<ApiResponse<ApostaRodadaResultadosDto>>(`${this.apiUrl}/Resultados`, { params })
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  /**
-   * Salva ou atualiza as apostas de uma rodada.
-   * @param request O DTO com os dados da aposta a serem salvos.
-   * @returns Um Observable com a resposta da API.
-   
-  salvarApostas(request: SalvarApostaRequestDto): Observable<ApiResponse<ApostaRodadaDto>> {
-    console.log(`[ApostaService] Chamando POST: ${this.apiUrlAposta}/SalvarApostas`, request);
-    return this.http.post<ApiResponse<ApostaRodadaDto>>(`${this.apiUrlAposta}/SalvarApostas`, request).pipe(
-      catchError(this.handleError)
-    );
+  salvarApostas(apostaRequest: SalvarApostaRequestDto): Observable<ApiResponse<any>> {
+    console.log('[ApostaService] Chamando salvarApostas com URL:', `${this.apiUrlSalvarApostas}/SalvarApostas`);
+    return this.http.post<ApiResponse<any>>(`${this.apiUrlSalvarApostas}/SalvarApostas`, apostaRequest)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
+  criarNovaApostaAvulsa(requestBody: CriarApostaAvulsaRequestDto): Observable<ApiResponse<ApostaRodadaDto>> {
+    console.log('[ApostaService] Chamando CriarNovaApostaAvulsa com URL:', `${this.apiUrl}/CriarApostaAvulsa`, 'e dados:', requestBody);
+    return this.http.post<ApiResponse<ApostaRodadaDto>>(`${this.apiUrl}/CriarApostaAvulsa`, requestBody)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+// Seu novo método vai ser adicionado aqui
   /**
-   * Manipulador de erros HTTP genérico para o ApostaService.
-   
+   * Obtém os totais de apostas avulsas (isoladas) de uma rodada específica.
+   * @param rodadaId O ID da rodada em aposta.
+   * @returns Um Observable com o DTO contendo o número e o valor total de apostas avulsas.
+   */
+  obterTotaisApostasAvulsas(rodadaId: string): Observable<ApiResponse<ApostasAvulsasTotaisDto>> {
+    const params = new HttpParams().set('rodadaId', rodadaId);
+    
+    console.log('[ApostaService] Chamando obterTotaisApostasAvulsas com URL:', `${this.apiUrl}/totais-apostas-avulsas`, 'e params:', params.toString());
+    
+    return this.http.get<ApiResponse<ApostasAvulsasTotaisDto>>(`${this.apiUrl}/totais-apostas-avulsas`, { params })
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+ /**
+   * Obtém os totais de arrecadação de um campeonato.
+   * @param campeonatoId O ID do campeonato.
+   * @returns Um Observable com o DTO de totais do campeonato.
+   */
+  obterTotaisCampeonato(campeonatoId: string): Observable<ApiResponse<ApostasCampeonatoTotaisDto>> {
+    return this.http.get<ApiResponse<ApostasCampeonatoTotaisDto>>(`${this.apiUrl}/totais-campeonato/${campeonatoId}`)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('[ApostaService] Erro na requisição HTTP:', error);
-    let errorMessage = 'Ocorreu um erro desconhecido ao processar a aposta.';
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Erro do cliente: ${error.error.message}`;
-    } else {
-      if (error.status === 404) {
-        errorMessage = 'Recurso não encontrado.';
-      } else if (error.status === 401) {
-        errorMessage = 'Não autorizado. Faça login novamente.';
-      } else if (error.status === 403) {
-        errorMessage = 'Acesso negado. Você não tem permissão para esta ação.';
-      } else if (error.error && error.error.message) {
-        errorMessage = `Erro do servidor: ${error.error.message}`;
-      } else if (error.message) {
-        errorMessage = `Erro: ${error.message}`;
-      } else {
-        errorMessage = `Erro do servidor (Status: ${error.status}): ${error.statusText || ''}`;
-      }
-    }
-    return throwError(() => new Error(errorMessage));
+    return throwError(() => error);
   }
 }
-
-*/

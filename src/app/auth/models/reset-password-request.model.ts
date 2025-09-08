@@ -4,5 +4,6 @@ export interface ResetPasswordRequestDto {
   userId: string;
   token: string;
   newPassword: string;
+  email:string;
   confirmNewPassword: string; // Adicionado para validação no frontend
 }
