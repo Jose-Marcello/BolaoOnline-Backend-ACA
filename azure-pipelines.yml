@@ -19,7 +19,7 @@ stages:
     - script: |
         npm install
         npm run build
-      workingDirectory: '$(Build.SourcesDirectory)/frontend'
+      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
       displayName: 'Install dependencies and build frontend'
       
     - script: |
