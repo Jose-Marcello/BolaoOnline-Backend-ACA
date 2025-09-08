@@ -1,65 +1,97 @@
-// Localização: ApostasApp.Core.Web/Controllers/FinanceiroController.cs
+// FinanceiroController.cs
 
 using ApostasApp.Core.Application.DTOs.Financeiro;
-using ApostasApp.Core.Application.Models; // Para ApiResponse
-using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
-using ApostasApp.Core.Domain.Models.Financeiro; // Para TipoTransacao
+using ApostasApp.Core.Domain.Models.Financeiro;
 using Microsoft.AspNetCore.Mvc;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
-using System; // Para Guid e Task
-using System.Threading.Tasks; // Para Task
-using Microsoft.AspNetCore.Authorization; // Para [Authorize]
-using ApostasApp.Core.Web.Controllers; // Para BaseController
+using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using ApostasApp.Core.Web.Controllers;
+using System;
+using Microsoft.Extensions.Logging;
 
-namespace ApostasApp.Core.Web.Controllers
+// A rota deve ser exatamente a URL que o front-end está enviando
+[Route("api/TransacaoFinanceira")]
+[ApiController]
+[Authorize]
+public class FinanceiroController : BaseController
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize] // Adicionado para proteger os endpoints por padrão
-    public class FinanceiroController : BaseController
+    private readonly IFinanceiroService _financeiroService;
+    private readonly ILogger<FinanceiroController> _logger;
+
+    public FinanceiroController(
+        IFinanceiroService financeiroService,
+        INotificador notificador,
+        ILogger<FinanceiroController> logger) : base(notificador)
     {
-        private readonly IFinanceiroService _financeiroService;
-
-        public FinanceiroController(
-            IFinanceiroService financeiroService,
-            INotificador notificador,
-            // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
-            IUnitOfWork uow) : base(notificador) // Passa apenas o notificador para a BaseController
-        {
-            _financeiroService = financeiroService;
-        }
-
-        [HttpGet("saldo/{apostadorId}")]
-        public async Task<IActionResult> GetSaldo(Guid apostadorId)
-        {
-            var response = await _financeiroService.ObterSaldoAtualAsync(apostadorId);
-            return CustomResponse(response); // Usa CustomResponse
-        }
-
-        [HttpPost("depositar/{apostadorId}")]
-        public async Task<IActionResult> Depositar(Guid apostadorId, [FromBody] DepositRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return CustomValidationProblem(ModelState); // Usa CustomValidationProblem
-            }
-
-            var response = await _financeiroService.CreditarSaldoAsync(apostadorId, request.Amount, TipoTransacao.CreditoManual, "Depósito via API");
-            return CustomResponse(response); // Usa CustomResponse
-        }
-        /*
-        [HttpPost("debitar/{apostadorId}")]
-        public async Task<IActionResult> Debitar(Guid apostadorId, [FromBody] DebitRequestDto request) // Supondo um DebitRequestDto
-        {
-            if (!ModelState.IsValid)
-            {
-                return CustomValidationProblem(ModelState);
-            }
-
-            var response = await _financeiroService.DebitarSaldoAsync(apostadorId, request.Amount, TipoTransacao.DebitoManual, "Débito via API");
-            return CustomResponse(response);
-        }
-        */
+        _financeiroService = financeiroService;
+        _logger = logger;
     }
+
+    // Endpoint de Depósito
+    [HttpPost("Depositar")]
+    public async Task<IActionResult> Depositar([FromBody] DepositarRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            NotificarErro("Dados de depósito inválidos.");
+            return CustomResponse();
+        }
+
+        _logger.LogInformation("Recebida requisição de depósito para o apostador {ApostadorId} no valor de {Valor}", request.ApostadorId, request.Valor);
+
+
+        // A alteração está aqui: agora chamamos o método que gera o PIX
+        var pixResponse = await _financeiroService.GerarPixParaDepositoAsync(request);
+
+        // Retornamos a resposta do serviço, que contém os dados do PIX
+        return CustomResponse(pixResponse);
+
+        /*
+        var result = await _financeiroService.CreditarSaldoAsync(
+            request.ApostadorId,
+            request.Valor,
+            TipoTransacao.CreditoManual,
+            "Depósito via API"
+        );
+
+        return CustomResponse(result);*/
+
+    }
+
+    // Opcional: Adicionar os outros endpoints aqui
+    [HttpGet("saldo/{apostadorId}")]
+    public async Task<IActionResult> GetSaldo(Guid apostadorId)
+    {
+        var response = await _financeiroService.ObterSaldoAtualAsync(apostadorId);
+        return CustomResponse(response);
+    }
+
+    /*
+    [HttpPost("SimularWebhookPix")]
+    public async Task<IActionResult> SimularWebhookPix([FromBody] SimularWebhookRequestDto request)
+    {
+        // Crie um DTO simples para esta requisição, como:
+        // public class SimularWebhookRequestDto
+        // {
+        //    public string ExternalReference { get; set; }
+        //    public decimal Valor { get; set; }
+        // }
+
+        // Chame a lógica de negócio do seu serviço para creditar o saldo.
+        var response = await _financeiroService.CreditarSaldoViaWebhookAsync(request.ExternalReference, request.Valor);
+
+        if (response.Success)
+        {
+            return Ok(response);
+        }
+        else
+        {
+            return BadRequest(response);
+        }
+    }
+
+    */
+
 }

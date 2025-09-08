@@ -2,23 +2,25 @@
 // NOVO controlador para lidar com dados gerais do apostador.
 // Ele fornecerá os endpoints que o frontend Angular está a procurar.
 
-using Microsoft.AspNetCore.Mvc;
-using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.DTOs.Rodadas;
+using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
-using Microsoft.AspNetCore.Authorization;
-using System.Linq; // Necessário para o método .Any()
-using AutoMapper;
-using System.Collections.Generic;
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
-using System.Threading.Tasks;
-using System;
-using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
+using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq; // Necessário para o método .Any()
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp.Core.Web.Controllers
 {
@@ -203,7 +205,7 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
                 return CustomResponse<bool>(); // Usa CustomResponse do BaseController
             }
 
-            if (!string.IsNullOrEmpty(request.ApostadorId) && request.ApostadorId != apostadorEntity.Id.ToString())
+            if (!string.IsNullOrEmpty(request.ApostadorId) && request.ApostadorId.ToUpper() != apostadorEntity.Id.ToString().ToUpper())
             {
                 // CORRIGIDO: Usando NotificarErro do BaseController
                 NotificarErro("ID do apostador na requisição inválido ou não corresponde ao usuário logado.", "ID_APOSTADOR_INVALIDO");
@@ -222,5 +224,57 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
 
             return CustomResponse(resultadoAdesao); // Retorna a ApiResponse do serviço de forma consistente
         }
+
+
+        // <<-- NOVO ENDPOINT -->>
+        [HttpGet("apostador-campeonato-id/{campeonatoId}")]
+        public async Task<ActionResult<ApiResponse<string>>> ObterApostadorCampeonatoId(string campeonatoId)
+        {
+            // O UserId é obtido do token de autenticação do usuário logado
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                NotificarErro("Usuário não autenticado.");
+                return CustomResponse();
+            }
+
+            if (!Guid.TryParse(campeonatoId, out Guid campeonatoIdGuid))
+            {
+                NotificarErro("ID do campeonato inválido.");
+                return CustomResponse();
+            }
+
+            var result = await _apostadorService.ObterApostadorCampeonatoIdParaUsuarioECampeonato(userIdClaim.Value, campeonatoIdGuid);
+            return CustomResponse(result);
+        }
+
+
+
+        [HttpPut("AtualizarPerfil")]
+        public async Task<IActionResult> AtualizarPerfil([FromBody] UpdatePerfilRequestDto request)
+        {
+            var userId = ObterUsuarioIdLogado();
+            if (string.IsNullOrEmpty(userId))
+            {
+                NotificarErro("Usuário não identificado ou token inválido.", "USUARIO_NAO_IDENTIFICADO");
+                return CustomResponse();
+            }
+
+            // A lógica de negócio e persistência está agora no serviço
+            var success = await _apostadorService.AtualizarPerfilAsync(userId, request);
+
+            if (success)
+            {
+                NotificarSucesso("Perfil atualizado com sucesso.");
+                return CustomResponse(true);
+            }
+            else
+            {
+                NotificarErro("Erro ao atualizar o perfil. Tente novamente.", "ERRO_ATUALIZACAO_PERFIL");
+                return CustomResponse(false);
+            }
+        }
+        // ... (todo o código da controller abaixo)
+
     }
 }

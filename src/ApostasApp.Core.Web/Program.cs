@@ -1,46 +1,44 @@
-// Localização: Program.cs (no projeto da API)
-
+// Localização: Program.cs (no projeto da API
 // Usings para componentes do ASP.NET Core
 // Usings para seus projetos e namespaces específicos
 using ApostasApp.Core.Application.MappingProfiles;
-using ApostasApp.Core.Application.Services.Interfaces.Email;
+using ApostasApp.Core.Application.Services;
+using ApostasApp.Core.Application.Services.Interfaces;
 using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identity
 using ApostasApp.Core.Infrastructure.Identity.Seed;
-using ApostasApp.Core.Infrastructure.Services.Email;
+using ApostasApp.Core.Infrastructure.Services;
 using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
 using ApostasApp.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http; // Necessário para IHttpContextAccessor
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.UI;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens; // Para SendGridEmailSender
 using Microsoft.OpenApi.Models;
-using SendGrid;
+//using SendGrid; // Para ISendGridClient
 using Swashbuckle.AspNetCore.SwaggerGen; // Necessário para AddSwaggerGen
 using Swashbuckle.AspNetCore.SwaggerUI; // Necessário para UseSwaggerUI
 using System; // Para TimeSpan, Guid, etc.
 using System.Collections.Generic; // Para List
+using System.Net.Http.Headers;
 using System.Text; // Para Encoding
-using Microsoft.AspNetCore.Identity.UI.Services; // Para a interface IEmailSender
-using SendGrid; // Para ISendGridClient
-using Microsoft.Extensions.Options; // Para IOptions<SendGridSettings>
-using ApostasApp.Core.Domain.Models.Configuracoes; // Para SendGridSettings
+using System.Text.Json;
+using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Infrastructure.Services.Email;
-using IEmailSender = Microsoft.AspNetCore.Identity.UI.Services.IEmailSender; // Para SendGridEmailSender
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 // ===================================================================================================
-// Configuração do Banco de Dados Principal (ApostasAppDbContext)
-// ===================================================================================================
 builder.Services.AddDbContext<MeuDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .LogTo(Console.WriteLine, LogLevel.Information) // Adicionado para ver o SQL no console
+           .EnableSensitiveDataLogging()); // Adicionado para ver os valores dos parâmetros
+
 
 // ===================================================================================================
 // Configuração do Banco de Dados de Identidade (IdentityDbContext)
@@ -51,9 +49,10 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 // ===================================================================================================
 // Configuração do ASP.NET Core Identity
 // ===================================================================================================
+
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false; // true;
+    options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -63,10 +62,15 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
     options.User.RequireUniqueEmail = true;
+    //options.Stores.ProtectPersonalData = false; //provisório
+
 })
-//.AddEntityFrameworkStores<IdentityDbContext>()
-.AddEntityFrameworkStores<MeuDbContext>() // <<-- MUDANÇA CRÍTICA AQUI!
-.AddDefaultTokenProviders();
+.AddEntityFrameworkStores<MeuDbContext>()
+.AddDefaultTokenProviders(); // <- O único ponto e vírgula aqui
+
+//builder.Services.AddDataProtection();
+//builder.Services.AddScoped<IPersonalDataProtector, PersonalDataProtectorService>();
+
 
 // ===================================================================================================
 // Configuração JWT Bearer Authentication
@@ -93,7 +97,45 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Adicione esta linha!
+System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+
+//builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
+
+// 1. Configura o PagSeguroSettings
+builder.Services.Configure<PagSeguroSettings>(builder.Configuration.GetSection("PagSeguroSettings"));
+
+// 2. Registra o PagSeguroService e configura o HttpClient
+builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProvider, client) =>
+{
+    var pagSeguroSettings = serviceProvider.GetRequiredService<IOptions<PagSeguroSettings>>().Value;
+
+    client.BaseAddress = new Uri("https://api.sandbox.pagseguro.com/charges");
+    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
+});
+
+
+
 builder.Services.ResolveDependencies();
+
+// ===================================================================================================
+// Lógica para Injeção Condicional do Serviço de E-mail
+// ===================================================================================================
+var emailSimulationMode = builder.Configuration.GetValue<bool>("EmailSettings:EmailSimulationMode");
+
+if (emailSimulationMode)
+{
+    // Se a flag for TRUE, registre o serviço de simulação
+    builder.Services.AddTransient<IBolaoEmailSender, MockEmailSender>();
+}
+else
+{
+    // Se a flag for FALSE, use o seu serviço SMTP real (Mailtrap ou SendGrid)
+    builder.Services.AddTransient<IBolaoEmailSender, SmtpEmailSender>();
+}
+
+/*
 
 // <<-- NOVO: CONFIGURAÇÃO E REGISTRO DO SENDGRID E EMAILSENDER AQUI -->>
 // Configurações do SendGrid (lê do appsettings.json)
@@ -108,8 +150,7 @@ builder.Services.AddTransient<ISendGridClient>(s =>
 
 // Registra sua implementação de IEmailSender (usando a interface padrão do Identity UI)
 builder.Services.AddTransient<IEmailSender, SendGridEmailSender>();
-
-
+*/
 
 
 // ===================================================================================================
@@ -123,14 +164,31 @@ builder.Services.AddAutoMapper(cfg =>
 });
 
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        // ADICIONE ESTA LINHA PARA TRATAR REFERÊNCIAS CIRCULARES
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-        // Opcional: para melhor legibilidade no desenvolvimento
-        options.JsonSerializerOptions.WriteIndented = true;
-    });
+
+
+if (builder.Environment.IsDevelopment())
+{
+    // Adicione os controllers da sua aplicação E O TestController em uma só linha
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        })
+        .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
+}
+else
+{
+    // Apenas os controllers de produção
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
+}
 
 
 
@@ -214,14 +272,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
 
-app.UseCors("AllowSpecificOrigin"); // Usar a política CORS definida
-//app.UseCors(); // Usar a política CORS definida
+// Adicione UseRouting() explicitamente
+app.UseRouting();
 
-app.UseAuthentication(); // Deve vir antes de UseAuthorization
+// AQUI: O UseCors deve vir AGORA, depois de UseRouting
+app.UseCors("AllowSpecificOrigin");
+
+// Os middlewares de autenticação e autorização vêm em seguida
+app.UseAuthentication();
 app.UseAuthorization();
 
+// As requisições são mapeadas para os controladores
 app.MapControllers();
+
+// Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
+app.UseStaticFiles();
+
 
 app.Run();

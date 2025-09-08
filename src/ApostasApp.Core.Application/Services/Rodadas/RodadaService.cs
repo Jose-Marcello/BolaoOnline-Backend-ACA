@@ -1,12 +1,16 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Rodadas/RodadaService.cs
 
+using ApostasApp.Core.Application.DTOs.Conferencia;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Application.Services.Interfaces;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // Para .Include(), .AsNoTracking(), .ToListAsync()
 using Microsoft.Extensions.Logging; // Para ILogger
 using System;
@@ -22,12 +26,14 @@ namespace ApostasApp.Core.Application.Services.Rodadas
         private readonly ICampeonatoRepository _campeonatoRepository;
         private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
         private readonly ILogger<RodadaService> _logger;
+        private readonly IMapper _mapper;
 
         public RodadaService(IRodadaRepository rodadaRepository,
                                      ICampeonatoRepository campeonatoRepository,
                                      IApostadorCampeonatoRepository apostadorCampeonatoRepository,
                                      INotificador notificador,
                                      IUnitOfWork uow,
+                                     IMapper mapper,
                                      ILogger<RodadaService> logger)
             : base(notificador, uow)
         {
@@ -35,6 +41,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
             _campeonatoRepository = campeonatoRepository;
             _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
             _logger = logger;
+            _mapper = mapper;
         }
 
         public async Task<ApiResponse<Rodada>> ObterRodadaPorId(Guid rodadaId)
@@ -236,6 +243,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
                 return apiResponse;
             }
         }
+
 
         public async Task<ApiResponse<Rodada>> ObterRodadaCorrenteParaApostador(Guid rodadaId, Guid apostadorCampeonatoId)
         {
@@ -447,5 +455,50 @@ namespace ApostasApp.Core.Application.Services.Rodadas
                 return apiResponse;
             }
         }
+
+        public async Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId)
+        {
+            // A assinatura do repositório deve ser alterada para:
+            // Task<IEnumerable<object>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId)
+            var dadosDoRepositorio = await _rodadaRepository.ObterDadosPlanilhaConferenciaAsync(rodadaId);
+
+            if (dadosDoRepositorio == null || !dadosDoRepositorio.Any())
+            //if (dadosPlanilha == null || !dadosPlanilha.Any())
+                {
+                NotificarAlerta("Dados da planilha não encontrados.");
+                return new ApiResponse<IEnumerable<ConferenciaPalpiteDto>>
+                {
+                    Success = false,
+                    Data = Enumerable.Empty<ConferenciaPalpiteDto>()
+                };
+            }
+
+            // AQUI ESTÁ A CORREÇÃO: Mapeamento manual com LINQ para evitar erros do AutoMapper
+            var dadosMapeados = dadosDoRepositorio.Select(item => new ConferenciaPalpiteDto
+            {
+                ApelidoApostador = (string)item.GetType().GetProperty("ApelidoApostador").GetValue(item, null),
+                IdentificadorAposta = (string)item.GetType().GetProperty("IdentificadorAposta").GetValue(item, null),
+                DataHoraEnvio = (DateTime)item.GetType().GetProperty("DataHoraEnvio").GetValue(item, null),
+                NomeEquipeCasa = (string)item.GetType().GetProperty("NomeEquipeCasa").GetValue(item, null),
+                PlacarPalpiteCasa = (int)item.GetType().GetProperty("PlacarPalpiteCasa").GetValue(item, null),
+                PlacarPalpiteVisita = (int)item.GetType().GetProperty("PlacarPalpiteVisita").GetValue(item, null),
+                NomeEquipeVisita = (string)item.GetType().GetProperty("NomeEquipeVisita").GetValue(item, null),
+                DataJogo = (DateTime)item.GetType().GetProperty("DataJogo").GetValue(item, null),
+                HoraJogo = (string)item.GetType().GetProperty("HoraJogo").GetValue(item, null)
+
+            }).ToList();
+
+            return new ApiResponse<IEnumerable<ConferenciaPalpiteDto>>
+            {
+                Success = true,
+                Message = "Dados da planilha gerados com sucesso.",
+                Data = dadosMapeados
+            };
+        }
+
+        //public Task<IEnumerable<object>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId)
+        //{
+         //   throw new NotImplementedException();
+        //}
     }
 }

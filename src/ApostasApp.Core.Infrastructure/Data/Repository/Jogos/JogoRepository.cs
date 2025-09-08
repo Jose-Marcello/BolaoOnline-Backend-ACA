@@ -96,6 +96,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Jogos // Namespace ajus
                                      .ThenInclude(ec => ec.Equipe)
                                  .Include(j => j.EquipeVisitante)
                                      .ThenInclude(ev => ev.Equipe)
+                                 .Include(j => j.Estadio)
                                  .Where(j => j.RodadaId == rodadaId)
                                  .ToListAsync();
         }

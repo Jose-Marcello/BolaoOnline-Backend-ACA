@@ -20,7 +20,11 @@ namespace ApostasApp.Core.Application.DTOs.ApostasRodada
         public bool EhApostaIsolada { get; set; }
         public decimal? CustoPagoApostaRodada { get; set; }
         public int PontuacaoTotalRodada { get; set; }
+        public int StatusAposta { get; set; } // 1 = Pendente, 2 = Enviada
         public bool Enviada { get; set; }
+        public int NumJogosApostados { get; set; }
+        
+        //public decimal? ValorAposta { get; set; }
 
         // DTO aninhado para os detalhes do apostador no campeonato (se necessário para exibição)
         public ApostadorCampeonatoDto ApostadorCampeonato { get; set; } // <<-- Adicionado aqui -->>

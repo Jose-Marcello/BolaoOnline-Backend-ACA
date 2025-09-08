@@ -1,4 +1,5 @@
 // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
+using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
@@ -18,6 +19,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ApostasApp.Core.Infrastructure.Identity
 {
@@ -29,14 +31,14 @@ namespace ApostasApp.Core.Infrastructure.Identity
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<IdentityService> _logger;
-        private readonly IEmailSender _emailSender;
+        private readonly IBolaoEmailSender _emailSender;
         private readonly string _apiBaseUrl; // Propriedade para a URL base da API
 
         public IdentityService(
             UserManager<Usuario> userManager,
             SignInManager<Usuario> signInManager,
             INotificador notificador,
-            IEmailSender emailSender,
+            IBolaoEmailSender emailSender,
             IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor,
             ILogger<IdentityService> logger)
@@ -70,8 +72,27 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
-        public async Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular)
+        // Localização: IdentityService.cs
+        public async Task<AuthResult> RegisterUserAsync(
+    string email,
+    string password,
+    string apelido,
+    string cpf,
+    string celular,
+    string fotoPerfil,
+    string nomeCompleto,
+    bool termsAccepted)
         {
+            // Verificações de unicidade de CPF e Apelido
+            if (await _userManager.Users.AnyAsync(u => u.CPF == cpf))
+            {
+                return AuthResult.Failure(new List<Notificacao> { new Notificacao(null, "Erro", "Este CPF já foi cadastrado.") });
+            }
+            if (await _userManager.Users.AnyAsync(u => u.Apelido == apelido))
+            {
+                return AuthResult.Failure(new List<Notificacao> { new Notificacao(null, "Erro", "Este apelido já está em uso.") });
+            }
+
             var user = new Usuario
             {
                 UserName = email,
@@ -79,41 +100,86 @@ namespace ApostasApp.Core.Infrastructure.Identity
                 Apelido = apelido,
                 CPF = cpf,
                 Celular = celular,
-                EmailConfirmed = true, // false,
+                FotoPerfil = fotoPerfil,
+                TermsAccepted = termsAccepted,
+                EmailConfirmed = false,
                 RegistrationDate = DateTime.Now,
-                // <<-- INICIALIZAÇÃO DO REFRESH TOKEN E EXPIRATION TIME AQUI -->>
-                RefreshToken = Guid.NewGuid().ToString(), // Gera um GUID único
-                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)// Expira em 7 dias (ajuste conforme sua política)               
-            };   
+                RefreshToken = Guid.NewGuid().ToString(),
+                RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7)
+            };
 
-        var result = await _userManager.CreateAsync(user, password);
-
-            if (!result.Succeeded)
+            try
             {
-                // Mapeia IdentityError para Notificacao
-                var notifications = result.Errors.Select(error => new Notificacao(null, "Erro", error.Description, error.Code)).ToList();
-                foreach (var notif in notifications)
+                // 1. Tenta criar o usuário. A exceção, se ocorrer, vai ser capturada aqui.
+                var result = await _userManager.CreateAsync(user, password);
+
+                // 2. Se não houver exceção, verifica se a validação do Identity falhou.
+                if (!result.Succeeded)
                 {
-                    _notificador.Handle(notif); // Passa Notificacao
+                    var notifications = new List<Notificacao>();
+                    foreach (var error in result.Errors)
+                    {
+                        string mensagemTraduzida;
+                        switch (error.Code)
+                        {
+                            case "DuplicateUserName":
+                                mensagemTraduzida = "O nome de usuário já está em uso.";
+                                break;
+                            case "DuplicateEmail":
+                                mensagemTraduzida = "Este e-mail já foi cadastrado.";
+                                break;
+                            case "PasswordRequiresNonAlphanumeric":
+                                mensagemTraduzida = "A senha precisa de pelo menos um caractere especial.";
+                                break;
+                            case "PasswordRequiresDigit":
+                                mensagemTraduzida = "A senha precisa de pelo menos um número ('0'-'9').";
+                                break;
+                            case "PasswordRequiresUpper":
+                                mensagemTraduzida = "A senha precisa de pelo menos uma letra maiúscula ('A'-'Z').";
+                                break;
+                            case "PasswordRequiresLower":
+                                mensagemTraduzida = "A senha precisa de pelo menos uma letra minúscula ('a'-'z').";
+                                break;
+                            default:
+                                mensagemTraduzida = "Ocorreu um erro no registro. Verifique os dados e tente novamente.";
+                                break;
+                        }
+                        notifications.Add(new Notificacao(null, "Erro", mensagemTraduzida, error.Code));
+                    }
+                    // Retorna o resultado da validação do Identity.
+                    return AuthResult.Failure(notifications);
                 }
-                // AuthResult.Failure agora espera List<Notificacao>
-                return AuthResult.Failure(notifications);
+
+                // 3. Se tudo deu certo, retorna sucesso.
+                return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
             }
-            return AuthResult.Succeeded(user.Id, user.Email, user.UserName);
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+            {
+                // A exceção de banco de dados foi capturada aqui.
+                // O log registrará o erro exato, que nos dirá o nome da coluna.
+                _logger.LogError(ex, "Erro de persistência no banco de dados.");
+
+                // Notifique o usuário de forma genérica
+                return AuthResult.Failure(new List<Notificacao> { new Notificacao(null, "Erro", "Ocorreu um erro ao salvar os dados. Tente novamente.") });
+            }
         }
+
+        // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
 
         public async Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host)
         {
             var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-            // <<-- CORREÇÃO CRÍTICA: USA A URL BASE DA API E A ROTA CORRETA DO CONTROLADOR -->>
-            var confirmationLink = $"{_apiBaseUrl}/confirm-email?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            // A rota do seu AccountController é [HttpGet("confirm-email")]
+            //var confirmationLink = $"{scheme}://{host}/confirm-email?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+            var confirmationLink = $"{scheme}://{host}/api/account/ConfirmEmail?userId={user.Id}&code={Uri.EscapeDataString(code)}";
 
             try
             {
                 var subject = "Confirme seu e-mail - Bolão Online";
+
+                // AQUI ESTÁ A CHANCE DE ENCONTRAR O ERRO
+                // Logue a mensagem HTML completa antes de enviar.
                 var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Por favor, confirme sua conta clicando neste link:</p><p><a href='{confirmationLink}'>Confirmar E-mail</a></p><p>Se você não solicitou este e-mail, por favor, ignore-o.</p>";
+                _logger.LogInformation($"[DEBUG] HTML da mensagem de e-mail a ser enviada: {htmlMessage}");
 
                 await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
 
@@ -144,33 +210,38 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return await _userManager.Users.AnyAsync(u => u.Apelido == apelido);
         }
 
+
+        // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
+
         public async Task<LoginResult> LoginAsync(string email, string password, bool rememberMe)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
             if (user == null)
             {
-                // Passa Notificacao para o notificador
+                // Lógica de notificação correta
                 var notifs = new List<Notificacao> { new Notificacao(null, "Erro", "Usuário ou senha inválidos.", null) };
-                _notificador.Handle(notifs.First()); // Ou use o Handle(List<Notificacao>) se ele estiver na interface
+                _notificador.Handle(notifs.First());
                 _logger.LogWarning($"Login falhou para '{email}': Usuário não encontrado.");
-                return LoginResult.Failed(notifs); // Retorna List<Notificacao>
+                return LoginResult.Failed(notifs);
             }
 
+            // **A SUA VERIFICAÇÃO JÁ ESTAVA CORRETA AQUI!**
+            // Se essa condição for verdadeira, o método DEVE retornar imediatamente.
             if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
             {
-                // Passa Notificacao para o notificador
-                var notifs = new List<Notificacao> { new Notificacao(null, "Erro", "Seu e-mail ainda não foi confirmado.", null) };
+                var notifs = new List<Notificacao> { new Notificacao(null, "Erro", "Seu e-mail ainda não foi confirmado. Por favor, verifique sua caixa de entrada.", null) };
                 _notificador.Handle(notifs.First());
                 _logger.LogWarning($"Login falhou para '{email}': E-mail não confirmado.");
-                return LoginResult.Failed(notifs); // Retorna List<Notificacao>
+                return LoginResult.Failed(notifs);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: true);
+            // A partir daqui, se a execução chegou, o e-mail está CONFIRMADO.
+            // Agora sim, é seguro tentar o login com a senha.
+            var result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: true);
 
             if (result.RequiresTwoFactor)
             {
-                // Passa Notificacao para o notificador
                 _notificador.Handle(new Notificacao(null, "Alerta", "Autenticação de dois fatores necessária.", null));
                 _logger.LogInformation($"Login para '{email}' requer 2FA.");
                 return LoginResult.TwoFactorRequired();
@@ -178,29 +249,19 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
             if (result.IsLockedOut)
             {
-                // Passa Notificacao para o notificador
                 _notificador.Handle(new Notificacao(null, "Erro", "A conta está bloqueada devido a várias tentativas de login inválidas. Por favor, tente novamente mais tarde.", null));
                 _logger.LogWarning($"Login falhou para '{email}': Conta bloqueada.");
                 return LoginResult.LockedOut();
             }
 
-            if (result.IsNotAllowed)
-            {
-                // Passa Notificacao para o notificador
-                var notifs = new List<Notificacao> { new Notificacao(null, "Erro", "Você não tem permissão para fazer login.", null) };
-                _notificador.Handle(notifs.First());
-                _logger.LogWarning($"Login falhou para '{email}': Não permitido.");
-                return LoginResult.Failed(notifs); // Retorna List<Notificacao>
-            }
-
             if (!result.Succeeded)
             {
-                // Passa Notificacao para o notificador
                 var notifs = new List<Notificacao> { new Notificacao(null, "Erro", "Usuário ou senha inválidos.", null) };
                 _notificador.Handle(notifs.First());
                 _logger.LogWarning($"Login falhou para '{email}': Credenciais inválidas (SignInManager result.Succeeded é false).");
-                return LoginResult.Failed(notifs); // Retorna List<Notificacao>
+                return LoginResult.Failed(notifs);
             }
+
 
             // O LOGIN FOI BEM-SUCEDIDO AQUI!
             var jwtSecret = _configuration["Jwt:SecretKey"];
@@ -286,7 +347,49 @@ namespace ApostasApp.Core.Infrastructure.Identity
             return result.Succeeded;
         }
 
+
+        public async Task<bool> ForgotPasswordAsync(string email, string baseUrl)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            // Evita a enumeração de usuários. Retorna true para dar o mesmo feedback.
+            if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
+            {
+                _logger.LogWarning($"Tentativa de redefinição de senha para e-mail inexistente ou não confirmado: {email}");
+                // Não retorna erro ao cliente, apenas loga.
+                return true;
+            }
+
+            // 1. Gera o token
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // 2. Monta o link de redefinição usando o baseUrl seguro
+            var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+
+            try
+            {
+                // 3. Envia o e-mail
+                var subject = "Redefinir sua senha - Bolão Online";
+                var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Para redefinir sua senha, por favor, clique neste link:</p><p><a href='{resetLink}'>Redefinir Senha</a></p><p>Se você não solicitou esta redefinição, por favor, ignore este e-mail.</p>";
+
+                await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
+
+                _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de redefinição de senha enviado para {user.Email}.", null));
+                _logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de redefinição para {user.Email}: {ex.Message}", null));
+                _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}.");
+                return false;
+            }
+        }
+
+        /*
         public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
+       
         {
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
@@ -301,6 +404,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
             _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
             return true;
         }
+        */
 
         public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
         {

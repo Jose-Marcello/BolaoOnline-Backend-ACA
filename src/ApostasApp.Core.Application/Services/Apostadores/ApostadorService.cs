@@ -4,6 +4,7 @@ using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostadores;
+using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostadores;
@@ -29,13 +30,16 @@ namespace ApostasApp.Core.Application.Services.Apostadores
     public class ApostadorService : BaseService, IApostadorService
     {
         private readonly IApostadorRepository _apostadorRepository;
+        private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
         private readonly ISaldoRepository _saldoRepository;
         private readonly ILogger<ApostadorService> _logger;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUnitOfWork _uow;
 
         public ApostadorService(
             IApostadorRepository apostadorRepository,
+            IApostadorCampeonatoRepository apostadorCampeonatoRepository,
             ISaldoRepository saldoRepository,
             INotificador notificador,
             IUnitOfWork uow,
@@ -45,10 +49,12 @@ namespace ApostasApp.Core.Application.Services.Apostadores
             : base(notificador, uow)
         {
             _apostadorRepository = apostadorRepository;
+            _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
             _saldoRepository = saldoRepository;
             _logger = logger;
             _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
+            _uow = uow;
         }
 
         /// <summary>
@@ -222,8 +228,8 @@ namespace ApostasApp.Core.Application.Services.Apostadores
                 }
                 string userId = userIdClaim.Value;
 
-                // Usar o método GetApostadorByUserIdAsync que já inclui as relações
-                var apostador = await GetApostadorByUserIdAsync(userId);
+                // Chamamos o método do serviço que vai fazer a conversão e a busca no repositório
+                var apostador = await ObterApostadorPorUsuarioId(userId);
 
                 if (apostador == null)
                 {
@@ -235,6 +241,7 @@ namespace ApostasApp.Core.Application.Services.Apostadores
                 // Mapeia o modelo de domínio para o DTO
                 var apostadorDto = _mapper.Map<ApostadorDto>(apostador);
 
+                // Define os dados de sucesso na resposta
                 apiResponse.Success = true;
                 apiResponse.Data = apostadorDto;
                 apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
@@ -248,5 +255,114 @@ namespace ApostasApp.Core.Application.Services.Apostadores
                 return apiResponse;
             }
         }
+
+        // O método auxiliar no serviço, que faz a conversão e chama o repositório
+        public async Task<Apostador?> ObterApostadorPorUsuarioId(string userIdString)
+        {
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                Notificar("Erro", "ID do usuário não pode ser nulo ou vazio.");
+                return null;
+            }
+
+            // <<-- AQUI ESTÁ A CONVERSÃO DE STRING PARA GUID NO SERVIÇO -->>
+            if (!Guid.TryParse(userIdString, out Guid userIdGuid))
+            {
+                Notificar("Erro", "ID do usuário inválido.");
+                return null;
+            }
+
+            // Passamos o Guid para o repositório
+            return await _apostadorRepository.ObterApostadorPorUsuarioId(userIdString);
+            //return await _apostadorRepository.ObterApostadorPorUsuarioIdAsync(userIdGuid);
+        }
+
+
+        // <<-- NOVA IMPLEMENTAÇÃO DE MÉTODO -->>
+        /// <summary>
+        /// Obtém o ID do ApostadorCampeonato para um dado usuário e campeonato.
+        /// Retorna o ID se encontrado, ou null se não houver adesão.
+        /// </summary>
+        /// <param name="userId">ID do usuário (Auth).</param>
+        /// <param name="campeonatoId">ID do campeonato.</param>
+        /// <returns>ApiResponse contendo o ApostadorCampeonatoId (string) ou null.</returns>
+        public async Task<ApiResponse<string>> ObterApostadorCampeonatoIdParaUsuarioECampeonato(string userId, Guid campeonatoId)
+        {
+            var apiResponse = new ApiResponse<string>(false, null);
+            try
+            {
+                _logger.LogInformation($"[ObterApostadorCampeonatoIdParaUsuarioECampeonato] Buscando ApostadorCampeonato para UserId: {userId}, CampeonatoId: {campeonatoId}");
+
+                // 1. Encontre o Apostador associado ao UserId
+                var apostador = await _apostadorRepository.ObterApostadorPorUsuarioId(userId);
+
+                if (apostador == null)
+                {
+                    _logger.LogInformation($"[ObterApostadorCampeonatoIdParaUsuarioECampeonato] Apostador não encontrado para UserId: {userId}.");
+                    Notificar("Alerta", "Apostador não encontrado para o usuário fornecido.");
+                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                    return apiResponse; // Retorna null no Data, indicando que não foi encontrado
+                }
+
+                // 2. Agora, busque a adesão específica do Apostador a este Campeonato
+                var apostadorCampeonato = await _apostadorCampeonatoRepository.ObterApostadorCampeonatoPorApostadorECampeonato(apostador.Id, campeonatoId);
+
+                //Buscar(ac =>
+                //                            ac.ApostadorId == apostador.Id &&
+                //                            ac.CampeonatoId == campeonatoId)
+                //                            .FirstOrDefaultAsync();
+
+                if (apostadorCampeonato == null)
+                {
+                    _logger.LogInformation($"[ObterApostadorCampeonatoIdParaUsuarioECampeonato] Nenhuma adesão encontrada para ApostadorId: {apostador.Id}, CampeonatoId: {campeonatoId}.");
+                    Notificar("Alerta", "Usuário não aderiu a este campeonato.");
+                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                    // Data permanece null, indicando que não foi encontrado
+                }
+                else
+                {
+                    _logger.LogInformation($"[ObterApostadorCampeonatoIdParaUsuarioECampeonato] Adesão encontrada. ApostadorCampeonatoId: {apostadorCampeonato.Id}");
+                    apiResponse.Success = true;
+                    apiResponse.Data = apostadorCampeonato.Id.ToString();
+                }
+                return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao obter ApostadorCampeonatoId para UserId: {userId}, CampeonatoId: {campeonatoId}.");
+                Notificar("Erro", $"Erro interno ao obter adesão ao campeonato: {ex.Message}");
+                apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+                return apiResponse;
+            }
+        }
+
+
+        public async Task<bool> AtualizarPerfilAsync(string userId, UpdatePerfilRequestDto request)
+        {
+            // 1. Busca o apostador existente no banco de dados usando o repositório
+            var apostador = await _apostadorRepository.ObterApostadorPorUsuarioId(userId);
+
+            if (apostador == null)
+            {
+                return false; // Apostador não encontrado, retorna falha
+            }
+
+            // 2. Atualiza as propriedades com os dados do DTO da requisição
+            apostador.Usuario.Apelido = request.Apelido;
+            apostador.Usuario.Celular = request.Celular;
+            apostador.Usuario.FotoPerfil = request.FotoPerfil;
+
+            // 3. Notifica o Unit of Work / repositório sobre a atualização
+            _apostadorRepository.Atualizar(apostador);
+
+            // 4. Salva as alterações no banco de dados
+            //return await _uow.SaveChangesAsync(); // Retorna true se houver alterações salvas, false caso contrário
+            return await CommitAsync();
+                        
+        }
+
     }
 }
+
+
+

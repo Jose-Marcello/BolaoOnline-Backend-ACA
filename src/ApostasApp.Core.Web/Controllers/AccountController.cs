@@ -2,12 +2,15 @@
 
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Usuarios; // Para LoginRequestDto, LoginResponseDto, RegisterRequestDto, RegisterResponse
+using ApostasApp.Core.Application.Models;
+using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
+using ApostasApp.Core.Domain.Models.Notificacoes;
+using ApostasApp.Core.Infrastructure.Notificacoes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
 using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
+using System.Security.Claims;
 
 namespace ApostasApp.Core.Web.Controllers
 {
@@ -17,15 +20,20 @@ namespace ApostasApp.Core.Web.Controllers
     {
         private readonly IUsuarioService _usuarioService;
         private readonly ILogger<AccountController> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly INotificador _notificador;
 
         // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da injeção no Controller
         public AccountController(IUsuarioService usuarioService,
                                  ILogger<AccountController> logger,
+                                 IConfiguration configuration,
                                  INotificador notificador)
                                  : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _usuarioService = usuarioService;
             _logger = logger;
+            _configuration = configuration;
+            _notificador = notificador;
         }
 
         [AllowAnonymous]
@@ -84,9 +92,22 @@ namespace ApostasApp.Core.Web.Controllers
                 _logger.LogWarning($"Registro de {request.Email} falhou.");
             }
 
-            // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(registerResult); // Retorna a ApiResponse do serviço de forma consistente
+
+            // <<-- CORREÇÃO: RETORNA O STATUS HTTP CORRETO -->>
+            if (registerResult.Success)
+            {
+                _logger.LogInformation($"Registro de {request.Email} realizado com sucesso.");
+                // Retorna Status 200 OK com a resposta
+                return CustomResponse(registerResult);
+            }
+            else
+            {
+                _logger.LogWarning($"Registro de {request.Email} falhou.");
+                // Retorna Status 400 Bad Request ou similar com a resposta
+                return BadRequest(registerResult);
+            }
         }
+
 
         [HttpPost("forgot-password")]
         [AllowAnonymous]
@@ -99,10 +120,13 @@ namespace ApostasApp.Core.Web.Controllers
                 return CustomValidationProblem(ModelState); // Usa o método da BaseController
             }
 
-            var scheme = HttpContext.Request.Scheme;
-            var host = HttpContext.Request.Host.ToUriComponent();
+            var baseUrl = _configuration.GetValue<string>("FrontendUrls:BaseUrl");
+            var result = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, baseUrl);
 
-            var result = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, scheme, host);
+            //var scheme = HttpContext.Request.Scheme;
+            //var host = HttpContext.Request.Host.ToUriComponent();
+
+            //var result = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, scheme, host);
 
             if (result.Success)
             {
@@ -121,6 +145,7 @@ namespace ApostasApp.Core.Web.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {
+
             _logger.LogInformation($"Requisição de Redefinição de Senha para UserId: {request.UserId}");
 
             if (!ModelState.IsValid)
@@ -143,32 +168,73 @@ namespace ApostasApp.Core.Web.Controllers
             return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
         }
 
-        [HttpGet("confirm-email")]
+
+        // Localização: ApostasApp.Core.Web/Controllers/AccountController.cs
+
+
         [AllowAnonymous]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string code)
+        [HttpPost("ConfirmEmail")]
+        public async Task<ApiResponse<bool>> ConfirmEmail([FromBody] ConfirmEmailDto model)
         {
-            _logger.LogInformation($"Requisição de Confirmação de E-mail para UserId: {userId}");
-
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
+            try
             {
-                // CORRIGIDO: Usando NotificarErro do BaseController
-                NotificarErro("Parâmetros de confirmação de e-mail inválidos.", "PARAMETROS_INVALIDOS");
-                return CustomResponse(); // Retorna a resposta padronizada com as notificações
+                // 1. Validação inicial dos parâmetros
+                if (string.IsNullOrEmpty(model.UserId) || string.IsNullOrEmpty(model.Code))
+                {
+                    NotificarErro("Parâmetros de confirmação de e-mail inválidos.", "PARAMETROS_INVALIDOS");
+                }
+
+                // 2. Chama o serviço para processar a confirmação
+                //    (A chamada é feita somente se não houver erros de validação inicial)
+                var result = new ApiResponse<bool>();
+                if (OperacaoValida())
+                {
+                    result = await _usuarioService.ConfirmEmail(model.UserId, model.Code);
+
+                    _logger.LogInformation($"Requisição de Confirmação de E-mail para UserId: {model.UserId}");
+
+                    if (result.Success)
+                    {
+                        _logger.LogInformation($"E-mail confirmado com sucesso para UserId: {model.UserId}.");
+                        NotificarSucesso("E-mail confirmado com sucesso!");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Falha na confirmação de e-mail para UserId: {model.UserId}.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ocorreu um erro inesperado durante a confirmação de e-mail.");
+                NotificarErro("Ocorreu um erro inesperado.", "ERRO_INESPERADO");
             }
 
-            var result = await _usuarioService.ConfirmEmail(userId, code);
+            // 3. Coleta e retorna a resposta final
+            //    Coleta as notificações de domínio
+            var domainNotifications = _notificador.ObterNotificacoes().ToList();
 
-            if (result.Success)
-            {
-                _logger.LogInformation($"E-mail confirmado com sucesso para UserId: {userId}.");
-            }
-            else
-            {
-                _logger.LogWarning($"Falha na confirmação de e-mail para UserId: {userId}.");
-            }
+            //    Limpa as notificações após a coleta (boa prática)
+            _notificador.LimparNotificacoes();
 
-            // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
+            //    Converte as notificações de domínio para DTOs
+            var allNotifications = domainNotifications.Select(n => new NotificationDto
+            {
+                Codigo = n.Codigo,
+                Tipo = n.Tipo,
+                Mensagem = n.Mensagem,
+                NomeCampo = n.NomeCampo
+            }).ToList();
+
+            var hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
+
+            //    Retorna a resposta final com base no sucesso da operação
+            return new ApiResponse<bool>
+            {
+                Success = !hasErrors,
+                Data = !hasErrors,
+                Notifications = allNotifications
+            };
         }
 
         [HttpPost("resend-email-confirmation")]

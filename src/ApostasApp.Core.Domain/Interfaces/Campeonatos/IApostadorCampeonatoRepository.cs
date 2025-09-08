@@ -14,5 +14,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Campeonatos
         Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorUsuarioIdAsync(string userId);
         
         Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId);
+
+        Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId);
     }
 }

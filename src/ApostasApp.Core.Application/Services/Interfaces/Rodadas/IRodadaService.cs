@@ -1,10 +1,11 @@
 ﻿// Localização: ApostasApp.Core.Application.Services.Interfaces.Rodadas/IRodadaService.cs
 
+using ApostasApp.Core.Application.DTOs.Conferencia;
+using ApostasApp.Core.Application.Models; // <<-- ADICIONADO: Para ApiResponse -->>
+using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
 using System; // Para Guid
 using System.Collections.Generic; // Para IEnumerable, List
 using System.Threading.Tasks; // Para Task
-using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
-using ApostasApp.Core.Application.Models; // <<-- ADICIONADO: Para ApiResponse -->>
 
 namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
 {
@@ -32,5 +33,10 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
         Task<ApiResponse<IEnumerable<Rodada>>> ObterTodasAsRodadasDoCampeonato(Guid campeonatoId);
         Task<ApiResponse> Atualizar(Rodada Rodada); // Método para atualizar uma Rodada (retornando ApiResponse sem Data)
         Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasEmDestaque();
+        //Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
+        Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
+
+
+
     }
 }

@@ -22,6 +22,9 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
         [Required(ErrorMessage = "O apelido é obrigatório.")]
         public string Apelido { get; set; }
 
+        [Required(ErrorMessage = "O NOME COMPLETO é obrigatório.")]
+        public string NomeCompleto { get; set; }
+
         private string _cpf;
 
         [Required(ErrorMessage = "O CPF é obrigatório.")]
@@ -33,6 +36,10 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
 
         [Required(ErrorMessage = "O celular é obrigatório.")]
         public string Celular { get; set; }
+
+        public string FotoPerfil { get; set; } = string.Empty; // Adicionado para exibição no dashboard
+
+        public bool TermsAccepted { get; set; }
 
         // NOVOS CAMPOS: Para passar scheme e host para o serviço de e-mail de confirmação.
         public string Scheme { get; set; }

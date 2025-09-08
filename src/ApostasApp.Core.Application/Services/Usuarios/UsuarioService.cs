@@ -19,6 +19,7 @@ using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (classe de
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -62,86 +63,92 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             _mapper = mapper;
         }
 
+        // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
+
+        // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
+
+        // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
+
         public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request)
         {
-            var apiResponse = new ApiResponse<LoginResponseDto>();
+            var apiResponse = new ApiResponse<LoginResponseDto> { Notifications = new List<NotificationDto>() };
             var responseData = new LoginResponseDto { LoginSucesso = false };
 
-            apiResponse.Notifications = new List<NotificationDto>();
+            _logger.LogInformation("Iniciando LoginAsync no UsuarioService.");
 
             try
             {
+                // PASSO 1: Busca o usuário pelo e-mail.
+                var user = await _identityService.GetUserByEmailAsync(request.Email);
+
+                // Se o usuário não for encontrado, falha o login com mensagem genérica.
+                if (user == null)
+                {
+                    Notificar("Erro", "Usuário ou senha inválidos.");
+                    apiResponse.Success = false;
+                    apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
+                    apiResponse.Data = responseData;
+                    return apiResponse;
+                }
+
+                // PASSO 2: VERIFICAÇÃO CRUCIAL - Checa se o e-mail está confirmado.
+                if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
+                {
+                    Notificar("Erro", "Sua conta ainda não foi confirmada. Por favor, verifique sua caixa de entrada.");
+                    apiResponse.Success = false;
+                    apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
+                    apiResponse.Data = responseData;
+                    return apiResponse;
+                }
+
+                // PASSO 3: Tenta fazer o login com a senha.
+                // A sua lógica original que eu removi está certa, vamos usá-la.
                 var loginResult = await _identityService.LoginAsync(request.Email, request.Password, request.IsPersistent);
 
-                responseData.LoginSucesso = loginResult.Success;
-                responseData.Token = loginResult.Token;
-                responseData.RefreshToken = loginResult.RefreshToken;
-                responseData.Expiration = loginResult.Expiration;
-
-                var user = await _identityService.GetUserByEmailAsync(request.Email);
-                if (user != null)
+                if (loginResult.Success)
                 {
+                    // Login bem-sucedido.
+                    responseData.LoginSucesso = true;
+                    responseData.Token = loginResult.Token;
+                    responseData.RefreshToken = loginResult.RefreshToken;
+                    responseData.Expiration = loginResult.Expiration;
                     responseData.Apelido = user.Apelido;
                     responseData.Email = user.Email;
                     responseData.UserId = user.Id;
+
                     user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
-                }
-                else
-                {
-                    Notificar("Erro", "Detalhes do usuário não encontrados após login.");
-                    responseData.LoginSucesso = false;
-                }
 
-                // Mapear Notificacao para NotificationDto
-                responseData.Erros = loginResult.Notifications?
-                    .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo })
-                    .ToList() ?? new List<NotificationDto>();
-
-                if (responseData.LoginSucesso)
-                {
-                    apiResponse.Success = true;
                     Notificar("Sucesso", "Login realizado com sucesso.");
+                    apiResponse.Success = true;
+                    apiResponse.Data = responseData;
                 }
                 else
                 {
-                    if (!ObterNotificacoesParaResposta().Any() && !responseData.Erros.Any())
+                    // O login falhou por outros motivos.
+                    if (loginResult.Notifications != null && loginResult.Notifications.Any())
                     {
-                        Notificar("Erro", "Credenciais inválidas ou erro desconhecido.");
+                        apiResponse.Notifications.AddRange(loginResult.Notifications
+                            .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo }));
                     }
+                    else
+                    {
+                        Notificar("Erro", "Usuário ou senha inválidos.");
+                    }
+
+                    apiResponse.Success = false;
+                    apiResponse.Data = responseData;
                 }
             }
             catch (Exception ex)
             {
-                Notificar("Erro", $"Ocorreu um erro inesperado durante o login: {ex.Message}");
                 _logger.LogError(ex, $"EXCEÇÃO NO LOGIN (LoginAsync Service): {ex.Message}");
+                Notificar("Erro", "Ocorreu um erro inesperado durante o login. Por favor, tente novamente mais tarde.");
+                apiResponse.Success = false;
+                apiResponse.Data = responseData;
             }
 
-            var notificationsFromService = ObterNotificacoesParaResposta();
-            if (notificationsFromService != null)
-            {
-                apiResponse.Notifications.AddRange(notificationsFromService);
-            }
-            else
-            {
-                _logger.LogError("ObterNotificacoesParaResposta() retornou null inesperadamente.");
-            }
-
-            if (responseData.Erros != null)
-            {
-                apiResponse.Notifications.AddRange(responseData.Erros);
-            }
-            else
-            {
-                _logger.LogError("responseData.Erros é null inesperadamente antes de AddRange.");
-            }
-
-            if (!apiResponse.Success && !apiResponse.Notifications.Any())
-            {
-                apiResponse.Notifications.Add(new NotificationDto { Codigo = "GENERIC_ERROR", Tipo = "Erro", Mensagem = "Ocorreu um erro inesperado." });
-            }
-
-            apiResponse.Data = responseData;
+            apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
             return apiResponse;
         }
 
@@ -150,8 +157,10 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             var apiResponse = new ApiResponse<RegisterResponse>();
             try
             {
-                var registrationSuccess = await RegistrarNovoUsuario(
-                    request.Email, request.Password, request.Apelido, request.Cpf, request.Celular, request.Scheme, request.Host);
+                var registrationSuccess = await RegistrarNovoUsuario(request);
+                //var registrationSuccess = await RegistrarNovoUsuario(
+                //    request.Email, request.Password, request.Apelido, request.Cpf, 
+                //    request.Celular, request.Scheme, request.Host, request.NomeCompleto);
 
                 if (registrationSuccess)
                 {
@@ -192,6 +201,45 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return apiResponse;
         }
 
+
+        public async Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
+        {
+            var apiResponse = new ApiResponse<bool>();
+
+            // Alerta de segurança: não informamos se o usuário existe ou não
+            Notificar("Sucesso", "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas.");
+            apiResponse.Success = true;
+            apiResponse.Data = true;
+
+            try
+            {
+                var result = await _identityService.ForgotPasswordAsync(email, baseUrl);
+
+                if (result)
+                {
+                    apiResponse.Success = true;
+                    apiResponse.Data = true;
+                    Notificar("Sucesso", "Instruções para redefinição de senha enviadas para o seu e-mail.");
+                    // Opcional: Logar o erro internamente para monitoramento, mas não notificar o usuário
+                   // _logger.LogWarning($"Falha na solicitação de redefinição de senha para o e-mail '{email}': " +
+                   //                    $"{result.FirstOrDefault()?.Mensagem}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Se o IdentityService não notificar o erro, nós o fazemos aqui.
+                if (!ObterNotificacoesParaResposta().Any())
+                {
+                    Notificar("Erro", "Falha ao solicitar redefinição de senha. Verifique o e-mail ou tente novamente.");
+                }
+                //_logger.LogError(ex, $"EXCEÇÃO NO ESQUECI MINHA SENHA: {ex.Message}");
+            }
+
+            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+            return apiResponse;
+        }
+
+        /*
         public async Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string scheme, string host)
         {
             var apiResponse = new ApiResponse<bool>();
@@ -220,6 +268,8 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
             return apiResponse;
         }
+        */
+
 
         public async Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword)
         {
@@ -272,7 +322,10 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                     return apiResponse;
                 }
 
-                var identityResult = await _userManager.ConfirmEmailAsync(user, stringcode);
+                // Decodifica a URL e remove qualquer espaço indesejado
+                string decodedCode = System.Net.WebUtility.UrlDecode(stringcode).Replace(" ", "+");
+
+                var identityResult = await _userManager.ConfirmEmailAsync(user, decodedCode);
 
                 if (identityResult.Succeeded)
                 {
@@ -507,33 +560,32 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             return await _identityService.GetLoggedInUserIdAsync();
         }
 
-        // <<-- MÉTODO RegistrarNovoUsuario (COM LÓGICA DE ROLLBACK MANUAL) -->>
-        public async Task<bool> RegistrarNovoUsuario(string email, string password, string apelido, string cpf, string celular, string scheme, string host)
+        //public async Task<bool> RegistrarNovoUsuario(string email, string password, string apelido, string cpf, string celular,
+        //                                     string scheme, string host, string nomeCompleto, bool termsAccepted)
+        public async Task<bool> RegistrarNovoUsuario(RegisterRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(apelido))
-            {
-                Notificar("Erro", "Apelido é obrigatório.");
-                _logger.LogError("Falha no registro: Apelido é obrigatório.");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(celular))
-            {
-                Notificar("Erro", "Celular é obrigatório.");
-                _logger.LogError("Falha no registro: Celular é obrigatório.");
-                return false;
-            }
+            // A validação via FluentValidation já foi executada antes deste método ser chamado.
+            // As verificações de obrigatoriedade de apelido, email, etc., já estão garantidas.
 
-            // 1. Limpeza do CPF e Celular (garantir que estão apenas com números)
-            var cleanedCpf = cpf.CleanNumbers();
-            var cleanedCelular = celular.CleanNumbers();
+            // Obtenha os dados limpos do DTO
+            var cleanedCpf = request.Cpf.CleanNumbers();
+            var cleanedCelular = request.Celular.CleanNumbers();
 
-            // 2. Tenta registrar o usuário no Identity (isso DEVE persistir no AspNetUsers IMEDIATAMENTE)
-            // A interface IIdentityService.RegisterUserAsync espera parâmetros individuais
-            var registrationResult = await _identityService.RegisterUserAsync(email, password, apelido, cleanedCpf, cleanedCelular);
+            // 1. Tenta registrar o usuário no Identity (isso DEVE persistir no AspNetUsers)
+            // A chamada agora utiliza as propriedades do DTO e inclui a nova propriedade.
+            var registrationResult = await _identityService.RegisterUserAsync(
+                request.Email,                
+                request.Password,                
+                request.Apelido,
+                cleanedCpf,
+                cleanedCelular,                
+                request.FotoPerfil,
+                request.NomeCompleto,
+                request.TermsAccepted
+            );
 
             if (!registrationResult.Success)
             {
-                // Propaga as notificações do IdentityService
                 if (registrationResult.Notifications != null && registrationResult.Notifications.Any())
                 {
                     foreach (var notif in registrationResult.Notifications)
@@ -541,26 +593,24 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                         Notificar(notif.Tipo, notif.Mensagem, notif.NomeCampo);
                     }
                 }
-                else // Se não há notificações específicas, usa uma genérica
+                else
                 {
                     Notificar("Erro", "Falha ao registrar usuário no Identity. Verifique os dados informados.");
                 }
-                _logger.LogError($"Falha ao registrar usuário '{email}' no Identity.");
+                _logger.LogError($"Falha ao registrar usuário '{request.Email}' no Identity.");
                 return false;
             }
 
             // Se o registro no IdentityService foi bem-sucedido, o usuário já está no AspNetUsers.
-            // Agora, tentamos criar o Apostador e persistir.
-            Usuario newUser = null; // Declarado aqui para ser acessível no bloco catch
+            // Agora, tenta criar o Apostador e persistir.
+            Usuario newUser = null;
             try
             {
-                newUser = await _identityService.GetUserByEmailAsync(email);
+                newUser = await _identityService.GetUserByEmailAsync(request.Email);
                 if (newUser == null)
                 {
                     Notificar("Erro", "Usuário recém-criado não encontrado no Identity após registro. Contate o suporte.");
-                    _logger.LogError($"Usuário '{email}' criado mas não encontrado no Identity após registro.");
-                    // Se o usuário não for encontrado aqui, é um estado inconsistente grave.
-                    // Não há como fazer rollback sem o ID, mas o erro já é crítico.
+                    _logger.LogError($"Usuário '{request.Email}' criado mas não encontrado no Identity após registro.");
                     return false;
                 }
 
@@ -568,7 +618,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                 {
                     Id = Guid.NewGuid(),
                     UsuarioId = newUser.Id, // Associa ao ID do usuário Identity
-                    NomeCompleto = apelido,
+                    NomeCompleto = request.NomeCompleto,
                     Status = StatusApostador.AguardandoAssociacao
                 };
 
@@ -576,43 +626,39 @@ namespace ApostasApp.Core.Application.Services.Usuarios
 
                 _apostadorRepository.Adicionar(apostador);
 
-                // 3. Tenta persistir o Apostador e o Saldo (via UnitOfWork)
+                // 2. Tenta persistir o Apostador e o Saldo (via UnitOfWork)
                 if (await CommitAsync())
                 {
-                    // 4. Somente AGORA (APÓS O COMMIT DA TRANSAÇÃO DO APOSTADOR) tenta enviar o e-mail de confirmação
-                    var emailSent = await _identityService.SendConfirmationEmailAsync(newUser, scheme, host);
+                    var emailSent = await _identityService.SendConfirmationEmailAsync(newUser, request.Scheme, request.Host);
+                    
+
+
 
                     if (emailSent)
                     {
                         Notificar("Sucesso", "Registro realizado com sucesso! Um e-mail de confirmação foi enviado.");
-                        _logger.LogInformation($"Usuário '{email}' registrado e e-mail de confirmação enviado.");
+                        _logger.LogInformation($"Usuário '{request.Email}' registrado e e-mail de confirmação enviado.");
                         return true;
                     }
                     else
                     {
                         Notificar("Erro", "Usuário registrado, mas falha ao enviar e-mail de confirmação. Contate o suporte.");
-                        _logger.LogError($"Usuário '{email}' registrado, mas falha ao enviar e-mail de confirmação.");
+                        _logger.LogError($"Usuário '{request.Email}' registrado, mas falha ao enviar e-mail de confirmação.");
                         return false;
                     }
                 }
-                else // Falha ao persistir o Apostador (CommitAsync falhou)
+                else
                 {
                     Notificar("Erro", "Não foi possível persistir o registro do apostador. Tente novamente.");
-                    _logger.LogError($"Falha ao persistir registro do apostador para '{email}'.");
+                    _logger.LogError($"Falha ao persistir registro do apostador para '{request.Email}'.");
 
-                    // <<-- ROLLBACK: Tenta deletar o usuário recém-criado do Identity -->>
                     if (newUser != null)
                     {
                         var deleteResult = await _userManager.DeleteAsync(newUser);
                         if (!deleteResult.Succeeded)
                         {
-                            _logger.LogError($"Falha ao reverter criação do usuário '{email}' após falha na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
-                            Notificar("Erro", "Falha na reversão do usuário Identity. Contate o suporte.");
-                        }
-                        else
-                        {
-                            _logger.LogInformation($"Usuário '{email}' revertido com sucesso após falha na criação do apostador.");
-                            Notificar("Alerta", "Registro de usuário revertido devido a falha na criação do apostador.");
+                            _logger.LogError($"Falha ao reverter criação do usuário '{request.Email}' após falha na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
+                            Notificar("Erro", "Falha na reversão do usuário Identity após exceção. Contate o suporte.");
                         }
                     }
                     return false;
@@ -620,22 +666,25 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             }
             catch (Exception ex)
             {
+
+                // AQUI ESTÁ O LOG ESCANDALOSO
+                // Isso irá registrar a exceção completa, incluindo a mensagem, o StackTrace e as InnerExceptions
+                _logger.LogError(ex, "ERRO CRÍTICO NO REGISTRO DE USUÁRIO: {ErrorMessage}", ex.Message);
+
+                // Agora, retorne o erro de forma apropriada
+                Notificar("Erro", "Ocorreu um erro inesperado no registro. Verifique os logs do servidor.");
+              
+
                 Notificar("Erro", $"Ocorreu um erro inesperado durante o registro do apostador: {ex.Message}");
                 _logger.LogError(ex, $"EXCEÇÃO NO REGISTRO DO APOSTADOR (RegistrarNovoUsuario): {ex.Message}");
 
-                // <<-- ROLLBACK EM CASO DE EXCEÇÃO: Tenta deletar o usuário recém-criado do Identity -->>
                 if (newUser != null)
                 {
                     var deleteResult = await _userManager.DeleteAsync(newUser);
                     if (!deleteResult.Succeeded)
                     {
-                        _logger.LogError($"Falha ao reverter criação do usuário '{email}' após exceção na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
+                        _logger.LogError($"Falha ao reverter criação do usuário '{request.Email}' após exceção na criação do apostador. Erros: {string.Join(", ", deleteResult.Errors.Select(e => e.Description))}");
                         Notificar("Erro", "Falha na reversão do usuário Identity após exceção. Contate o suporte.");
-                    }
-                    else
-                    {
-                        _logger.LogInformation($"Usuário '{email}' revertido com sucesso após exceção na criação do apostador.");
-                        Notificar("Alerta", "Registro de usuário revertido devido a exceção na criação do apostador.");
                     }
                 }
                 return false;
@@ -643,7 +692,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         }
 
 
-
+       
         public async Task<UsuarioLoginResult> Login(string email, string password, bool rememberMe)
         {
             var domainLoginResult = await _identityService.LoginAsync(email, password, rememberMe);

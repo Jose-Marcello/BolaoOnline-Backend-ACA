@@ -1,10 +1,13 @@
-﻿using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
+﻿using ApostasApp.Core.Application.DTOs.RankingRodadas;
+using ApostasApp.Core.Application.Models;
+using ApostasApp.Core.Application.Services.Interfaces; // Para BaseService
 using ApostasApp.Core.Application.Services.Interfaces.RankingRodadas; // Para IRankingRodadaService
 using ApostasApp.Core.Application.Validations; // Para RankingRodadaValidation (se for usada aqui)
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Interfaces.RankingRodadas; // Para IRankingRodadaRepository
 using ApostasApp.Core.Domain.Models.RankingRodadas; // Para RankingRodada
+using AutoMapper;
 using System;
 using System.Collections.Generic; // Se necessário para métodos de retorno de coleção
 using System.Threading.Tasks;
@@ -18,14 +21,18 @@ namespace ApostasApp.Core.Application.Services.Rodadas
     public class RankingRodadaService : BaseService, IRankingRodadaService
     {
         private readonly IRankingRodadaRepository _rankingRodadaRepository;
+        private readonly IMapper _mapper;
         // private readonly IUnitOfWork _uow; // REMOVIDO: Gerenciado pela BaseService
 
         // O construtor agora injeta INotificador e IUnitOfWork e os passa para a BaseService
         public RankingRodadaService(IRankingRodadaRepository rankingRodadaRepository,
+                                    IMapper mapper,
                                     IUnitOfWork uow, // UoW injetado
                                     INotificador notificador) : base(notificador, uow) // Passando notificador e uow para o construtor da BaseService
         {
             _rankingRodadaRepository = rankingRodadaRepository;
+            _mapper = mapper;
+
             // _uow = uow; // REMOVIDO: Não é mais necessário atribuir aqui
         }
 
@@ -127,5 +134,39 @@ namespace ApostasApp.Core.Application.Services.Rodadas
         }
 
         // Outros métodos de RankingRodadaService...
+    
+
+     
+        public async Task<ApiResponse<IEnumerable<RankingRodadaDto>>> ObterRankingDaRodada(Guid rodadaId)
+        {
+            var ranking = await _rankingRodadaRepository.ObterRankingDaRodada(rodadaId);
+
+            if (ranking == null || !ranking.Any())
+            {
+                // Se não houver ranking, notifica e retorna uma resposta de erro
+                return new ApiResponse<IEnumerable<RankingRodadaDto>>
+                {
+                    Success = false,
+                    Message = "Ranking da rodada não encontrado."
+                };
+            }
+
+            // O AutoMapper se encarregará de mapear a entidade para o DTO
+            var rankingDto = _mapper.Map<IEnumerable<RankingRodadaDto>>(ranking);
+
+            return new ApiResponse<IEnumerable<RankingRodadaDto>>
+            {
+                Success = true,
+                Message = "Operação realizada com sucesso.",
+                Data = rankingDto
+            };
+        }
     }
+
+
+
+
+
+
 }
+

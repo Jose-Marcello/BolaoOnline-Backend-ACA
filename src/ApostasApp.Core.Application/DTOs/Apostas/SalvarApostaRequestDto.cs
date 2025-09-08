@@ -10,6 +10,9 @@ namespace ApostasApp.Core.Application.DTOs.Apostas
 {
     public class SalvarApostaRequestDto
     {
+
+        public string Id { get; set; } // Ajustado para string
+
         [Required(ErrorMessage = "O ID do apostador no campeonato é obrigatório.")]
         [JsonPropertyName("apostadorCampeonatoId")] // Mapeia 'apostadorCampeonatoId' do frontend
         public string ApostadorCampeonatoId { get; set; }
@@ -29,6 +32,8 @@ namespace ApostasApp.Core.Application.DTOs.Apostas
 
         [JsonPropertyName("identificadorAposta")] // Mapeia 'identificadorAposta' do frontend
         public string IdentificadorAposta { get; set; }
+
+        public bool ehApostaIsolada { get; set; }
 
         // Removidas as propriedades 'EhApostaIsolada' e 'Enviada' pois não são enviadas pelo frontend
         // e podem causar confusão se não forem usadas ou inicializadas corretamente.

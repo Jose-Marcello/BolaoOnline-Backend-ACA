@@ -193,5 +193,15 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                 return apiResponse;
             }
         }
+
+        public async Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId)
+        {
+            // Chama o repositÃ³rio para obter a pontuaÃ§Ã£o
+            var pontuacao = await _apostadorCampeonatoRepository.ObterPontuacaoTotal(campeonatoId, apostadorCampeonatoId);
+            return pontuacao;
+        }
+
+
+
     }
 }

@@ -13,13 +13,21 @@ namespace ApostasApp.Core.Domain.Models.Usuarios
     {
         [Required]
         [MaxLength(11)]
+        [ProtectedPersonalData]
         public string CPF { get; set; }
 
         [MaxLength(20)]
+        [ProtectedPersonalData]
         public string Celular { get; set; }
 
         [MaxLength(50)]
+        [ProtectedPersonalData]
         public string Apelido { get; set; }
+
+        [StringLength(255)]
+        public string FotoPerfil { get; set; }
+
+        public bool TermsAccepted { get; set; }
 
         // Propriedade de navegação para a entidade Apostador (se um usuário pode ser um apostador)
         public Apostador Apostador { get; set; }

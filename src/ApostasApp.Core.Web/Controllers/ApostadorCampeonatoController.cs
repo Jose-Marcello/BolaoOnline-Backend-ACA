@@ -177,7 +177,7 @@ namespace ApostasApp.Core.Web.Controllers
         [HttpGet("BuscarApostasParaVisualizacaoCorrente/{apostadorCampeonatoId}/{rodadaId}")]
         public async Task<IActionResult> BuscarApostasParaVisualizacaoCorrente(Guid apostadorCampeonatoId, Guid rodadaId)
         {
-            var listaApostasResponse = await _apostaRodadaService.ObterApostasDoApostadorNaRodadaParaVisualizacao(rodadaId, apostadorCampeonatoId);
+            var listaApostasResponse = await _apostaRodadaService.ObterApostasDoApostadorNaRodadaParaEdicao(rodadaId, apostadorCampeonatoId);
             var listaApostasDto = listaApostasResponse.Data;
 
             if (!listaApostasResponse.Success || listaApostasDto == null || !listaApostasDto.Any())
@@ -240,7 +240,7 @@ namespace ApostasApp.Core.Web.Controllers
         [HttpGet("BuscarApostasParaVisualizacaoSelecionada/{apostadorCampeonatoId}/{rodadaId}")]
         public async Task<IActionResult> BuscarApostasParaVisualizacaoSelecionada(Guid apostadorCampeonatoId, Guid rodadaId)
         {
-            var listaApostasResponse = await _apostaRodadaService.ObterApostasDoApostadorNaRodadaParaVisualizacao(rodadaId, apostadorCampeonatoId);
+            var listaApostasResponse = await _apostaRodadaService.ObterApostasDoApostadorNaRodadaParaEdicao(rodadaId, apostadorCampeonatoId);
             var listaApostasDto = listaApostasResponse.Data;
 
             if (!listaApostasResponse.Success || listaApostasDto == null || !listaApostasDto.Any())
@@ -313,5 +313,25 @@ namespace ApostasApp.Core.Web.Controllers
                 return CustomResponse<bool>();
             }
         }
+
+        [HttpGet("GetPontuacaoTotalDoApostador")]
+        public async Task<IActionResult> GetPontuacaoTotalDoApostador([FromQuery] Guid campeonatoId, [FromQuery] Guid apostadorId)
+        {
+            try
+            {
+                // Aqui você chamaria o seu serviço de ApostadorCampeonato para obter a pontuação
+                var pontuacao = await _apostadorCampeonatoService.ObterPontuacaoTotal(campeonatoId, apostadorId);
+
+                return CustomResponse(pontuacao);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter a pontuação total do apostador.");
+                NotificarErro($"Erro ao obter a pontuação total.");
+                return CustomResponse<int>(); //(null, "Erro ao obter a pontuação total.");
+            }
+        }
+
+
     }
 }

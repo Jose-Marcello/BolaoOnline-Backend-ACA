@@ -8,6 +8,8 @@ namespace ApostasApp.Core.Domain.Interfaces.Financeiro
         // Por enquanto, o método 'Adicionar' do IRepository genérico já é suficiente para TransacaoFinanceira.
         // Você pode adicionar métodos específicos aqui no futuro, se precisar (ex: obter transações por período, por tipo, etc.).
         // NOVO MÉTODO PARA DEPÓSITO
-       
+
+        Task<TransacaoFinanceira> ObterPorReferenciaExterna(string externalReference);
+
     }
 }

@@ -1,8 +1,9 @@
 ﻿using ApostasApp.Core.Domain.Models.Apostas;
 using ApostasApp.Core.Domain.Models.Base;
-using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Models.Jogos;
+using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Models.RankingRodadas;
+using ApostasApp.Core.Domain.Models.Campeonatos;
 
 namespace ApostasApp.Core.Domain.Models.Rodadas
 {

@@ -13,6 +13,9 @@
 
         // Outras
         CreditoManual = 20, // Para ajustes manuais, ex: bônus
-        DebitoManual = 21   // Para ajustes manuais, ex: estorno
+        DebitoManual = 21,   // Para ajustes manuais, ex: estorno
+
+        CreditoPix = 22 // Para OS DEPÓSITOS de APOSTADORES        
+
     }
 }

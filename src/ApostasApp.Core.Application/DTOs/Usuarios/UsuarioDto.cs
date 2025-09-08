@@ -12,6 +12,8 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
         public string Username { get; set; } = string.Empty; // Mantenha se o username for um identificador de login diferente do email
         public string Email { get; set; } = string.Empty;
         public string Apelido { get; set; } = string.Empty; // Adicionado para exibição no dashboard
+        public string FotoPerfil { get; set; } = string.Empty; // Adicionado para exibição no dashboard
+        public bool TermsAccepted { get; set; }
 
         // Adicione outras propriedades do usuário que você deseja expor ao frontend.
         // Por exemplo:

@@ -14,5 +14,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Campeonatos
         Task<ApiResponse> Remover(ApostadorCampeonato apostadorCampeonato);
         Task<ApiResponse<ApostadorCampeonato>> ObterApostadorCampeonatoPorApostadorECampeonato(Guid apostadorId, Guid campeonatoId);
         Task<ApiResponse<IEnumerable<ApostadorCampeonatoDto>>> ObterApostadoresDoCampeonato(Guid campeonatoId);
+
+        Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId);
     }
 }

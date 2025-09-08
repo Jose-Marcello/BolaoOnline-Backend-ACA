@@ -23,17 +23,19 @@ namespace ApostasApp.Infrastructure.Data.Repository
                .FirstOrDefaultAsync(r => r.Id == id);
         }
 
-        public async Task<IEnumerable<RankingRodada>> ObterRankingDaRodada(Guid idRodada)
+
+        public async Task<IEnumerable<RankingRodada>> ObterRankingDaRodada(Guid rodadaId)
         {
-            return await Db.RankingRodadas.AsNoTracking()
-                .Include(r => r.Rodada)
-                .Include(r => r.Rodada.Campeonato)
-                .Include(r => r.ApostadorCampeonato.Apostador.Usuario)
-                .Where(r => r.RodadaId == idRodada)
-                .OrderBy(r => r.Posicao) // Ordenar por pontuação
-                //.OrderByDescending(r => r.Pontuacao) // Ordenar por pontuação
+            return await DbSet
+                .AsNoTracking()
+                .Include(r => r.ApostadorCampeonato) // Incluindo o ApostadorCampeonato
+                    .ThenInclude(ac => ac.Apostador)     // E o Apostador dentro dele
+                        .ThenInclude(ap => ap.Usuario)    // e o usuario 
+                .Where(r => r.RodadaId == rodadaId)
+                .OrderByDescending(r => r.Pontuacao)
                 .ToListAsync();
         }
+
 
         public async Task<RankingRodada> ObterRankingDoApostadorNaRodada(Guid idRodada, Guid idApostador)
         {
@@ -45,6 +47,26 @@ namespace ApostasApp.Infrastructure.Data.Repository
                 .FirstOrDefaultAsync(r => r.Rodada.Id == idRodada && r.ApostadorCampeonato.Id == idApostador);
         }
 
-    }
 
+        /*
+        public async Task<IEnumerable<(Guid ApostadorCampeonatoId, int TotalPontos)>> ObterRankingCampeonatoTotalizadoAsync(Guid campeonatoId)
+        {
+            var ranking = await DbSet.AsNoTracking()
+                              .Where(r => r.Rodada.CampeonatoId == campeonatoId)
+                              .GroupBy(r => r.ApostadorCampeonatoId)
+                              .Select(g => new
+                              {
+                                  ApostadorCampeonatoId = g.Key,
+                                  TotalPontos = g.Sum(r => r.Pontuacao)
+                              })
+                              .OrderByDescending(r => r.TotalPontos)
+                              .ToListAsync();
+
+            return ranking.Select(r => (r.ApostadorCampeonatoId, r.TotalPontos));
+        }
+    
+        */
+
+    }
 }
+

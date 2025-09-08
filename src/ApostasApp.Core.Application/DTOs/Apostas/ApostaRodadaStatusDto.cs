@@ -9,6 +9,7 @@ namespace ApostasApp.Core.Application.DTOs.Apostas
         // Propriedades que o frontend espera
         [JsonPropertyName("statusAposta")] // Mapeia para 'statusAposta' no frontend
         public int StatusAposta { get; set; } // 1 = Pendente, 2 = Enviada
+        public string IdentificadorAposta { get; set; }
         public string ApostadorCampeonatoId { get; set; }
         public string RodadaId { get; set; }
 

@@ -20,6 +20,10 @@ namespace ApostasApp.Core.Domain.Models.Financeiro
         public DateTime DataTransacao { get; private set; }
         public string Descricao { get; private set; }
 
+        // NOVO: Adicione estas duas propriedades
+        public string ExternalReference { get; set; }
+        public string Status { get; set; }
+
         // Construtor vazio para o Entity Framework Core
         protected TransacaoFinanceira() { }
 

@@ -104,5 +104,18 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
                            .OrderByDescending(ac => ac.Pontuacao) // Assumindo que PontuacaoAtual existe na entidade
                            .ToListAsync();
         }
+
+        public async Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId)
+        {
+            // Consulta o banco de dados para somar a pontuaÃ§Ã£o total das apostas do apostador
+            var pontuacao = await Db.ApostasRodada
+                .AsNoTracking()
+                .Where(a => a.Rodada.CampeonatoId == campeonatoId && a.ApostadorCampeonatoId == apostadorCampeonatoId)
+                .SumAsync(a => a.PontuacaoTotalRodada);
+
+            return pontuacao;
+        }
+
+
     }
 }

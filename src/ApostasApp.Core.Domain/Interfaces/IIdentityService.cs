@@ -13,7 +13,11 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
         // Métodos relacionados a usuário
         Task<Usuario> GetLoggedInUserAsync();
         Task<string> GetLoggedInUserIdAsync();
-        Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf, string celular); // Retorna AuthResult
+        Task<AuthResult> RegisterUserAsync(string email, string password, string apelido, string cpf,
+                                           string celular, string fotoPerfil, string nomeCompleto, 
+                                           bool termsAccepted ); // Retorna AuthResult       
+
+
         Task<bool> SendConfirmationEmailAsync(Usuario user, string scheme, string host);
         Task<Usuario> GetUserByEmailAsync(string email);
         Task<Usuario> GetUserByIdAsync(string userId);
@@ -26,7 +30,9 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
         Task SignOutUserAsync(); // Seu método existente
 
         // Métodos de Redefinição de Senha e Confirmação de E-mail
-        Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
+        //Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
+        Task<bool> ForgotPasswordAsync(string email, string baseUrl);
+
         Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
 
         // Métodos de Alteração de E-mail

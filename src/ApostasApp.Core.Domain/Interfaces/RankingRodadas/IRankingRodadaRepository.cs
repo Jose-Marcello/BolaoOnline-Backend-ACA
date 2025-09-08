@@ -11,6 +11,12 @@ namespace ApostasApp.Core.Domain.Interfaces.RankingRodadas
 
         Task<RankingRodada> ObterRankingDoApostadorNaRodada(Guid idRodada, Guid idApostador);
 
+        //Task<IEnumerable<IRankingResult>> ObterRankingCampeonatoAsync(Guid campeonatoId);
+
+        // ... (outros métodos do repositório)
+        //Task<IEnumerable<(Guid ApostadorCampeonatoId, int PontuacaoTotal)>> ObterRankingCampeonatoTotalizadoAsync();
+        //Task<IEnumerable<RankingDto>> ObterRankingCampeonatoTotalizadoAsync();
+
 
     }
 }

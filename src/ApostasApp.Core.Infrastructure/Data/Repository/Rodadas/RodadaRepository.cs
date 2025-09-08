@@ -1,8 +1,12 @@
-﻿using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
+﻿using ApostasApp.Core.Application.DTOs.Conferencia;
+using ApostasApp.Core.Domain.Interfaces.Relatorios;
+using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
 using ApostasApp.Core.Domain.Models.Jogos; // Para Jogo
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
-using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using ApostasApp.Core.Infrastructure.Data.Models;
 using ApostasApp.Core.Infrastructure.Data.Repository; // PARA HERDAR DE Repository<T>
+using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -13,10 +17,13 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
     public class RodadaRepository : Repository<Rodada>, IRodadaRepository
     {
         private readonly ILogger<RodadaRepository> _logger;
+        private readonly IMapper _mapper; // Adicione o IMapper
 
-        public RodadaRepository(MeuDbContext context, ILogger<RodadaRepository> logger) : base(context)
+        public RodadaRepository(MeuDbContext context, ILogger<RodadaRepository> logger,
+                                                      IMapper mapper) : base(context)
         {
             _logger = logger;
+            _mapper = mapper;
         }
 
         // Métodos ESPECÍFICOS de IRodadaRepository (além dos que já vêm de IRepository<T>)
@@ -28,7 +35,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
                            .FirstOrDefaultAsync(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas);
         }
 
-        
+
         public async Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId)
         {
             return await Db.Rodadas
@@ -104,6 +111,37 @@ namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
                            .Where(r => r.CampeonatoId == campeonatoId)
                            .AsNoTracking()
                            .ToListAsync();
+        }
+
+
+        // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
+
+        // ...
+
+        // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
+        // Garanta que o método retorna uma interface, como havíamos discutido.
+        public async Task<IEnumerable<IConferenciaPalpite>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId)
+        {
+            var dados = await Db.Palpites
+                .AsNoTracking()
+                .Where(p => p.ApostaRodada.RodadaId == rodadaId)
+                .Select(p => new ConferenciaPalpiteDataModel
+                {
+                    ApelidoApostador = p.ApostaRodada.ApostadorCampeonato.Apostador.Usuario.Apelido,
+                    IdentificadorAposta = p.ApostaRodada.IdentificadorAposta,
+                    DataHoraEnvio = p.ApostaRodada.DataHoraSubmissao.HasValue ? p.ApostaRodada.DataHoraSubmissao.Value : DateTime.MinValue,
+                    NomeEquipeCasa = p.Jogo.EquipeCasa.Equipe.Nome,
+                    PlacarPalpiteCasa = p.PlacarApostaCasa ?? 0,
+                    PlacarPalpiteVisita = p.PlacarApostaVisita ?? 0,
+                    NomeEquipeVisita = p.Jogo.EquipeVisitante.Equipe.Nome,
+                    DataJogo = p.Jogo.DataJogo,
+                    HoraJogo = p.Jogo.HoraJogo.ToString(),
+                    // Adicione as outras propriedades se necessário
+                })
+                .OrderBy(p => p.ApelidoApostador)
+                .ToListAsync();
+
+            return dados;
         }
     }
 }
