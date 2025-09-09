@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="AutoMapper" Version="14.0.0" />
+	  <PackageReference Include="FluentValidation" Version="11.11.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+      Este projeto referenciado Domain -> (Models) deve ser o mais leve possível, contendo apenas DTOs e modelos.
+      Ele só precisa referenciar o projeto Domain para o NotificationDto.
+      Todas as outras referências (AutoMapper, EF, FluentValidation, Identity, JWT)
+      devem estar nos projetos onde são realmente utilizadas (Application Services, Infrastructure, Web).
+    -->
+		<ProjectReference Include="..\ApostasApp.Core.Domain\ApostasApp.Core.Domain.csproj" />
+	</ItemGroup>
+
+</Project>

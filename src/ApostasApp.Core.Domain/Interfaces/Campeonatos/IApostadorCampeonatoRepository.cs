@@ -1,0 +1,20 @@
+﻿using ApostasApp.Core.Domain.Models.Campeonatos;
+using ApostasApp.Core.Domain.Interfaces;
+
+namespace ApostasApp.Core.Domain.Interfaces.Campeonatos
+{
+    public interface IApostadorCampeonatoRepository : IRepository<ApostadorCampeonato>
+    {
+        Task<ApostadorCampeonato> ObterApostadorCampeonato(Guid id);
+        Task<ApostadorCampeonato> ObterApostadorDoCampeonato(Guid idCampeonato, Guid idApostador);
+        Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresComRanking(Guid campeonatoId);        
+        Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresDoCampeonato(Guid id);
+        Task<ApostadorCampeonato> ObterApostadorCampeonatoDoApostador(Guid apostadorId);
+        Task<ApostadorCampeonato> ObterApostadorCampeonatoPorApostadorECampeonato(Guid apostadorCampeonatoId, Guid campeonatoId);
+        Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorUsuarioIdAsync(string userId);
+        
+        Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId);
+
+        Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId);
+    }
+}

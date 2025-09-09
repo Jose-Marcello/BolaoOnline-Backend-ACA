@@ -1,0 +1,223 @@
+body {
+    background-color: seagreen !important;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+/* Estilos gerais para cabeçalhos e células da tabela */
+th, td {
+    font-size: 12px;
+    padding: 3px;
+    white-space: normal;
+}
+
+th {
+    color: black;
+}
+
+/* Estilos específicos para a tabela DataTables */
+#tb_apostas.dataTable thead th,
+#tb_apostas.dataTable tbody td {
+    border: 1px solid darkseagreen;
+    background-color: seagreen;
+    color: black;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#tb_apostas.dataTable tbody tr:nth-child(odd) {
+    background-color: #8FBC8F;
+}
+
+#tb_apostas.dataTable thead th {
+    background-color: #f0f0f0;
+    color: black;
+    border-bottom: 2px solid #aaa;
+}
+
+/* Estilos para colunas específicas da tabela de consulta */
+.tabela-consulta th:nth-child(1),
+.tabela-consulta td:nth-child(1) {
+    width: 20%;
+}
+
+.tabela-consulta th:nth-child(2),
+.tabela-consulta td:nth-child(2) {
+    font-weight: bold;
+    color: greenyellow;
+    font-size: 15px;
+    width: 25%;
+}
+
+/* Estilo destacado para a primeira coluna da seção "Plc" */
+#tb_apostas.dataTable tbody td:nth-child(2) {
+    color: yellow;
+    font-weight: bold;
+}
+
+.tabela-consulta th:nth-child(3),
+.tabela-consulta td:nth-child(3) {
+    width: 20%;
+}
+
+.tabela-consulta th:nth-child(4),
+.tabela-consulta td:nth-child(4) {
+    font-weight: bold;
+    width: 15%;
+}
+
+.tabela-consulta th:nth-child(5),
+.tabela-consulta td:nth-child(5) {
+    color: blue;
+    text-align: center;
+    width: 10%;
+}
+
+/* Estilos para dispositivos móveis */
+@media (max-width: 768px) {
+    #tb_apostas {
+        width: auto;
+        overflow-x: auto;
+    }
+}
+
+/* Estilos para imagens */
+img {
+    max-width: 40px;
+    max-height: 40px;
+}
+
+/* Estilos para botões de detalhes */
+.btn-detalhes {
+    padding: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    font-weight: bold;
+}
+
+    .btn-detalhes i {
+        font-size: 1em;
+        color: #007bff;
+    }
+
+/* Estilos para o modal de detalhes do jogo rápido */
+#detalheJogoRapido {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    width: 80%;
+    max-width: 400px;
+    border: 1px solid #ff0000;
+    background-color: black;
+    color: aliceblue;
+    border: 1px solid #555;
+}
+
+    #detalheJogoRapido .card-title.jogo-titulo {
+        text-align: center;
+        font-size: 1.3em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+        #detalheJogoRapido .card-title.jogo-titulo img.escudo-casa,
+        #detalheJogoRapido .card-title.jogo-titulo img.escudo-visitante {
+            height: 40px !important;
+            width: 40px !important;
+            vertical-align: middle !important;
+            display: inline-block;
+        }
+
+        #detalheJogoRapido .card-title.jogo-titulo span.equipe-casa,
+        #detalheJogoRapido .card-title.jogo-titulo span.equipe-visitante {
+            font-size: 0.8em;
+        }
+
+/* Limita a largura dos inputs de gols em telas grandes */
+@media (min-width: 769px) {
+    #tb_apostas input[type="number"] {
+        max-width: 50px; /* Ajuste a largura conforme necessário */
+    }
+}
+
+
+@media (max-width: 768px) {
+    #detalheJogoRapido {
+        width: 95%;
+        max-width: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+    }
+
+        #detalheJogoRapido .card-body {
+            padding: 15px;
+        }
+
+        #detalheJogoRapido .card-title.jogo-titulo {
+            font-size: 1.2em;
+        }
+
+        #detalheJogoRapido .card-text.rodada-info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        #detalheJogoRapido dl.row dt {
+            width: 40%;
+        }
+
+        #detalheJogoRapido dl.row dd {
+            width: 60%;
+        }
+
+        #detalheJogoRapido .btn.btn-secondary {
+            font-size: 0.9em;
+            padding: 8px 12px;
+        }
+}
+   
+
+#detalheJogoRapido .status-jogo {
+    font-style: italic;
+    margin-bottom: 10px;
+    align-items: center;
+    color: chartreuse;
+}
+
+.info-apostador {
+    background-color: #808080;
+    color: black;
+    padding: 15px 10px; /* Mantém o padding que discutimos para dar altura */
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-bottom: 1px solid #ccc;
+    /* ADICIONE ESTA LINHA PARA DESCOLAR DO TOPO */
+    margin-top: 20px; /* Experimente com este valor (ex: 15px, 20px, 30px) */
+}
+
+.barra-inferior {
+    background-color: #808080;
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid #ccc;
+}
+
+
+    .barra-inferior button {
+        padding: 8px 15px;
+        cursor: pointer;
+    }
