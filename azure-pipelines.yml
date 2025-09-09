@@ -1,0 +1,46 @@
+trigger:
+- main
+
+pool:
+  name: MyAgentPool
+
+stages:
+- stage: Build
+  displayName: 'Build and package artifacts'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build job'
+    steps:
+    - script: |
+        echo "Listing files in the source directory:"
+        dir /s
+      displayName: 'List all files for debugging'
+
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install
+        npm run build
+      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
+      displayName: 'Install dependencies and build frontend'
+      
+    - script: |
+        npm install
+      workingDirectory: '$(Build.SourcesDirectory)/src'
+      displayName: 'Install dependencies for backend'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+      displayName: 'Archive files'
+
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'drop'
+      displayName: 'Publish artifacts'
