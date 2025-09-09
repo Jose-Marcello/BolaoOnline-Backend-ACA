@@ -45,7 +45,6 @@ stages:
       artifact: 'drop'
       displayName: 'Publish artifacts'
 
-# O SEGUNDO STAGE DEVE COMEÇAR AQUI, NO MESMO NÍVEL DO PRIMEIRO '- stage'
 - stage: Deploy
   displayName: 'Deploy to Test Environment'
   jobs:
@@ -60,9 +59,19 @@ stages:
           steps:
           - download: current
             artifact: drop
+          
+          # NOVO PASSO: Executa a migração do banco de dados antes do deploy da aplicação
+          - script: |
+              echo "Iniciando a migração do banco de dados..."
+              # Navega para o diretório do seu projeto de backend, onde está o DbContext
+              cd $(Pipeline.Workspace)/drop/src
+              # Executa o comando para aplicar as migrações no banco de dados de testes
+              dotnet ef database update
+
+            displayName: 'Apply database migrations'
 
           - script: |
-              echo "Iniciando o deploy..."
+              echo "Iniciando o deploy da aplicação..."
               echo "O artefato foi baixado e pronto para o deploy."
               # Substitua este comando pelo seu script de deploy real, por exemplo:
               # - task: AzureWebApp@1
