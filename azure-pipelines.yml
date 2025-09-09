@@ -44,3 +44,30 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: 'drop'
       displayName: 'Publish artifacts'
+
+# O SEGUNDO STAGE DEVE COMEÇAR AQUI, NO MESMO NÍVEL DO PRIMEIRO '- stage'
+- stage: Deploy
+  displayName: 'Deploy to Test Environment'
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy job'
+    environment: AmbienteDeTestes
+    pool:
+      name: MyAgentPool
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+
+          - script: |
+              echo "Iniciando o deploy..."
+              echo "O artefato foi baixado e pronto para o deploy."
+              # Substitua este comando pelo seu script de deploy real, por exemplo:
+              # - task: AzureWebApp@1
+              #   inputs:
+              #     azureSubscription: 'SuaAssinatura'
+              #     appName: 'bolaoonline-testes'
+              #     package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+            displayName: 'Deploy application'
