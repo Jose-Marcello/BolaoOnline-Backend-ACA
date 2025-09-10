@@ -60,15 +60,10 @@ stages:
           - download: current
             artifact: drop
           
-          # NOVO PASSO: Executa a migração do banco de dados antes do deploy da aplicação
           - script: |
-              echo "Iniciando a migração do banco de dados..."
-              # Navega para o diretório do seu projeto de backend, onde está o DbContext
-              cd $(Pipeline.Workspace)/drop/src
-              # Executa o comando para aplicar as migrações no banco de dados de testes
               dotnet ef database update
-
             displayName: 'Apply database migrations'
+            workingDirectory: '$(Pipeline.Workspace)/drop/src'
 
           - script: |
               echo "Iniciando o deploy da aplicação..."
