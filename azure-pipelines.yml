@@ -24,7 +24,7 @@ stages:
     - script: |
         npm install
         npm run build
-      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
+      workingDirectory: '$(Pipeline.Workspace)/src'
       displayName: 'Install dependencies and build frontend'
       
     - script: |
