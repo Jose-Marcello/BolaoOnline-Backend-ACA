@@ -29,7 +29,7 @@ stages:
       
     - script: |
         npm install
-      workingDirectory: '$(Build.SourcesDirectory)/src'
+      workingDirectory: '$(Build.SourcesDirectory)'
       displayName: 'Install dependencies for backend'
 
     - task: ArchiveFiles@2
