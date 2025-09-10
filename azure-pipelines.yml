@@ -58,7 +58,7 @@ stages:
           - script: |
               dotnet ef database update
             displayName: 'Apply database migrations'
-            workingDirectory: '$(Pipeline.Workspace)/src'
+            workingDirectory: '$(Pipeline.Workspace)/s/src'
 
           - script: |
               echo "Iniciando o deploy da aplicação..."
