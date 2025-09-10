@@ -56,7 +56,7 @@ stages:
             artifact: drop
           
           - script: |
-              dotnet ef database update --project $(Pipeline.Workspace)/src/BolaoOnline.csproj
+              dotnet ef database update --project $(Pipeline.Workspace)/drop/src/BolaoOnline.csproj
             displayName: 'Apply database migrations'
             workingDirectory: '$(Pipeline.Workspace)'
 
