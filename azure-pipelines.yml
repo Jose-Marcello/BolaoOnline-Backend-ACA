@@ -16,24 +16,15 @@ stages:
         versionSpec: '18.x'
       displayName: 'Install Node.js'
 
-    - task: Npm@1
-      inputs:
-        command: 'custom'
-        workingDir: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
-        customCommand: 'run build -- --no-build-optimizer'
-      displayName: 'Build frontend'
+    - script: |
+        npm install
+        npm run build -- --no-build-optimizer
+      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
+      displayName: 'Install dependencies and build frontend'
 
-    - task: Npm@1
-      inputs:
-        command: 'custom'
-        workingDir: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
-        customCommand: 'run build'
-      displayName: 'Build frontend'
-
-    - task: Npm@1
-      inputs:
-        command: 'install'
-        workingDir: '$(Build.SourcesDirectory)/src'
+    - script: |
+        npm install
+      workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
 
     - task: ArchiveFiles@2
