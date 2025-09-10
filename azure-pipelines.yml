@@ -56,9 +56,14 @@ stages:
             artifact: drop
           
           - script: |
-              dotnet ef database update --project $(Pipeline.Workspace)/drop/src/BolaoOnline.csproj
+              echo "Listing files in the deployment directory:"
+              dir /s
+            displayName: 'List files for debugging'
+
+          - script: |
+              dotnet ef database update
             displayName: 'Apply database migrations'
-            workingDirectory: '$(Pipeline.Workspace)'
+            workingDirectory: '$(Pipeline.Workspace)/drop/src'
 
           - script: |
               echo "Iniciando o deploy da aplicação..."
