@@ -56,13 +56,11 @@ stages:
             artifact: drop
           
           - script: |
-              dotnet ef database update
+              dotnet ef database update --project $(Pipeline.Workspace)/src/BolaoOnline.csproj
             displayName: 'Apply database migrations'
-            workingDirectory: '$(Pipeline.Workspace)/s/src'
+            workingDirectory: '$(Pipeline.Workspace)'
 
           - script: |
               echo "Iniciando o deploy da aplicação..."
               echo "O artefato foi baixado e pronto para o deploy."
-              # Substitua este comando pelo seu script de deploy real
-              # Exemplo: - task: AzureWebApp@1
             displayName: 'Deploy application'
