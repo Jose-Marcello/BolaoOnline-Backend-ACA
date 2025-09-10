@@ -18,9 +18,10 @@ stages:
 
     - task: Npm@1
       inputs:
-        command: 'install'
+        command: 'custom'
         workingDir: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
-      displayName: 'Install dependencies for frontend'
+        customCommand: 'run build -- --no-build-optimizer'
+      displayName: 'Build frontend'
 
     - task: Npm@1
       inputs:
