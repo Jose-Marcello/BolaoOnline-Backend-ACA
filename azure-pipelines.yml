@@ -54,16 +54,9 @@ stages:
           steps:
           - download: current
             artifact: drop
-          
-          - script: |
-              echo "Listing files in the deployment directory:"
-              dir /s
-            displayName: 'List files for debugging'
 
           - script: |
-              dotnet restore "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
-              dotnet build "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --no-restore
-              dotnet ef database update --project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj --startup-project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
+              dotnet ef database update --project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
             displayName: 'Apply database migrations'
             workingDirectory: '$(Pipeline.Workspace)/drop'
 
