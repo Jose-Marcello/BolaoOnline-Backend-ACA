@@ -30,10 +30,11 @@ stages:
       workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
       
-    # Mova o comando de migração do banco de dados para cá
     - script: |
         echo "Aplicando migrações do banco de dados..."
-        dotnet tool install --global dotnet-ef --version 7.0.12 # Verifique a versão que você usa
+        # Instala a ferramenta localmente no contexto do projeto
+        dotnet tool install dotnet-ef --local --version 7.0.12 
+        # Executa o comando de migração
         dotnet ef database update --project ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj --startup-project ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
       displayName: 'Apply database migrations'
       workingDirectory: '$(Build.SourcesDirectory)/src'
@@ -66,6 +67,4 @@ stages:
           
           - script: |
               echo "Iniciando o deploy da aplicação..."
-              # Aqui você deve colocar a tarefa de deploy da sua aplicação compilada
-              echo "Deploy do artefato concluído."
             displayName: 'Deploy application'
