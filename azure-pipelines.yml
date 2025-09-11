@@ -61,7 +61,9 @@ stages:
             displayName: 'List files for debugging'
 
           - script: |
-              dotnet ef database update --project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
+              dotnet restore
+              dotnet build --no-restore
+              dotnet ef database update --project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj --startup-project src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
             displayName: 'Apply database migrations'
             workingDirectory: '$(Pipeline.Workspace)/drop'
 
