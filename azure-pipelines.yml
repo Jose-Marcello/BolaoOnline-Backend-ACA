@@ -28,11 +28,11 @@ stages:
       displayName: 'Install dependencies for backend'
 
     - script: |
-        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.ArtifactStagingDirectory)/publish
+        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.ArtifactStagingDirectory)
       workingDirectory: '$(Build.SourcesDirectory)'
       displayName: 'Build and publish backend'
 
-    - publish: '$(Build.ArtifactStagingDirectory)/publish'
+    - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: 'drop'
       displayName: 'Publish artifacts'
 
@@ -57,7 +57,7 @@ stages:
             displayName: 'List files for debugging'
 
           - script: |
-              dotnet ef database update --project ApostasApp.Core.Web.csproj --startup-project ApostasApp.Core.Web.csproj
+              dotnet ef database update --project ApostasApp.Core.Web.csproj
             displayName: 'Apply database migrations'
             workingDirectory: '$(Pipeline.Workspace)/drop'
 
