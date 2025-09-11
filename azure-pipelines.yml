@@ -32,9 +32,7 @@ stages:
       
     - script: |
         echo "Aplicando migrações do banco de dados..."
-        # Instala a ferramenta localmente no contexto do projeto
         dotnet tool install dotnet-ef --local --version 7.0.12 
-        # Executa o comando de migração
         dotnet ef database update --project ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj --startup-project ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
       displayName: 'Apply database migrations'
       workingDirectory: '$(Build.SourcesDirectory)/src'
