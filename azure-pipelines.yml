@@ -62,7 +62,11 @@ stages:
           steps:
           - download: current
             artifact: drop
-          
-          - script: |
-              echo "Iniciando o deploy da aplicação..."
-            displayName: 'Deploy application'
+
+          - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App'
+            inputs:
+              azureSubscription: 'Azure-BolaoOnline'
+              appType: 'webApp'
+              appName: 'bolaoonline-testes'
+              package: '$(Pipeline.Workspace)/drop'
