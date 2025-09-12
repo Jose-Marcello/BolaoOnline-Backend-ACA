@@ -1,37 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Desen\\ApostasApp.Core\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{93103F06-71EF-490E-B665-5FD804BAED43}|src\\ApostasApp.Core.Infrastructure\\ApostasApp.Core.Infrastructure.csproj|c:\\desen\\apostasapp.core\\src\\apostasapp.core.infrastructure\\data\\repository\\apostas\\apostarodadarepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{93103F06-71EF-490E-B665-5FD804BAED43}|src\\ApostasApp.Core.Infrastructure\\ApostasApp.Core.Infrastructure.csproj|solutionrelative:src\\apostasapp.core.infrastructure\\data\\repository\\apostas\\apostarodadarepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ApostaRodadaRepository.cs",
-              "DocumentMoniker": "C:\\Desen\\ApostasApp.Core\\src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "ToolTip": "C:\\Desen\\ApostasApp.Core\\src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "RelativeToolTip": "src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "ViewState": "AgIAAK8AAAAAAAAAAAAYwL0AAABkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T00:29:09.234Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
+      "DocumentGroups": []
     }
   ]
 }
