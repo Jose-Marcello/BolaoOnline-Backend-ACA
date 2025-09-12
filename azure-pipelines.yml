@@ -4,6 +4,9 @@ trigger:
 pool:
   name: MyAgentPool
 
+variables:
+- group: BolaoOnline-ProdSecrets
+
 stages:
 - stage: Build
   displayName: 'Build and package artifacts'
@@ -11,11 +14,6 @@ stages:
   - job: BuildJob
     displayName: 'Build job'
     steps:
-    - script: |
-        echo "Listing files in the source directory:"
-        dir /s
-      displayName: 'List all files for debugging'
-
     - task: NodeTool@0
       inputs:
         versionSpec: '18.x'
@@ -23,24 +21,48 @@ stages:
 
     - script: |
         npm install
-        npm run build
+        npm run build -- --no-build-optimizer
       workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
       displayName: 'Install dependencies and build frontend'
-      
+
     - script: |
         npm install
       workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
+      
+    - script: |
+        echo "Aplicando migrações do banco de dados..."
+        dotnet tool install --global dotnet-ef
+        dotnet ef database update --project ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj --startup-project ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
+      displayName: 'Apply database migrations'
+      workingDirectory: '$(Build.SourcesDirectory)/src'
+      env:
+        ConnectionStrings__DefaultConnection: $(DefaultConnection)
 
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-      displayName: 'Archive files'
+    - script: |
+        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.ArtifactStagingDirectory)
+      workingDirectory: '$(Build.SourcesDirectory)'
+      displayName: 'Build and publish backend'
 
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    - publish: '$(Build.ArtifactStagingDirectory)'
       artifact: 'drop'
       displayName: 'Publish artifacts'
+
+- stage: Deploy
+  displayName: 'Deploy to Test Environment'
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Deploy job'
+    environment: AmbienteDeTestes
+    pool:
+      name: MyAgentPool
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          
+          - script: |
+              echo "Iniciando o deploy da aplicação..."
+            displayName: 'Deploy application'
