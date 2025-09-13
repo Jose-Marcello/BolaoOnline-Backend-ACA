@@ -6,8 +6,6 @@ pool:
 
 variables:
 - group: BolaoOnline-ProdSecrets
-- name: frontend_dist_path
-  value: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5'
 
 stages:
 - stage: Build
@@ -48,13 +46,15 @@ stages:
 
     - script: |
         echo "Copiando arquivos do frontend para a pasta de publicação do backend..."
-        xcopy "$(frontend_dist_path)" "$(Build.SourcesDirectory)\publish\wwwroot" /E /I /Y
+        set frontendPath=$(Build.SourcesDirectory)\BolaoOnlineAppV5\dist\bolao-online-app-v5
+        set backendPath=$(Build.SourcesDirectory)\publish\wwwroot
+        xcopy "%frontendPath%" "%backendPath%" /E /I /Y
       displayName: 'Copy frontend assets to backend publish directory (Windows)'
       condition: eq(variables['Agent.OS'], 'Windows_NT')
 
     - script: |
         echo "Copiando arquivos do frontend para a pasta de publicação do backend..."
-        cp -R "$(frontend_dist_path)" "$(Build.SourcesDirectory)/publish/wwwroot"
+        cp -R "$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5" "$(Build.SourcesDirectory)/publish/wwwroot"
       displayName: 'Copy frontend assets to backend publish directory (Linux/macOS)'
       condition: ne(variables['Agent.OS'], 'Windows_NT')
 
