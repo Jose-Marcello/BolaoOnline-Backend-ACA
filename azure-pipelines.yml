@@ -24,13 +24,12 @@ stages:
         npm run build -- --no-build-optimizer
       workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
       displayName: 'Install dependencies and build frontend'
-      
-    # This step is likely not needed if the backend doesn't have its own node_modules
+
     - script: |
         npm install
       workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
-
+      
     - script: |
         echo "Aplicando migrações do banco de dados..."
         dotnet tool install --global dotnet-ef
@@ -45,12 +44,15 @@ stages:
       workingDirectory: '$(Build.SourcesDirectory)'
       displayName: 'Build and publish backend'
 
-    # New step to copy frontend assets to the backend's publish directory
     - script: |
-        cp -R "$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5" "$(Build.SourcesDirectory)/publish/wwwroot"
+        echo "Copiando arquivos do frontend para a pasta de publicação do backend..."
+        if [ "$AGENT_OS" = "Windows_NT" ]; then
+          xcopy "$(Build.SourcesDirectory)\BolaoOnlineAppV5\dist\bolao-online-app-v5" "$(Build.SourcesDirectory)\publish\wwwroot" /E /I /Y
+        else
+          cp -R "$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5" "$(Build.SourcesDirectory)/publish/wwwroot"
+        fi
       displayName: 'Copy frontend assets to backend publish directory'
 
-    # The publish step now packages a single, optimized folder
     - publish: '$(Build.SourcesDirectory)/publish'
       artifact: 'drop'
       displayName: 'Publish optimized artifacts'
