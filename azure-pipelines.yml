@@ -24,12 +24,13 @@ stages:
         npm run build -- --no-build-optimizer
       workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
       displayName: 'Install dependencies and build frontend'
-
+      
+    # This step is likely not needed if the backend doesn't have its own node_modules
     - script: |
         npm install
       workingDirectory: '$(Build.SourcesDirectory)/src'
       displayName: 'Install dependencies for backend'
-      
+
     - script: |
         echo "Aplicando migrações do banco de dados..."
         dotnet tool install --global dotnet-ef
@@ -40,13 +41,19 @@ stages:
         ConnectionStrings__DefaultConnection: $(DefaultConnection)
 
     - script: |
-        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.ArtifactStagingDirectory)
+        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.SourcesDirectory)/publish
       workingDirectory: '$(Build.SourcesDirectory)'
       displayName: 'Build and publish backend'
 
-    - publish: '$(Build.ArtifactStagingDirectory)'
+    # New step to copy frontend assets to the backend's publish directory
+    - script: |
+        cp -R "$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5" "$(Build.SourcesDirectory)/publish/wwwroot"
+      displayName: 'Copy frontend assets to backend publish directory'
+
+    # The publish step now packages a single, optimized folder
+    - publish: '$(Build.SourcesDirectory)/publish'
       artifact: 'drop'
-      displayName: 'Publish artifacts'
+      displayName: 'Publish optimized artifacts'
 
 - stage: Deploy
   displayName: 'Deploy to Test Environment'
