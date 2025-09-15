@@ -72,4 +72,4 @@ stages:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
               appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip'
+              package: '$(Pipeline.Workspace)/web-app' 
