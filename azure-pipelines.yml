@@ -14,35 +14,11 @@ stages:
   - job: BuildJob
     displayName: 'Build job'
     steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '18.x'
-      displayName: 'Install Node.js'
-
-    - script: |
-        npm install
-        npm run build -- --no-build-optimizer
-      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
-      displayName: 'Install dependencies and build frontend'
-
     - script: |
         dotnet restore
         dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.SourcesDirectory)/publish
       workingDirectory: '$(Build.SourcesDirectory)'
-      displayName: 'Build and publish backend'
-
-    - task: DeleteFiles@1
-      displayName: 'Delete default wwwroot folder'
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/publish'
-        Contents: 'wwwroot'
-      
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-obnline-app-v5'
-        Contents: '**'
-        TargetFolder: '$(Build.SourcesDirectory)/publish/wwwroot'
-      displayName: 'Copy frontend assets to backend publish directory'
+      displayName: 'Build and publish application'
       
     - task: ArchiveFiles@2
       displayName: 'Archive files for deployment'
