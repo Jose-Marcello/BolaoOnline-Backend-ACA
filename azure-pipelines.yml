@@ -52,11 +52,11 @@ stages:
             displayName: 'Deploy using Azure CLI'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              scriptType: 'bash'
+              scriptType: 'PowerShell'  # ALTERADO PARA PowerShell
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Comando para descompactar e implantar o arquivo zip
-                az webapp deployment source config-zip \
-                  --resource-group <SEU_RESOURCE_GROUP> \
-                  --name bolaoonline-testes \
+                az webapp deployment source config-zip `
+                  --resource-group <SEU_RESOURCE_GROUP> `
+                  --name bolaoonline-testes `
                   --src "$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip"
