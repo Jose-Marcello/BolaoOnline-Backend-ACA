@@ -35,7 +35,7 @@ stages:
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-obnline-app-v5'
         Contents: '**'
-        TargetFolder: '$(Build.SourcesDirectory)/publish'
+        TargetFolder: '$(Build.SourcesDirectory)/publish/wwwroot' # Alterado novamente
       displayName: 'Copy frontend assets to backend publish directory'
       
     - task: ArchiveFiles@2
