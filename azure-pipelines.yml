@@ -48,10 +48,15 @@ stages:
           - download: current
             artifact: web-app
 
-          - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App'
+          - task: AzureCLI@2
+            displayName: 'Deploy using Azure CLI'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              appType: 'webApp'
-              appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Comando para descompactar e implantar o arquivo zip
+                az webapp deployment source config-zip \
+                  --resource-group <SEU_RESOURCE_GROUP> \
+                  --name bolaoonline-testes \
+                  --src "$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip"
