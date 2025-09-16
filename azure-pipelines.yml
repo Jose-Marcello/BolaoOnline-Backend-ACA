@@ -8,8 +8,33 @@ variables:
 - group: BolaoOnline-ProdSecrets
 
 stages:
+- stage: Build
+  displayName: 'Build and package artifacts'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build job'
+    steps:
+    - script: |
+        dotnet restore
+        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.SourcesDirectory)/publish
+      workingDirectory: '$(Build.SourcesDirectory)'
+      displayName: 'Build and publish application'
+      
+    - task: ArchiveFiles@2
+      displayName: 'Archive files for deployment'
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'web-app'
+      displayName: 'Publish web app artifact'
+
 - stage: Deploy
-  displayName: 'Build and Deploy'
+  displayName: 'Deploy to Test Environment'
   jobs:
   - deployment: DeployJob
     displayName: 'Deploy job'
@@ -20,10 +45,13 @@ stages:
       runOnce:
         deploy:
           steps:
+          - download: current
+            artifact: web-app
+
           - task: AzureWebApp@1
-            displayName: 'Build and Deploy Azure Web App'
+            displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
               appName: 'bolaoonline-testes'
-              package: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+              package: '$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip'
