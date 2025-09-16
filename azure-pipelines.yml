@@ -14,51 +14,24 @@ stages:
   - job: BuildJob
     displayName: 'Build job'
     steps:
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '18.x'
-      displayName: 'Install Node.js'
-
     - script: |
-        npm install
-        npm run build -- --no-build-optimizer
-      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineAppV5'
-      displayName: 'Install dependencies and build frontend'
-
-    - script: |
-        npm install
-      workingDirectory: '$(Build.SourcesDirectory)/src'
-      displayName: 'Install dependencies for backend'
-      
-    - script: |
-        echo "Aplicando migrações do banco de dados..."
-        dotnet tool install --global dotnet-ef
-        dotnet ef database update --project ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj --startup-project ApostasApp.Core.Web/ApostasApp.Core.Web.csproj
-      displayName: 'Apply database migrations'
-      workingDirectory: '$(Build.SourcesDirectory)/src'
-      env:
-        ConnectionStrings__DefaultConnection: $(DefaultConnection)
-
-    - script: |
+        dotnet restore
         dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.SourcesDirectory)/publish
       workingDirectory: '$(Build.SourcesDirectory)'
-      displayName: 'Build and publish backend'
+      displayName: 'Build and publish application'
+      
+    - task: ArchiveFiles@2
+      displayName: 'Archive files for deployment'
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
 
-    - script: |
-        echo "Copiando arquivos do frontend para a pasta de publicação do backend..."
-        xcopy "$(Build.SourcesDirectory)\BolaoOnlineAppV5\dist\bolao-online-app-v5" "$(Build.SourcesDirectory)\publish\wwwroot" /E /I /Y
-      displayName: 'Copy frontend assets to backend publish directory (Windows)'
-      condition: eq(variables['Agent.OS'], 'Windows_NT')
-
-    - script: |
-        echo "Copiando arquivos do frontend para a pasta de publicação do backend..."
-        cp -R "$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5" "$(Build.SourcesDirectory)/publish/wwwroot"
-      displayName: 'Copy frontend assets to backend publish directory (Linux/macOS)'
-      condition: ne(variables['Agent.OS'], 'Windows_NT')
-
-    - publish: '$(Build.SourcesDirectory)/publish'
-      artifact: 'drop'
-      displayName: 'Publish optimized artifacts'
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'web-app'
+      displayName: 'Publish web app artifact'
 
 - stage: Deploy
   displayName: 'Deploy to Test Environment'
@@ -73,12 +46,12 @@ stages:
         deploy:
           steps:
           - download: current
-            artifact: drop
+            artifact: web-app
 
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App'
             inputs:
-              azureSubscription: 'Azure-BolaoOnline'
+              azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
               appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop'
+              package: '$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip'
