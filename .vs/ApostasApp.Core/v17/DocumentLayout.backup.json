@@ -19,7 +19,7 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ApostasApp.Core.Web",
+              "Title": "ApostasApp.Core.Web.csproj",
               "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
               "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
               "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
