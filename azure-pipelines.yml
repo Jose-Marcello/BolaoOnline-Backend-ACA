@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest' # MUDANÇA AQUI!
+  vmImage: 'windows-latest' # MUDANÇA AQUI!
 
 variables:
   - group: BolaoOnline-ProdSecrets
