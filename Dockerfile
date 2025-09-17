@@ -1,23 +1,30 @@
-# Estágio de build do Frontend Angular
+# Usa uma imagem do Node.js como base para o build do frontend
 FROM node:18-alpine AS frontend-builder
-WORKDIR /app
-COPY ./BolaoOnlineAppV5/package.json ./BolaoOnlineAppV5/package-lock.json ./
+WORKDIR /usr/src/app
+# Copia e instala as dependências do Angular
+COPY BolaoOnlineAppV5/package*.json ./
 RUN npm install
-COPY ./BolaoOnlineAppV5/ .
-RUN npm run build -- --output-path ./dist --base-href /
+# Copia o código-fonte do Angular
+COPY BolaoOnlineAppV5/ .
+# Executa o build do Angular e salva a saída em um diretório /dist
+RUN npm run build -- --output-path=/usr/src/app/dist --base-href=/
 
-# Estágio de build do Backend .NET
+# Usa uma imagem do SDK do .NET para o build do backend
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-builder
 WORKDIR /src
-COPY . .
-RUN dotnet restore "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
-RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish
+# Copia todos os projetos .NET para o diretório /src
+COPY src/ .
+# Restaura as dependências
+RUN dotnet restore "ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
+# Publica a aplicação
+RUN dotnet publish "ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish
 
-# Estágio final: criando a imagem de produção
+# Usa a imagem final do ASP.NET para a aplicação em produção
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-# Copia os arquivos do backend
+# Copia a aplicação backend publicada no estágio anterior
 COPY --from=backend-builder /app/publish .
-# Copia os arquivos estáticos do frontend para a wwwroot
-COPY --from=frontend-builder /app/dist/ ./wwwroot/
+# Copia a aplicação frontend compilada no primeiro estágio para a pasta wwwroot
+COPY --from=frontend-builder /usr/src/app/dist/bolao-obnline-app-v5/ ./wwwroot/
+# Define o comando que o container irá executar
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
