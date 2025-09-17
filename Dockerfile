@@ -19,5 +19,5 @@ WORKDIR /app
 # Copia os arquivos do backend
 COPY --from=backend-builder /app/publish .
 # Copia os arquivos estáticos do frontend para a wwwroot
-COPY --from=frontend-builder /app/dist/bolao-obnline-app-v5/ ./wwwroot/
+COPY --from=frontend-builder /app/dist/ ./wwwroot/
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
