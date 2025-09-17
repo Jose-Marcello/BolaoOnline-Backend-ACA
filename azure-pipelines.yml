@@ -18,6 +18,8 @@ stages:
   - job: BuildDocker
     displayName: 'Build and Push'
     steps:
+    # Adicione esta linha: Força o checkout do repositório
+    - checkout: self
     - task: Docker@2
       inputs:
         containerRegistry: '$(dockerRegistryServiceConnection)'
