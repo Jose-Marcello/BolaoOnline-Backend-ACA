@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: MyAgentPool
+  vmImage: 'windows-latest' # MUDANÇA AQUI!
 
 variables:
   - group: BolaoOnline-ProdSecrets
@@ -35,7 +35,7 @@ stages:
     displayName: 'Deploy Job'
     environment: AmbienteDeTestes
     pool:
-      name: MyAgentPool
+      vmImage: 'ubuntu-latest' # MUDANÇA AQUI!
     strategy:
       runOnce:
         deploy:
