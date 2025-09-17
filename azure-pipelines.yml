@@ -18,7 +18,7 @@ stages:
   - job: BuildDocker
     displayName: 'Build and Push'
     steps:
-    # Adicione esta linha: Força o checkout do repositório
+    # Adicione esta linha para garantir que o código seja baixado
     - checkout: self
     - task: Docker@2
       inputs:
