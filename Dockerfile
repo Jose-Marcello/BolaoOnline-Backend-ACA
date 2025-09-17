@@ -14,7 +14,7 @@ WORKDIR /app
 # Copia a solução e todos os projetos de uma vez
 COPY . .
 # Restaura todas as dependências da solução inteira
-RUN dotnet restore "ApostaApp.Core.sln"
+RUN dotnet restore "ApostasApp.Core.sln"
 # Publica a aplicação Web
 RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish
 
