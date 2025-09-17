@@ -5,39 +5,34 @@ pool:
   name: MyAgentPool
 
 variables:
-- group: BolaoOnline-ProdSecrets
+  - group: BolaoOnline-ProdSecrets
+  - name: dockerRegistryServiceConnection
+    value: 'bolaoonline-docker-registry'
+  - name: imageName
+    value: 'bolaoonline-app'
 
 stages:
-- stage: Build
-  displayName: 'Build and package artifacts'
+- stage: BuildAndPush
+  displayName: 'Build and Push Docker Image'
   jobs:
-  - job: BuildJob
-    displayName: 'Build job'
+  - job: BuildDocker
+    displayName: 'Build and Push'
     steps:
-    - script: |
-        dotnet restore
-        dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o $(Build.SourcesDirectory)/publish
-      workingDirectory: '$(Build.SourcesDirectory)'
-      displayName: 'Build and publish application'
-      
-    - task: ArchiveFiles@2
-      displayName: 'Archive files for deployment'
+    - task: Docker@2
       inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/publish'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      artifact: 'web-app'
-      displayName: 'Publish web app artifact'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageName)'
+        command: 'buildAndPush'
+        Dockerfile: 'Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
 
 - stage: Deploy
   displayName: 'Deploy to Test Environment'
   jobs:
   - deployment: DeployJob
-    displayName: 'Deploy job'
+    displayName: 'Deploy Job'
     environment: AmbienteDeTestes
     pool:
       name: MyAgentPool
@@ -45,17 +40,12 @@ stages:
       runOnce:
         deploy:
           steps:
-          - download: current
-            artifact: web-app
-
-          - task: AzureCLI@2
-            displayName: 'Deploy using Azure CLI'
+          - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              scriptType: 'PowerShell'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                az webapp deployment source config-zip `
-                  --resource-group <SEU_RESOURCE_GROUP> `
-                  --name bolaoonline-testes `
-                  --src "$(Pipeline.Workspace)/web-app/$(Build.BuildId).zip"
+              appType: 'webAppContainer'
+              appName: 'bolaoonline-testes'
+              dockerNamespace: 'bolaoonlineregistry.azurecr.io'
+              dockerRepository: '$(imageName)'
+              dockerImageTag: '$(Build.BuildId)'
