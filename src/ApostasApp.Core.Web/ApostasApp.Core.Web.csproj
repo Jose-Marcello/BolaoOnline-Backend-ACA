@@ -16,7 +16,8 @@
     <PublishAot>false</PublishAot>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
-  
+
+  <!--
   <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
@@ -26,6 +27,7 @@
   <ItemGroup>
     <None Include="..\..\BolaoOnlineAppV5\dist\bolao-obnline-app-v5\**\*" CopyToPublishDirectory="Always" />
   </ItemGroup>
+  -->
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.18" />
