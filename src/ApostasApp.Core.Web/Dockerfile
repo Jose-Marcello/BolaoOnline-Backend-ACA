@@ -1,29 +1,42 @@
-# Estágio 1: Build do Frontend (Angular)
-FROM node:18-alpine AS frontend-builder
-WORKDIR /app
-# Copia somente o package.json e o package-lock.json para otimizar o cache do Docker
-COPY src/BolaoOnlineAppV5/package*.json ./src/BolaoOnlineAppV5/
-RUN npm install --prefix ./src/BolaoOnlineAppV5
-# Copia o restante do projeto Angular e faz o build
-COPY src/BolaoOnlineAppV5/ .
-RUN npm run build --output-path=/app/dist --base-href=/
+# Use a imagem do SDK do .NET para o estágio de build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-# Estágio 2: Build do Backend (ASP.NET Core)
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-builder
-WORKDIR /app
-# Copia a solução e todos os projetos de uma vez
-COPY . .
-# Restaura todas as dependências da solução inteira
-RUN dotnet restore "src/ApostasApp.Core.sln"
-# Publica a aplicação Web
-RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish
+# Copia os arquivos de backend para restaurar as dependências
+COPY ["BolaoOnlineProject/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "BolaoOnlineProject/src/ApostasApp.Core.Web/"]
+COPY ["BolaoOnlineProject/src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "BolaoOnlineProject/src/ApostasApp.Core.Application/"]
+COPY ["BolaoOnlineProject/src/ApostasApp.Core.Domain/ApostasApp.Core.Domain.csproj", "BolaoOnlineProject/src/ApostasApp.Core.Domain/"]
+COPY ["BolaoOnlineProject/src/ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj", "BolaoOnlineProject/src/ApostasApp.Core.Infrastructure/"]
 
-# Estágio 3: Imagem final de produção
+# Copia os arquivos de frontend para instalar as dependências
+COPY ["BolaoOnlineProject/BolaoOnlineAppV5/package.json", "BolaoOnlineProject/BolaoOnlineAppV5/package-lock.json", "BolaoOnlineProject/BolaoOnlineAppV5/"]
+
+# Copia todo o código do projeto para o contêiner
+COPY ["BolaoOnlineProject/", "BolaoOnlineProject/"]
+
+# Restaura as dependências do backend
+WORKDIR "/src/BolaoOnlineProject/src/ApostasApp.Core.Web"
+RUN dotnet restore "ApostasApp.Core.Web.csproj"
+
+# Instala e faz o build do frontend
+WORKDIR "/src/BolaoOnlineProject/BolaoOnlineAppV5"
+RUN npm install
+RUN npm run build
+
+# Publica a aplicação ASP.NET Core
+WORKDIR "/src/BolaoOnlineProject/src/ApostasApp.Core.Web"
+RUN dotnet publish "ApostasApp.Core.Web.csproj" -c Release -o /app/publish
+
+# Copia os arquivos estáticos do frontend para a pasta wwwroot do backend
+# O build do Angular é feito em /src/BolaoOnlineProject/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser
+# O publish do .NET é feito em /app/publish/wwwroot
+RUN cp -R "/src/BolaoOnlineProject/BolaoAppV5/dist/bolao-online-app-v5/browser/." "/app/publish/wwwroot/"
+
+
+# Estágio final do contêiner para a execução
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-# Copia os arquivos publicados do backend
-COPY --from=backend-builder /app/publish .
-# Copia os arquivos compilados do frontend para a wwwroot
-COPY --from=frontend-builder /app/dist/ ./wwwroot/
-# Ponto de entrada da aplicação
+COPY --from=build /app/publish .
+
+# Define o ponto de entrada da aplicação
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
