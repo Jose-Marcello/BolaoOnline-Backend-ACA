@@ -1,11 +1,8 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deploy", "Deploy", "{AA8949E1-C745-4561-A622-5CF1FC564185}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Application", "src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "{6D712024-6FE7-4323-8879-549C33471659}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Domain", "src/ApostasApp.Core.Domain/ApostasApp.Core.Domain.csproj", "{067117D4-107D-4E5C-BE11-564A49ED48C6}"
@@ -41,7 +38,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		        SolutionGuid = {BD0258F9-19A8-41E7-A8EA-D8B11B296D5A}
 		SolutionGuid = {A16C24B6-D1AE-40E1-A9C4-2DD959309EB4}
 	EndGlobalSection
 EndGlobal
