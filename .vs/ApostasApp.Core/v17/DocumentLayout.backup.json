@@ -1,12 +1,37 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\DesenBolao\\BolaoOnlineProject\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|c:\\desenbolao\\bolaoonlineproject\\src\\apostasapp.core.web\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|solutionrelative:src\\apostasapp.core.web\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Dockerfile",
+              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Dockerfile",
+              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\Dockerfile",
+              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Dockerfile",
+              "RelativeToolTip": "src\\ApostasApp.Core.Web\\Dockerfile",
+              "ViewState": "AgIAABsAAAAAAAAAAAAAACIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-09-18T12:03:48.444Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
