@@ -23,8 +23,10 @@ stages:
         containerRegistry: '$(dockerRegistryServiceConnection)'
         repository: '$(imageName)'
         command: 'buildAndPush'
-        Dockerfile: 'Dockerfile'
-        buildContext: 'BolaoOnlineProject'
+        # Caminho absoluto para o Dockerfile
+        Dockerfile: '$(Build.SourcesDirectory)/BolaoOnlineProject/Dockerfile'
+        # Caminho absoluto para o contexto de build
+        buildContext: '$(Build.SourcesDirectory)/BolaoOnlineProject'
         tags: |
           $(Build.BuildId)
           latest
