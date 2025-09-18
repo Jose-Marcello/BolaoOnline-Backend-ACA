@@ -1,5 +1,5 @@
-﻿using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using ApostasApp.Core.Domain.Models.RankingRodadas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

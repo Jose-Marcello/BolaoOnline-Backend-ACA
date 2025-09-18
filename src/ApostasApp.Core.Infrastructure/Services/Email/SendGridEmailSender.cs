@@ -1,6 +1,6 @@
-// LocalizaÁ„o: ApostasApp.Core.Infrastructure.Services.Email/SendGridEmailSender.cs
+// Localiza√ß√£o: ApostasApp.Core.Infrastructure.Services.Email/SendGridEmailSender.cs
 
-using Microsoft.AspNetCore.Identity.UI.Services; // Usando a interface padr„o do Identity UI
+using Microsoft.AspNetCore.Identity.UI.Services; // Usando a interface padr√£o do Identity UI
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SendGrid;
@@ -27,13 +27,13 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
         {
             var fromEmail = _configuration["SendGrid:FromEmail"];
             var fromName = _configuration["SendGrid:FromName"];
-            var apiKey = _configuration["SendGrid:ApiKey"]; // Embora n„o usado para instanciar client aqui, È bom ter acesso para logs/verificaÁ„o
+            var apiKey = _configuration["SendGrid:ApiKey"]; // Embora n√£o usado para instanciar client aqui, √© bom ter acesso para logs/verifica√ß√£o
 
             if (string.IsNullOrEmpty(fromEmail) || string.IsNullOrEmpty(fromName) || string.IsNullOrEmpty(apiKey))
             {
                 var errorMessage = "SendGrid settings are not fully configured (FromEmail, FromName, or ApiKey missing). Cannot send email.";
                 _logger.LogError(errorMessage);
-                System.Console.WriteLine(errorMessage); // Para visualizaÁ„o r·pida no console de debug
+                System.Console.WriteLine(errorMessage); // Para visualiza√ß√£o r√°pida no console de debug
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
                 var response = await _sendGridClient.SendEmailAsync(msg);
 
                 // <<-- NOVO: LER O CORPO DA RESPOSTA AQUI -->>
-                var responseBody = await response.Body.ReadAsStringAsync(); // Esta vari·vel conter· o corpo da resposta
+                var responseBody = await response.Body.ReadAsStringAsync(); // Esta vari√°vel conter√° o corpo da resposta
 
                 if (response.StatusCode != System.Net.HttpStatusCode.Accepted &&
                     response.StatusCode != System.Net.HttpStatusCode.OK)
@@ -69,8 +69,8 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"EXCE«√O NO ENVIO DE E-MAIL VIA SENDGRID para {email}.");
-                System.Console.WriteLine($"EXCE«√O NO ENVIO DE E-MAIL VIA SENDGRID para {email}: {ex.Message}");
+                _logger.LogError(ex, $"EXCE√á√ÉO NO ENVIO DE E-MAIL VIA SENDGRID para {email}.");
+                System.Console.WriteLine($"EXCE√á√ÉO NO ENVIO DE E-MAIL VIA SENDGRID para {email}: {ex.Message}");
             }
         }
     }

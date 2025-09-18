@@ -17,12 +17,12 @@ namespace ApostasApp.Core.Web.Controllers
         {
             if (string.IsNullOrEmpty(email))
             {
-                return BadRequest("O endereÁo de e-mail n„o pode ser nulo ou vazio.");
+                return BadRequest("O endere√ßo de e-mail n√£o pode ser nulo ou vazio.");
             }
             var emails = MockEmailSender.EmailsEnviados.GetValueOrDefault(email, null);
             if (emails == null || !emails.Any())
             {
-                return NotFound("Nenhum e-mail simulado encontrado para o endereÁo fornecido.");
+                return NotFound("Nenhum e-mail simulado encontrado para o endere√ßo fornecido.");
             }
             return Ok(emails);
         }
@@ -36,9 +36,9 @@ namespace ApostasApp.Core.Web.Controllers
 
         // Endpoints para pagamentos
         /// <summary>
-        /// ObtÈm o status de um pagamento simulado.
+        /// Obt√©m o status de um pagamento simulado.
         /// </summary>
-        /// <param name="idTransacao">O ID da transaÁ„o de pagamento.</param>
+        /// <param name="idTransacao">O ID da transa√ß√£o de pagamento.</param>
         [HttpGet("pagamentos/{idTransacao}")]
         public IActionResult GetMockPagamento(string idTransacao)
         {
@@ -46,14 +46,14 @@ namespace ApostasApp.Core.Web.Controllers
             {
                 return Ok(pagamento);
             }
-            return NotFound($"Pagamento com ID {idTransacao} n„o encontrado.");
+            return NotFound($"Pagamento com ID {idTransacao} n√£o encontrado.");
         }
 
         /// <summary>
         /// Simula a chamada de um webhook para alterar o status de um pagamento.
-        /// Este endpoint È ˙til para automatizar testes do fluxo de pagamento.
+        /// Este endpoint √© √∫til para automatizar testes do fluxo de pagamento.
         /// </summary>
-        /// <param name="idTransacao">O ID da transaÁ„o de pagamento.</param>
+        /// <param name="idTransacao">O ID da transa√ß√£o de pagamento.</param>
         /// <param name="novoStatus">O novo status (ex: "CONCLUIDO", "REJEITADO").</param>
         [HttpPost("pagamentos/{idTransacao}/status")]
         public IActionResult SetMockPagamentoStatus(string idTransacao, [FromQuery] string novoStatus)
@@ -63,7 +63,7 @@ namespace ApostasApp.Core.Web.Controllers
                 pagamento.Status = novoStatus.ToUpper();
                 return Ok($"Status do pagamento {idTransacao} atualizado para {pagamento.Status}.");
             }
-            return NotFound($"Pagamento com ID {idTransacao} n„o encontrado para atualizar o status.");
+            return NotFound($"Pagamento com ID {idTransacao} n√£o encontrado para atualizar o status.");
         }
 
         /// <summary>

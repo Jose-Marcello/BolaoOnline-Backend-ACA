@@ -1,12 +1,12 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Campeonatos;
+using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository;
+using ApostasApp.Core.Infrastructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
+namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
 {
     public class EquipeCampeonatoRepository : Repository<EquipeCampeonato>, IEquipeCampeonatoRepository
     {

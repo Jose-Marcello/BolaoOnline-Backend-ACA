@@ -1,5 +1,5 @@
-﻿using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork
+using ApostasApp.Core.Infrastructure.Data.Context;
 
 
 namespace ApostasApp.Core.Infrastructure.Data.Repository
@@ -50,9 +50,9 @@ using ApostasApp.Core.Domain.Models.Jogos;
 using ApostasApp.Core.Domain.Models.Rodadas;
 using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Repository.Apostadores;
-using ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos;
+using ApostasApp.Core.Infrastructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Repository.Apostadores;
+using ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos;
 using ApostasApp.Infrastructure.Data.Repository;
 using ApostasApp.Core.Domain.Models.RankingRodadas;
 using Microsoft.AspNetCore.Identity;

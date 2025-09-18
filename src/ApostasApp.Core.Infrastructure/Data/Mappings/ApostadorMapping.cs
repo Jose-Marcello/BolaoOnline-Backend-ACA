@@ -1,4 +1,4 @@
-﻿// EM ApostasApp.Core.InfraStructure.Data.Mappings/ApostadorMapping.cs COMPLETO
+// EM ApostasApp.Core.Infrastructure.Data.Mappings/ApostadorMapping.cs COMPLETO
 
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Financeiro; // Para Saldo
@@ -7,7 +7,7 @@ using ApostasApp.Core.Domain.Models.Campeonatos; // Para ApostadorCampeonato
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class ApostadorMapping : IEntityTypeConfiguration<Apostador>
     {

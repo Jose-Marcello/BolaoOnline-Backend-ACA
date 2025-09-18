@@ -1,11 +1,11 @@
-﻿// ApostasApp.Core.InfraStructure.Data.Mappings/ApostaRodadaMapping.cs
+// ApostasApp.Core.Infrastructure.Data.Mappings/ApostaRodadaMapping.cs
 using ApostasApp.Core.Domain.Models.Apostas; // Para ApostaRodada e Palpite
 using ApostasApp.Core.Domain.Models.Campeonatos; // <<-- ADICIONADO: Para ApostadorCampeonato
 using ApostasApp.Core.Domain.Models.Rodadas;      // Para Rodada
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class ApostaRodadaMapping : IEntityTypeConfiguration<ApostaRodada>
     {

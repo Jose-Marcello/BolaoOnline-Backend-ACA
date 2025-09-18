@@ -1,9 +1,9 @@
-﻿using ApostasApp.Core.Domain.Models.Apostas; // Para Palpite e ApostaRodada
+using ApostasApp.Core.Domain.Models.Apostas; // Para Palpite e ApostaRodada
 using ApostasApp.Core.Domain.Models.Jogos;      // Para Jogo
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class PalpiteMapping : IEntityTypeConfiguration<Palpite>
     {
@@ -48,7 +48,7 @@ using ApostasApp.Core.Domain.Models.Jogos;     // Para Jogo
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class PalpiteMapping : IEntityTypeConfiguration<Palpite>
     {

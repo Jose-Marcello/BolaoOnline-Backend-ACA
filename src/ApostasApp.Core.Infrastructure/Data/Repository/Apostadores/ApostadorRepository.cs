@@ -1,12 +1,12 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Apostadores;
+using ApostasApp.Core.Domain.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SendGrid.Helpers.Mail;
 
-namespace ApostasApp.Core.InfraStructure.Data.Repository.Apostadores
+namespace ApostasApp.Core.Infrastructure.Data.Repository.Apostadores
 {
     public class ApostadorRepository : Repository<Apostador>, IApostadorRepository
     {

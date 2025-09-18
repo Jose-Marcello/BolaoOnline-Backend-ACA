@@ -1,6 +1,6 @@
-// Localização: Program.cs (no projeto da API
+// LocalizaÃ§Ã£o: Program.cs (no projeto da API
 // Usings para componentes do ASP.NET Core
-// Usings para seus projetos e namespaces específicos
+// Usings para seus projetos e namespaces especÃ­ficos
 using ApostasApp.Core.Application.MappingProfiles;
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Interfaces;
@@ -8,7 +8,7 @@ using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identity
 using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using ApostasApp.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -19,8 +19,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens; // Para SendGridEmailSender
 using Microsoft.OpenApi.Models;
 //using SendGrid; // Para ISendGridClient
-using Swashbuckle.AspNetCore.SwaggerGen; // Necessário para AddSwaggerGen
-using Swashbuckle.AspNetCore.SwaggerUI; // Necessário para UseSwaggerUI
+using Swashbuckle.AspNetCore.SwaggerGen; // NecessÃ¡rio para AddSwaggerGen
+using Swashbuckle.AspNetCore.SwaggerUI; // NecessÃ¡rio para UseSwaggerUI
 using System; // Para TimeSpan, Guid, etc.
 using System.Collections.Generic; // Para List
 using System.Net.Http.Headers;
@@ -37,17 +37,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<MeuDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
            .LogTo(Console.WriteLine, LogLevel.Information) // Adicionado para ver o SQL no console
-           .EnableSensitiveDataLogging()); // Adicionado para ver os valores dos parâmetros
+           .EnableSensitiveDataLogging()); // Adicionado para ver os valores dos parÃ¢metros
 
 
 // ===================================================================================================
-// Configuração do Banco de Dados de Identidade (IdentityDbContext)
+// ConfiguraÃ§Ã£o do Banco de Dados de Identidade (IdentityDbContext)
 // ===================================================================================================
 //builder.Services.AddDbContext<IdentityDbContext>(options =>
 //    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
 
 // ===================================================================================================
-// Configuração do ASP.NET Core Identity
+// ConfiguraÃ§Ã£o do ASP.NET Core Identity
 // ===================================================================================================
 
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
@@ -62,18 +62,18 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
     options.User.RequireUniqueEmail = true;
-    //options.Stores.ProtectPersonalData = false; //provisório
+    //options.Stores.ProtectPersonalData = false; //provisÃ³rio
 
 })
 .AddEntityFrameworkStores<MeuDbContext>()
-.AddDefaultTokenProviders(); // <- O único ponto e vírgula aqui
+.AddDefaultTokenProviders(); // <- O Ãºnico ponto e vÃ­rgula aqui
 
 //builder.Services.AddDataProtection();
 //builder.Services.AddScoped<IPersonalDataProtector, PersonalDataProtectorService>();
 
 
 // ===================================================================================================
-// Configuração JWT Bearer Authentication
+// ConfiguraÃ§Ã£o JWT Bearer Authentication
 // ===================================================================================================
 builder.Services.AddAuthentication(options =>
 {
@@ -84,7 +84,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = false; // Em produção, deve ser true
+    options.RequireHttpsMetadata = false; // Em produÃ§Ã£o, deve ser true
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuer = true,
@@ -120,25 +120,25 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
 builder.Services.ResolveDependencies();
 
 // ===================================================================================================
-// Lógica para Injeção Condicional do Serviço de E-mail
+// LÃ³gica para InjeÃ§Ã£o Condicional do ServiÃ§o de E-mail
 // ===================================================================================================
 var emailSimulationMode = builder.Configuration.GetValue<bool>("EmailSettings:EmailSimulationMode");
 
 if (emailSimulationMode)
 {
-    // Se a flag for TRUE, registre o serviço de simulação
+    // Se a flag for TRUE, registre o serviÃ§o de simulaÃ§Ã£o
     builder.Services.AddTransient<IBolaoEmailSender, MockEmailSender>();
 }
 else
 {
-    // Se a flag for FALSE, use o seu serviço SMTP real (Mailtrap ou SendGrid)
+    // Se a flag for FALSE, use o seu serviÃ§o SMTP real (Mailtrap ou SendGrid)
     builder.Services.AddTransient<IBolaoEmailSender, SmtpEmailSender>();
 }
 
 /*
 
-// <<-- NOVO: CONFIGURAÇÃO E REGISTRO DO SENDGRID E EMAILSENDER AQUI -->>
-// Configurações do SendGrid (lê do appsettings.json)
+// <<-- NOVO: CONFIGURAÃ‡ÃƒO E REGISTRO DO SENDGRID E EMAILSENDER AQUI -->>
+// ConfiguraÃ§Ãµes do SendGrid (lÃª do appsettings.json)
 builder.Services.Configure<SendGridSettings>(builder.Configuration.GetSection("SendGrid"));
 
 // Registra o cliente SendGrid
@@ -148,19 +148,19 @@ builder.Services.AddTransient<ISendGridClient>(s =>
     return new SendGridClient(apiKey);
 });
 
-// Registra sua implementação de IEmailSender (usando a interface padrão do Identity UI)
+// Registra sua implementaÃ§Ã£o de IEmailSender (usando a interface padrÃ£o do Identity UI)
 builder.Services.AddTransient<IEmailSender, SendGridEmailSender>();
 */
 
 
 // ===================================================================================================
-// Configuração do AutoMapper
+// ConfiguraÃ§Ã£o do AutoMapper
 // ===================================================================================================
 // Adiciona AutoMapper e busca o MappingProfile na assembly do projeto de Application
-// Usando a sobrecarga que aceita uma Action para configuração, que é mais robusta.
+// Usando a sobrecarga que aceita uma Action para configuraÃ§Ã£o, que Ã© mais robusta.
 builder.Services.AddAutoMapper(cfg =>
 {
-    cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile está em ApostasApp.Core.Application
+    cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile estÃ¡ em ApostasApp.Core.Application
 });
 
 
@@ -168,7 +168,7 @@ builder.Services.AddAutoMapper(cfg =>
 
 if (builder.Environment.IsDevelopment())
 {
-    // Adicione os controllers da sua aplicação E O TestController em uma só linha
+    // Adicione os controllers da sua aplicaÃ§Ã£o E O TestController em uma sÃ³ linha
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -180,7 +180,7 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    // Apenas os controllers de produção
+    // Apenas os controllers de produÃ§Ã£o
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -193,14 +193,14 @@ else
 
 
 // ===================================================================================================
-// Configuração do Swagger/OpenAPI
+// ConfiguraÃ§Ã£o do Swagger/OpenAPI
 // ===================================================================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
 
-    // Configuração para JWT Bearer Authentication no Swagger UI
+    // ConfiguraÃ§Ã£o para JWT Bearer Authentication no Swagger UI
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
@@ -231,7 +231,7 @@ builder.Services.AddSwaggerGen(c =>
 
 
 // ===================================================================================================
-// Configuração CORS
+// ConfiguraÃ§Ã£o CORS
 // ===================================================================================================
 builder.Services.AddCors(options =>
 {
@@ -245,10 +245,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ===================================================================================================
-// Pipeline de Requisições HTTP
+// Pipeline de RequisiÃ§Ãµes HTTP
 // ===================================================================================================
 
-// Seed de dados de identidade (usuários e roles)
+// Seed de dados de identidade (usuÃ¡rios e roles)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -281,14 +281,14 @@ app.UseRouting();
 // AQUI: O UseCors deve vir AGORA, depois de UseRouting
 app.UseCors("AllowSpecificOrigin");
 
-// Os middlewares de autenticação e autorização vêm em seguida
+// Os middlewares de autenticaÃ§Ã£o e autorizaÃ§Ã£o vÃªm em seguida
 app.UseAuthentication();
 app.UseAuthorization();
 
-// As requisições são mapeadas para os controladores
+// As requisiÃ§Ãµes sÃ£o mapeadas para os controladores
 app.MapControllers();
 
-// Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
+// Apenas para garantir que outros arquivos estÃ¡ticos sejam servidos corretamente
 app.UseStaticFiles();
 
 

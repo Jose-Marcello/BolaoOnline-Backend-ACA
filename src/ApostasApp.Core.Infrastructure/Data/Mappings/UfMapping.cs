@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ApostasApp.Core.Domain.Models.Ufs;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class UfMapping : IEntityTypeConfiguration<Uf>
     {

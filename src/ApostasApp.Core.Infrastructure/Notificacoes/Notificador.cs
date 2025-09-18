@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Infrastructure/Notificacoes/Notificador.cs
+// Localização: ApostasApp.Core.Infrastructure/Notificacoes/Notificador.cs
 
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Notificacoes; // Usar Notificacao

@@ -8,8 +8,8 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
 {
     public class MockEmailSender : IBolaoEmailSender
     {
-        // Adicionamos um dicion·rio est·tico para armazenar os e-mails
-        // A chave È o e-mail do destinat·rio, e o valor È uma lista de objetos EmailMock
+        // Adicionamos um dicion√°rio est√°tico para armazenar os e-mails
+        // A chave √© o e-mail do destinat√°rio, e o valor √© uma lista de objetos EmailMock
         public static ConcurrentDictionary<string, List<EmailMock>> EmailsEnviados { get; } = new();
 
         private readonly ILogger<MockEmailSender> _logger;
@@ -21,21 +21,21 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
 
         public Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
-            _logger.LogWarning("--- MODO DE SIMULA«√O DE E-MAIL ATIVO ---");
+            _logger.LogWarning("--- MODO DE SIMULA√á√ÉO DE E-MAIL ATIVO ---");
 
-            // Crie uma nova inst‚ncia da lista se a chave n„o existir
+            // Crie uma nova inst√¢ncia da lista se a chave n√£o existir
             EmailsEnviados.TryAdd(toEmail, new List<EmailMock>());
 
-            // Extrai o link de confirmaÁ„o do HTML, se houver
+            // Extrai o link de confirma√ß√£o do HTML, se houver
             string confirmationLink = null;
             var match = Regex.Match(htmlMessage, @"href='(.*?)'");
             if (match.Success)
             {
                 confirmationLink = match.Groups[1].Value;
-                _logger.LogWarning($"LINK DE CONFIRMA«√O ENCONTRADO (PARA TESTE): {confirmationLink}");
+                _logger.LogWarning($"LINK DE CONFIRMA√á√ÉO ENCONTRADO (PARA TESTE): {confirmationLink}");
             }
 
-            // Adiciona o e-mail simulado ‡ lista do destinat·rio
+            // Adiciona o e-mail simulado √† lista do destinat√°rio
             EmailsEnviados[toEmail].Add(new EmailMock
             {
                 To = toEmail,
@@ -50,7 +50,7 @@ namespace ApostasApp.Core.Infrastructure.Services.Email
             return Task.CompletedTask;
         }
 
-        // --- M…TODOS EST¡TICOS PARA ACESSAR OS DADOS ---
+        // --- M√âTODOS EST√ÅTICOS PARA ACESSAR OS DADOS ---
         public static List<EmailMock> ObterEmails(string email)
         {
             EmailsEnviados.TryGetValue(email, out var emails);

@@ -1,13 +1,13 @@
-﻿using ApostasApp.Core.Application.DTOs.Apostas;
+using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.Ranking;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Models.Apostas;
 using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
-using ApostasApp.Core.InfraStructure.Data.Models;
-using ApostasApp.Core.InfraStructure.Data.Repository;
+using ApostasApp.Core.Infrastructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Models;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SendGrid.Helpers.Mail;

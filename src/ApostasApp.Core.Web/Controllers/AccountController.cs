@@ -1,4 +1,4 @@
-// LocalizaÁ„o: ApostasApp.Core.Web/Controllers/AccountController.cs
+// Localiza√ß√£o: ApostasApp.Core.Web/Controllers/AccountController.cs
 
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Usuarios; // Para LoginRequestDto, LoginResponseDto, RegisterRequestDto, RegisterResponse
@@ -23,7 +23,7 @@ namespace ApostasApp.Core.Web.Controllers
         private readonly IConfiguration _configuration;
         private readonly INotificador _notificador;
 
-        // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da injeÁ„o no Controller
+        // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da inje√ß√£o no Controller
         public AccountController(IUsuarioService usuarioService,
                                  ILogger<AccountController> logger,
                                  IConfiguration configuration,
@@ -44,7 +44,7 @@ namespace ApostasApp.Core.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Login: ModelState È inv·lido.");
+                _logger.LogWarning("Login: ModelState √© inv√°lido.");
                 foreach (var state in ModelState)
                 {
                     foreach (var error in state.Value.Errors)
@@ -52,7 +52,7 @@ namespace ApostasApp.Core.Web.Controllers
                         _logger.LogWarning($"Erro no ModelState: {state.Key} - {error.ErrorMessage}");
                     }
                 }
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var response = await _usuarioService.LoginAsync(request);
@@ -62,23 +62,23 @@ namespace ApostasApp.Core.Web.Controllers
             {
                 foreach (var notification in response.Notifications)
                 {
-                    _logger.LogInformation($"NotificaÁ„o de Login: Codigo={notification.Codigo}, Tipo={notification.Tipo}, Mensagem={notification.Mensagem}, NomeCampo={notification.NomeCampo}");
+                    _logger.LogInformation($"Notifica√ß√£o de Login: Codigo={notification.Codigo}, Tipo={notification.Tipo}, Mensagem={notification.Mensagem}, NomeCampo={notification.NomeCampo}");
                 }
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(response); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(response); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de Registro recebida para: {request.Email}");
+            _logger.LogInformation($"Requisi√ß√£o de Registro recebida para: {request.Email}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var registerResult = await _usuarioService.RegisterAsync(request);
@@ -93,7 +93,7 @@ namespace ApostasApp.Core.Web.Controllers
             }
 
 
-            // <<-- CORRE«√O: RETORNA O STATUS HTTP CORRETO -->>
+            // <<-- CORRE√á√ÉO: RETORNA O STATUS HTTP CORRETO -->>
             if (registerResult.Success)
             {
                 _logger.LogInformation($"Registro de {request.Email} realizado com sucesso.");
@@ -113,11 +113,11 @@ namespace ApostasApp.Core.Web.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de Esqueci Minha Senha para: {request.Email}");
+            _logger.LogInformation($"Requisi√ß√£o de Esqueci Minha Senha para: {request.Email}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var baseUrl = _configuration.GetValue<string>("FrontendUrls:BaseUrl");
@@ -130,15 +130,15 @@ namespace ApostasApp.Core.Web.Controllers
 
             if (result.Success)
             {
-                _logger.LogInformation($"E-mail de redefiniÁ„o de senha enviado para {request.Email}.");
+                _logger.LogInformation($"E-mail de redefini√ß√£o de senha enviado para {request.Email}.");
             }
             else
             {
-                _logger.LogWarning($"Falha na solicitaÁ„o de redefiniÁ„o de senha para {request.Email}.");
+                _logger.LogWarning($"Falha na solicita√ß√£o de redefini√ß√£o de senha para {request.Email}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [HttpPost("reset-password")]
@@ -146,11 +146,11 @@ namespace ApostasApp.Core.Web.Controllers
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {
 
-            _logger.LogInformation($"RequisiÁ„o de RedefiniÁ„o de Senha para UserId: {request.UserId}");
+            _logger.LogInformation($"Requisi√ß√£o de Redefini√ß√£o de Senha para UserId: {request.UserId}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var result = await _usuarioService.RedefinirSenhaAsync(request.UserId, request.Token, request.NewPassword);
@@ -161,15 +161,15 @@ namespace ApostasApp.Core.Web.Controllers
             }
             else
             {
-                _logger.LogWarning($"Falha na redefiniÁ„o de senha para UserId: {request.UserId}.");
+                _logger.LogWarning($"Falha na redefini√ß√£o de senha para UserId: {request.UserId}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
 
-        // LocalizaÁ„o: ApostasApp.Core.Web/Controllers/AccountController.cs
+        // Localiza√ß√£o: ApostasApp.Core.Web/Controllers/AccountController.cs
 
 
         [AllowAnonymous]
@@ -178,20 +178,20 @@ namespace ApostasApp.Core.Web.Controllers
         {
             try
             {
-                // 1. ValidaÁ„o inicial dos par‚metros
+                // 1. Valida√ß√£o inicial dos par√¢metros
                 if (string.IsNullOrEmpty(model.UserId) || string.IsNullOrEmpty(model.Code))
                 {
-                    NotificarErro("Par‚metros de confirmaÁ„o de e-mail inv·lidos.", "PARAMETROS_INVALIDOS");
+                    NotificarErro("Par√¢metros de confirma√ß√£o de e-mail inv√°lidos.", "PARAMETROS_INVALIDOS");
                 }
 
-                // 2. Chama o serviÁo para processar a confirmaÁ„o
-                //    (A chamada È feita somente se n„o houver erros de validaÁ„o inicial)
+                // 2. Chama o servi√ßo para processar a confirma√ß√£o
+                //    (A chamada √© feita somente se n√£o houver erros de valida√ß√£o inicial)
                 var result = new ApiResponse<bool>();
                 if (OperacaoValida())
                 {
                     result = await _usuarioService.ConfirmEmail(model.UserId, model.Code);
 
-                    _logger.LogInformation($"RequisiÁ„o de ConfirmaÁ„o de E-mail para UserId: {model.UserId}");
+                    _logger.LogInformation($"Requisi√ß√£o de Confirma√ß√£o de E-mail para UserId: {model.UserId}");
 
                     if (result.Success)
                     {
@@ -200,24 +200,24 @@ namespace ApostasApp.Core.Web.Controllers
                     }
                     else
                     {
-                        _logger.LogWarning($"Falha na confirmaÁ„o de e-mail para UserId: {model.UserId}.");
+                        _logger.LogWarning($"Falha na confirma√ß√£o de e-mail para UserId: {model.UserId}.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ocorreu um erro inesperado durante a confirmaÁ„o de e-mail.");
+                _logger.LogError(ex, "Ocorreu um erro inesperado durante a confirma√ß√£o de e-mail.");
                 NotificarErro("Ocorreu um erro inesperado.", "ERRO_INESPERADO");
             }
 
             // 3. Coleta e retorna a resposta final
-            //    Coleta as notificaÁıes de domÌnio
+            //    Coleta as notifica√ß√µes de dom√≠nio
             var domainNotifications = _notificador.ObterNotificacoes().ToList();
 
-            //    Limpa as notificaÁıes apÛs a coleta (boa pr·tica)
+            //    Limpa as notifica√ß√µes ap√≥s a coleta (boa pr√°tica)
             _notificador.LimparNotificacoes();
 
-            //    Converte as notificaÁıes de domÌnio para DTOs
+            //    Converte as notifica√ß√µes de dom√≠nio para DTOs
             var allNotifications = domainNotifications.Select(n => new NotificationDto
             {
                 Codigo = n.Codigo,
@@ -228,7 +228,7 @@ namespace ApostasApp.Core.Web.Controllers
 
             var hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
 
-            //    Retorna a resposta final com base no sucesso da operaÁ„o
+            //    Retorna a resposta final com base no sucesso da opera√ß√£o
             return new ApiResponse<bool>
             {
                 Success = !hasErrors,
@@ -241,11 +241,11 @@ namespace ApostasApp.Core.Web.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ResendEmailConfirmation([FromBody] ResendEmailConfirmationRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de Reenvio de ConfirmaÁ„o de E-mail para: {request.Email}");
+            _logger.LogInformation($"Requisi√ß√£o de Reenvio de Confirma√ß√£o de E-mail para: {request.Email}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var scheme = HttpContext.Request.Scheme;
@@ -255,34 +255,34 @@ namespace ApostasApp.Core.Web.Controllers
 
             if (result.Success)
             {
-                _logger.LogInformation($"Novo e-mail de confirmaÁ„o enviado para {request.Email}.");
+                _logger.LogInformation($"Novo e-mail de confirma√ß√£o enviado para {request.Email}.");
             }
             else
             {
-                _logger.LogWarning($"Falha no reenvio de confirmaÁ„o de e-mail para {request.Email}.");
+                _logger.LogWarning($"Falha no reenvio de confirma√ß√£o de e-mail para {request.Email}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [HttpPost("change-password")]
-        [Authorize] // Requer que o usu·rio esteja logado
+        [Authorize] // Requer que o usu√°rio esteja logado
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de AlteraÁ„o de Senha para usu·rio logado.");
+            _logger.LogInformation($"Requisi√ß√£o de Altera√ß√£o de Senha para usu√°rio logado.");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
                 // CORRIGIDO: Usando NotificarErro do BaseController
-                NotificarErro("Usu·rio n„o autenticado ou ID do usu·rio n„o encontrado no token.", "NAO_AUTENTICADO");
-                return CustomResponse(); // Retorna a resposta padronizada com as notificaÁıes
+                NotificarErro("Usu√°rio n√£o autenticado ou ID do usu√°rio n√£o encontrado no token.", "NAO_AUTENTICADO");
+                return CustomResponse(); // Retorna a resposta padronizada com as notifica√ß√µes
             }
 
             var result = await _usuarioService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
@@ -293,56 +293,56 @@ namespace ApostasApp.Core.Web.Controllers
             }
             else
             {
-                _logger.LogWarning($"Falha na alteraÁ„o de senha para UserId: {userId}.");
+                _logger.LogWarning($"Falha na altera√ß√£o de senha para UserId: {userId}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [HttpPost("change-email-request")]
-        [Authorize] // Requer que o usu·rio esteja logado
+        [Authorize] // Requer que o usu√°rio esteja logado
         public async Task<IActionResult> ChangeEmailRequest([FromBody] ChangeEmailRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de AlteraÁ„o de E-mail para novo e-mail: {request.NewEmail}");
+            _logger.LogInformation($"Requisi√ß√£o de Altera√ß√£o de E-mail para novo e-mail: {request.NewEmail}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
                 // CORRIGIDO: Usando NotificarErro do BaseController
-                NotificarErro("Usu·rio n„o autenticado ou ID do usu·rio n„o encontrado no token.", "NAO_AUTENTICADO");
-                return CustomResponse(); // Retorna a resposta padronizada com as notificaÁıes
+                NotificarErro("Usu√°rio n√£o autenticado ou ID do usu√°rio n√£o encontrado no token.", "NAO_AUTENTICADO");
+                return CustomResponse(); // Retorna a resposta padronizada com as notifica√ß√µes
             }
 
             var result = await _usuarioService.ChangeEmail(userId, request.NewEmail);
 
             if (result.Success)
             {
-                _logger.LogInformation($"E-mail de confirmaÁ„o de alteraÁ„o enviado para {request.NewEmail}.");
+                _logger.LogInformation($"E-mail de confirma√ß√£o de altera√ß√£o enviado para {request.NewEmail}.");
             }
             else
             {
-                _logger.LogWarning($"Falha na solicitaÁ„o de alteraÁ„o de e-mail para UserId: {userId}.");
+                _logger.LogWarning($"Falha na solicita√ß√£o de altera√ß√£o de e-mail para UserId: {userId}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [HttpPost("confirm-change-email")]
-        [AllowAnonymous] // O link de confirmaÁ„o pode ser acessado sem estar logado
+        [AllowAnonymous] // O link de confirma√ß√£o pode ser acessado sem estar logado
         public async Task<IActionResult> ConfirmChangeEmail([FromBody] ConfirmChangeEmailRequestDto request)
         {
-            _logger.LogInformation($"RequisiÁ„o de ConfirmaÁ„o de AlteraÁ„o de E-mail para UserId: {request.UserId}");
+            _logger.LogInformation($"Requisi√ß√£o de Confirma√ß√£o de Altera√ß√£o de E-mail para UserId: {request.UserId}");
 
             if (!ModelState.IsValid)
             {
-                return CustomValidationProblem(ModelState); // Usa o mÈtodo da BaseController
+                return CustomValidationProblem(ModelState); // Usa o m√©todo da BaseController
             }
 
             var result = await _usuarioService.ConfirmChangeEmail(request.UserId, request.NewEmail, request.Code);
@@ -353,11 +353,11 @@ namespace ApostasApp.Core.Web.Controllers
             }
             else
             {
-                _logger.LogWarning($"Falha na confirmaÁ„o de alteraÁ„o de e-mail para UserId: {request.UserId}.");
+                _logger.LogWarning($"Falha na confirma√ß√£o de altera√ß√£o de e-mail para UserId: {request.UserId}.");
             }
 
             // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviÁo de forma consistente
+            return CustomResponse(result); // Retorna a ApiResponse do servi√ßo de forma consistente
         }
 
         [Authorize]
@@ -368,8 +368,8 @@ namespace ApostasApp.Core.Web.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                // CORRIGIDO: Usando NotificarErro e CustomResponse para consistÍncia
-                NotificarErro("Usu·rio n„o autenticado ou ID do usu·rio n„o encontrado no token.", "NAO_AUTENTICADO");
+                // CORRIGIDO: Usando NotificarErro e CustomResponse para consist√™ncia
+                NotificarErro("Usu√°rio n√£o autenticado ou ID do usu√°rio n√£o encontrado no token.", "NAO_AUTENTICADO");
                 return CustomResponse<ApostadorDto>(); // Retorna uma ApiResponse de erro com o tipo correto
             }
 
@@ -377,8 +377,8 @@ namespace ApostasApp.Core.Web.Controllers
 
             if (apostadorProfile == null)
             {
-                // CORRIGIDO: Usando NotificarErro e CustomResponse para consistÍncia
-                NotificarErro("Perfil do apostador n„o encontrado ou n„o associado.", "PERFIL_NAO_ENCONTRADO");
+                // CORRIGIDO: Usando NotificarErro e CustomResponse para consist√™ncia
+                NotificarErro("Perfil do apostador n√£o encontrado ou n√£o associado.", "PERFIL_NAO_ENCONTRADO");
                 return CustomResponse<ApostadorDto>(); // Retorna uma ApiResponse de erro com o tipo correto
             }
 

@@ -1,4 +1,4 @@
-// LocalizaÁ„o: ApostasApp.Core.Infrastructure\Identity\Seed\IdentitySeed.cs
+// Localiza√ß√£o: ApostasApp.Core.Infrastructure\Identity\Seed\IdentitySeed.cs
 
 using Microsoft.AspNetCore.Identity;
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
@@ -12,12 +12,12 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
     {
         public static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            // Cria a role 'Admin' se ela n„o existir
+            // Cria a role 'Admin' se ela n√£o existir
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
                 await roleManager.CreateAsync(new IdentityRole("Admin"));
             }
-            // Adicione outras roles aqui, se necess·rio
+            // Adicione outras roles aqui, se necess√°rio
             if (!await roleManager.RoleExistsAsync("User"))
             {
                 await roleManager.CreateAsync(new IdentityRole("User"));
@@ -26,11 +26,11 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
 
         public static async Task SeedAdminUserAsync(UserManager<Usuario> userManager, RoleManager<IdentityRole> roleManager)
         {
-            // Verifica se o usu·rio admin j· existe
+            // Verifica se o usu√°rio admin j√° existe
             var adminUser = await userManager.FindByEmailAsync("admin@apostasapp.com");
             if (adminUser == null)
             {
-                // Cria o usu·rio admin
+                // Cria o usu√°rio admin
                 adminUser = new Usuario
                 {
                     UserName = "admin@apostasapp.com",
@@ -45,16 +45,16 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
                 var result = await userManager.CreateAsync(adminUser, "Admin@123"); // Senha forte para o admin
                 if (result.Succeeded)
                 {
-                    // Adiciona o usu·rio ‡ role 'Admin'
+                    // Adiciona o usu√°rio √† role 'Admin'
                     await userManager.AddToRoleAsync(adminUser, "Admin");
-                    // Adiciona o usu·rio ‡ role 'User' tambÈm, se for o caso
+                    // Adiciona o usu√°rio √† role 'User' tamb√©m, se for o caso
                     await userManager.AddToRoleAsync(adminUser, "User");
                 }
                 else
                 {
-                    // Logar erros se a criaÁ„o do admin falhar
-                    // Em um ambiente real, vocÍ logaria isso para depuraÁ„o
-                    Console.WriteLine($"Erro ao criar usu·rio admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    // Logar erros se a cria√ß√£o do admin falhar
+                    // Em um ambiente real, voc√™ logaria isso para depura√ß√£o
+                    Console.WriteLine($"Erro ao criar usu√°rio admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
             }
         }

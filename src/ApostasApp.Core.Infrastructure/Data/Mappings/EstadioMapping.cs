@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using ApostasApp.Core.Domain.Models.Estadios;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class EstadioMapping : IEntityTypeConfiguration<Estadio>
     {

@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\DesenBolao\\BolaoOnlineProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|c:\\desenbolao\\bolaoonlineproject\\src\\apostasapp.core.web\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|solutionrelative:src\\apostasapp.core.web\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
+      "AbsoluteMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|c:\\desenbolao\\bolaoonlineproject\\src\\apostasapp.core.web\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|solutionrelative:src\\apostasapp.core.web\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -19,14 +19,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Dockerfile",
-              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Dockerfile",
-              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\Dockerfile",
-              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Dockerfile",
-              "RelativeToolTip": "src\\ApostasApp.Core.Web\\Dockerfile",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAwwCkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-09-18T17:54:43.454Z",
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Program.cs",
+              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\Program.cs",
+              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\Program.cs",
+              "RelativeToolTip": "src\\ApostasApp.Core.Web\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-18T19:35:16.604Z",
               "EditorCaption": ""
             }
           ]

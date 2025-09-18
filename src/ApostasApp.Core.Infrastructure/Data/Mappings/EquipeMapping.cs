@@ -1,8 +1,8 @@
-﻿using ApostasApp.Core.Domain.Models.Equipes;
+using ApostasApp.Core.Domain.Models.Equipes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mapping // Verifique seu namespace de mapeamento
+namespace ApostasApp.Core.Infrastructure.Data.Mapping // Verifique seu namespace de mapeamento
 {
     public class EquipeMapping : IEntityTypeConfiguration<Equipe>
     {

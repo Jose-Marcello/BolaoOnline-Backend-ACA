@@ -1,6 +1,6 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Estadios;
+using ApostasApp.Core.Domain.Interfaces.Estadios;
 using ApostasApp.Core.Domain.Models.Estadios;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

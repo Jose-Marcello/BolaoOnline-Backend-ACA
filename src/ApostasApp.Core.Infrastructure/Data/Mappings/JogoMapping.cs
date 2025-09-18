@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using ApostasApp.Core.Domain.Models.Jogos;
 using ApostasApp.Core.Domain.Models.Apostas; // Adicione esta linha para Palpite
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class JogoMapping : IEntityTypeConfiguration<Jogo>
     {

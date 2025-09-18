@@ -1,11 +1,11 @@
-﻿// Em ApostasApp.Core.InfraStructure.Data.Mappings/SaldoMapping.cs
+// Em ApostasApp.Core.Infrastructure.Data.Mappings/SaldoMapping.cs
 
 using ApostasApp.Core.Domain.Models.Financeiro; // Para Saldo
 using ApostasApp.Core.Domain.Models.Apostadores; // Para Apostador
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class SaldoMapping : IEntityTypeConfiguration<Saldo>
     {

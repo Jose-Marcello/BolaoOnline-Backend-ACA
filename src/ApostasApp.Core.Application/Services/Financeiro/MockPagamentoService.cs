@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Application.DTOs.Financeiro;
+using ApostasApp.Core.Application.DTOs.Financeiro;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Domain.Models.Financeiro;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;

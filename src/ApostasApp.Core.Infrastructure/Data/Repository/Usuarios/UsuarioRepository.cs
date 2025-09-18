@@ -1,14 +1,14 @@
-﻿using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
+using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
 using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore; // Adicionado para o método AnyAsync
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
 // Namespace deve ser ajustado para a localização real do arquivo
-namespace ApostasApp.Core.InfraStructure.Data.Repository.Usuarios
+namespace ApostasApp.Core.Infrastructure.Data.Repository.Usuarios
 {
     public class UsuarioRepository : Repository<Usuario>, IUsuarioRepository
     {

@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Relatorios;
+using ApostasApp.Core.Domain.Interfaces.Relatorios;
 using System;
 
 namespace ApostasApp.Core.Infrastructure.Data.Models

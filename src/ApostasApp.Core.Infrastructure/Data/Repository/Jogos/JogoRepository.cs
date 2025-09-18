@@ -1,6 +1,6 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Jogos;
+using ApostasApp.Core.Domain.Interfaces.Jogos;
 using ApostasApp.Core.Domain.Models.Jogos;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 namespace ApostasApp.Core.Infrastructure.Data.Repository.Jogos // Namespace ajustado

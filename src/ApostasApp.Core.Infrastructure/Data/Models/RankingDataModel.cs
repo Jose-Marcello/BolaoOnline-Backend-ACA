@@ -1,9 +1,9 @@
-﻿// Localização: ApostasApp.Core.Infrastructure.Data.Models/RankingDataModel.cs
+// Localização: ApostasApp.Core.Infrastructure.Data.Models/RankingDataModel.cs
 // ou em um novo DTO no seu projeto de Application.
 
 using ApostasApp.Core.Domain.Interfaces;
 
-namespace ApostasApp.Core.InfraStructure.Data.Models
+namespace ApostasApp.Core.Infrastructure.Data.Models
 {
     public class RankingDataModel : IRankingResult
     {

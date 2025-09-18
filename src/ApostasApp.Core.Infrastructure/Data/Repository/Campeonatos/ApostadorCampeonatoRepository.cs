@@ -1,8 +1,8 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Campeonatos;
+using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Data.Repository;
-using ApostasApp.Core.InfraStructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ApostasApp.Core.InfraStructure.Data.Repository.Campeonatos
+namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
 {
     public class ApostadorCampeonatoRepository : Repository<ApostadorCampeonato>, IApostadorCampeonatoRepository
     {

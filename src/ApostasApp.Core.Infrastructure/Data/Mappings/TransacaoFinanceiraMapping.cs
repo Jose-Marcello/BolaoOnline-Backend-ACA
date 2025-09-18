@@ -1,9 +1,9 @@
-﻿// Localização: ApostasApp.Core.InfraStructure.Data.Mappings/TransacaoFinanceiraMapping.cs
+// Localização: ApostasApp.Core.Infrastructure.Data.Mappings/TransacaoFinanceiraMapping.cs
 using ApostasApp.Core.Domain.Models.Financeiro;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class TransacaoFinanceiraMapping : IEntityTypeConfiguration<TransacaoFinanceira>
     {

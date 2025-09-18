@@ -1,16 +1,16 @@
-﻿using ApostasApp.Core.Application.DTOs.Conferencia;
+using ApostasApp.Core.Application.DTOs.Conferencia;
 using ApostasApp.Core.Domain.Interfaces.Relatorios;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
 using ApostasApp.Core.Domain.Models.Jogos; // Para Jogo
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
 using ApostasApp.Core.Infrastructure.Data.Models;
 using ApostasApp.Core.Infrastructure.Data.Repository; // PARA HERDAR DE Repository<T>
-using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using ApostasApp.Core.Infrastructure.Data.Context; // Para MeuDbContext
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace ApostasApp.Core.InfraStructure.Data.Repository.Rodadas
+namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
 {
     // RodadaRepository herda de Repository<Rodada> e implementa IRodadaRepository
     // Ele NÃO precisa re-implementar Adicionar, ObterPorId, etc., pois Repository<Rodada> já faz isso.

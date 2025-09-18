@@ -1,8 +1,8 @@
-﻿using ApostasApp.Core.Domain.Models.RankingRodadas;
+using ApostasApp.Core.Domain.Models.RankingRodadas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class RankingRodadaMapping : IEntityTypeConfiguration<RankingRodada>
     {

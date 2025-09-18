@@ -1,5 +1,5 @@
-﻿using ApostasApp.Core.Domain.Interfaces; // Para IRepository
-using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using ApostasApp.Core.Domain.Interfaces; // Para IRepository
+using ApostasApp.Core.Infrastructure.Data.Context; // Para MeuDbContext
 using Microsoft.EntityFrameworkCore; // Para DbSet, AsNoTracking, Where, FirstOrDefaultAsync, ToListAsync, CountAsync
 using System;
 using System.Collections.Generic;

@@ -1,9 +1,9 @@
-﻿using ApostasApp.Core.Domain.Models.Apostadores;
+using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ApostasApp.Core.InfraStructure.Data.Mappings
+namespace ApostasApp.Core.Infrastructure.Data.Mappings
 {
     public class UsuarioMapping : IEntityTypeConfiguration<Usuario>
     {

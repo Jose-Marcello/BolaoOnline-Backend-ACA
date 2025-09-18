@@ -1,6 +1,6 @@
-﻿using ApostasApp.Core.Domain.Interfaces.Apostas; // Para IPalpiteRepository
+using ApostasApp.Core.Domain.Interfaces.Apostas; // Para IPalpiteRepository
 using ApostasApp.Core.Domain.Models.Apostas; // Para Palpite, ApostaRodada
-using ApostasApp.Core.InfraStructure.Data.Context; // Para MeuDbContext
+using ApostasApp.Core.Infrastructure.Data.Context; // Para MeuDbContext
 using ApostasApp.Core.Infrastructure.Data.Repository; // Para Repository<T>
 using Microsoft.EntityFrameworkCore; // Para Include, Where, ExecuteDeleteAsync, AsNoTracking, ToListAsync
 using Microsoft.Extensions.Logging;

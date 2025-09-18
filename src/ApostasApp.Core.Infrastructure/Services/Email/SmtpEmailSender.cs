@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Infrastructure.Services.Email/SmtpEmailSender.cs
+// Localização: ApostasApp.Core.Infrastructure.Services.Email/SmtpEmailSender.cs
 
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using Microsoft.AspNetCore.Hosting;

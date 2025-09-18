@@ -1,30 +1,30 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration; // Necess·rio para IConfiguration
-using System.IO; // Necess·rio para Path
-using System; // Necess·rio para InvalidOperationException
+using Microsoft.Extensions.Configuration; // Necess√°rio para IConfiguration
+using System.IO; // Necess√°rio para Path
+using System; // Necess√°rio para InvalidOperationException
 
 // *** Mantenha o MESMO namespace do seu MeuDbContext ***
-namespace ApostasApp.Core.InfraStructure.Data.Context
+namespace ApostasApp.Core.Infrastructure.Data.Context
 {
-    // Esta classe È usada apenas pelas ferramentas do Entity Framework Core
-    // para criar uma inst‚ncia do DbContext em tempo de design (para migraÁıes).
+    // Esta classe √© usada apenas pelas ferramentas do Entity Framework Core
+    // para criar uma inst√¢ncia do DbContext em tempo de design (para migra√ß√µes).
     public class MeuDbContextFactory : IDesignTimeDbContextFactory<MeuDbContext>
     {
         public MeuDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<MeuDbContext>();
 
-            // Este È um mÈtodo simplificado e robusto para o IDesignTimeDbContextFactory.
-            // Quando Add-Migration È executado com -StartupProject, as ferramentas do EF Core
-            // **j· carregam a configuraÁ„o do projeto de startup**.
-            // Portanto, a f·brica n„o precisa (e geralmente n„o deve) tentar ler o appsettings.json por si mesma.
-            // Ela sÛ precisa fornecer uma maneira de criar o DbContext.
+            // Este √© um m√©todo simplificado e robusto para o IDesignTimeDbContextFactory.
+            // Quando Add-Migration √© executado com -StartupProject, as ferramentas do EF Core
+            // **j√° carregam a configura√ß√£o do projeto de startup**.
+            // Portanto, a f√°brica n√£o precisa (e geralmente n√£o deve) tentar ler o appsettings.json por si mesma.
+            // Ela s√≥ precisa fornecer uma maneira de criar o DbContext.
 
-            // A string de conex„o abaixo È um placeholder para que o EF Core
+            // A string de conex√£o abaixo √© um placeholder para que o EF Core
             // consiga instanciar o DbContext em tempo de design para inspecionar o modelo.
-            // ELA N√O SER¡ USADA EM TEMPO DE EXECU«√O PELA SUA APLICA«√O.
-            // Use uma string de conex„o v·lida para seu SQL Server.
+            // ELA N√ÉO SER√Å USADA EM TEMPO DE EXECU√á√ÉO PELA SUA APLICA√á√ÉO.
+            // Use uma string de conex√£o v√°lida para seu SQL Server.
             //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ApostasAppDb;Trusted_Connection=True;MultipleActiveResultSets=true");
             optionsBuilder.UseSqlServer("Server=DESKTOP-1VSTFVA\\SQLEXPRESS;Database=BolaoLocalV2;User Id=sa;Password=Teste@123;MultipleActiveResultSets=true;TrustServerCertificate=True;MultipleActiveResultSets=true");
             return new MeuDbContext(optionsBuilder.Options);

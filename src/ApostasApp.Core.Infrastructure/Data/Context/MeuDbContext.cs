@@ -20,7 +20,7 @@ using System.Runtime.ConstrainedExecution;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ApostasApp.Core.InfraStructure.Data.Context
+namespace ApostasApp.Core.Infrastructure.Data.Context
 {
     public class MeuDbContext : IdentityDbContext<Usuario, IdentityRole, string>
     {
@@ -51,8 +51,8 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(MeuDbContext).Assembly);
 
-            // --- CONFIGURA«’ES DE RELA«’ES (MANTIDAS COMO ANTERIORMENTE) ---
-            // 1. Refino da relaÁ„o TransacaoFinanceira para Saldo:
+            // --- CONFIGURA√á√ïES DE RELA√á√ïES (MANTIDAS COMO ANTERIORMENTE) ---
+            // 1. Refino da rela√ß√£o TransacaoFinanceira para Saldo:
             modelBuilder.Entity<TransacaoFinanceira>()
                 .HasOne(tf => tf.Saldo)
                 .WithMany()
@@ -60,7 +60,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired();
 
-            // 2. CorreÁ„o para Ciclo de Exclus„o de RankingRodada:
+            // 2. Corre√ß√£o para Ciclo de Exclus√£o de RankingRodada:
             modelBuilder.Entity<RankingRodada>()
                 .HasOne(rr => rr.Rodada)
                 .WithMany(r => r.RankingRodadas)
@@ -73,7 +73,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 .HasForeignKey(rr => rr.ApostadorCampeonatoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 3. CorreÁ„o para Ciclo de Exclus„o de JOGOS:
+            // 3. Corre√ß√£o para Ciclo de Exclus√£o de JOGOS:
             modelBuilder.Entity<Jogo>()
                 .HasOne(j => j.EquipeCasa)
                 .WithMany(ec => ec.JogosCasa)
@@ -101,7 +101,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 .OnDelete(DeleteBehavior.Restrict);
 
 
-            // ConfiguraÁıes para as propriedades decimal
+            // Configura√ß√µes para as propriedades decimal
             modelBuilder.Entity<Campeonato>()
                 .Property(c => c.CustoAdesao)
                 .HasColumnType("decimal(18, 2)");
@@ -110,18 +110,18 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 .Property(r => r.CustoApostaRodada)
                 .HasColumnType("decimal(18, 2)");
         }
-            // --- FIM: CONFIGURA«’ES DE RELA«’ES ---
+            // --- FIM: CONFIGURA√á√ïES DE RELA√á√ïES ---
 
 
-            // --- INÕCIO: DATA SEEDING (COLOQUE SEUS DADOS EXTRAÕDOS AQUI) ---
+            // --- IN√çCIO: DATA SEEDING (COLOQUE SEUS DADOS EXTRA√çDOS AQUI) ---
 
-            // Exemplo de Seed de UFs (preenchido com base na extraÁ„o)
+            // Exemplo de Seed de UFs (preenchido com base na extra√ß√£o)
             // Substitua os GUIDs e Nomes/Siglas pelos seus dados REAIS
             
             /*
             modelBuilder.Entity<Uf>().HasData(
                 new Uf { Id = Guid.Parse("C1052671-5582-4E87-8A87-A7B0FE10558C"), Nome = "Rio de Janeiro", Sigla = "RJ" },
-                new Uf { Id = Guid.Parse("96C5F6F3-9D96-4158-9A70-AF273B0FE81D"), Nome = "S„o Paulo", Sigla = "SP" },
+                new Uf { Id = Guid.Parse("96C5F6F3-9D96-4158-9A70-AF273B0FE81D"), Nome = "S√£o Paulo", Sigla = "SP" },
                 new Uf { Id = Guid.Parse("D8A4E1A9-B1D6-4F23-9F61-8C1A5C13D7E8"), Nome = "Minas Gerais", Sigla = "MG" }
 
                
@@ -129,7 +129,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
             );
 
             // Seed de AspNetRoles (Roles para o Identity)
-            // Use os IDs que vocÍ j· tem no seu BolaoLocal, ou gere novos se estiver comeÁando do zero com Identity
+            // Use os IDs que voc√™ j√° tem no seu BolaoLocal, ou gere novos se estiver come√ßando do zero com Identity
             var adminRoleId = "SEU_ID_ROLE_ADMIN_AQUI"; // Ex: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
             var userRoleId = "SEU_ID_ROLE_USER_AQUI";   // Ex: "f6e5d4c3-b2a1-0987-6543-2109fedcba98"
 
@@ -138,8 +138,8 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 new IdentityRole { Id = userRoleId, Name = "User", NormalizedName = "USER", ConcurrencyStamp = userRoleId }
             );
 
-            // Seed de AspNetUsers (Usu·rio Admin)
-            // Use os IDs e dados reais do seu usu·rio admin se for migrar.
+            // Seed de AspNetUsers (Usu√°rio Admin)
+            // Use os IDs e dados reais do seu usu√°rio admin se for migrar.
             // Se for um novo admin, use Guid.NewGuid().ToString() para o ID e ajuste os detalhes.
             var adminUserId = "SEU_ID_USUARIO_ADMIN_AQUI"; // Ex: "1a2b3c4d-5e6f-7890-1234-567890abcdef"
             var hasher = new PasswordHasher<Usuario>();
@@ -167,8 +167,8 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 PhoneNumberConfirmed = false
             };
 
-            // Use a senha que vocÍ quer para o admin. Se for reutilizar um usu·rio antigo,
-            // considere redefinir a senha para algo tempor·rio ou instruir o usu·rio a fazer "Esqueci a senha".
+            // Use a senha que voc√™ quer para o admin. Se for reutilizar um usu√°rio antigo,
+            // considere redefinir a senha para algo tempor√°rio ou instruir o usu√°rio a fazer "Esqueci a senha".
             adminUser.PasswordHash = hasher.HashPassword(adminUser, "SuaNovaSenhaSegura@123");
 
             modelBuilder.Entity<Usuario>().HasData(adminUser);
@@ -201,10 +201,10 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                     Nome = "Copa do Brasil 2024",
                     DataInic = new DateTime(2024, 2, 20),
                     DataFim = new DateTime(2024, 11, 10),
-                    NumRodadas = 1, // Exemplo: rodadas eliminatÛrias
+                    NumRodadas = 1, // Exemplo: rodadas eliminat√≥rias
                     Tipo = 2,
                     Ativo = true,
-                    CustoAdesao = 0.00m // Pode ser gr·tis
+                    CustoAdesao = 0.00m // Pode ser gr√°tis
                 }
             );
 
@@ -218,15 +218,15 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
 
             // Exemplo de Seed para Estadios (substitua pelos seus dados reais, e use os UfIds corretos)
             modelBuilder.Entity<Estadio>().HasData(
-                new Estadio { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), Nome = "Maracan„", UfId = Guid.Parse("C1052671-5582-4E87-8A87-A7B0FE10558C") },
+                new Estadio { Id = Guid.Parse("20000000-0000-0000-0000-000000000001"), Nome = "Maracan√£", UfId = Guid.Parse("C1052671-5582-4E87-8A87-A7B0FE10558C") },
                 new Estadio { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Nome = "Morumbi", UfId = Guid.Parse("96C5F6F3-9D96-4158-9A70-AF273B0FE81D") }
                 // Adicione os outros estadios aqui
             );
 
             // Exemplo de Seed para EquipeCampeonato (substitua pelos seus dados reais)
             modelBuilder.Entity<EquipeCampeonato>().HasData(
-                new EquipeCampeonato { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), EquipeId = Guid.Parse("10000000-0000-0000-0000-000000000001") }, // Fla no Brasileir„o
-                new EquipeCampeonato { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), EquipeId = Guid.Parse("10000000-0000-0000-0000-000000000002") }  // Vasco no Brasileir„o
+                new EquipeCampeonato { Id = Guid.Parse("30000000-0000-0000-0000-000000000001"), CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), EquipeId = Guid.Parse("10000000-0000-0000-0000-000000000001") }, // Fla no Brasileir√£o
+                new EquipeCampeonato { Id = Guid.Parse("30000000-0000-0000-0000-000000000002"), CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), EquipeId = Guid.Parse("10000000-0000-0000-0000-000000000002") }  // Vasco no Brasileir√£o
                 // Adicione as outras EquipesCampeonatos aqui
             );
 
@@ -236,7 +236,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 new Apostador
                 {
                     Id = Guid.Parse("40000000-0000-0000-0000-000000000001"), // Use seu GUID real
-                    UsuarioId = adminUserId, // O ID do usu·rio Admin que vocÍ definiu acima
+                    UsuarioId = adminUserId, // O ID do usu√°rio Admin que voc√™ definiu acima
                     NomeCompleto = "Administrador do Sistema",
                     Email = "admin@aposta.com",
                     Status = 1 // Ajuste conforme seu enum
@@ -261,7 +261,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 new Rodada
                 {
                     Id = Guid.Parse("60000000-0000-0000-0000-000000000001"),
-                    CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), // ID do Brasileir„o
+                    CampeonatoId = Guid.Parse("00000000-0000-0000-0000-000000000004"), // ID do Brasileir√£o
                     NumeroRodada = 1,
                     DataInic = new DateTime(2024, 4, 13),
                     DataFim = new DateTime(2024, 4, 15),
@@ -280,10 +280,10 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                     RodadaId = Guid.Parse("60000000-0000-0000-0000-000000000001"), // ID da Rodada 1
                     DataJogo = new DateTime(2024, 4, 13),
                     HoraJogo = new TimeSpan(16, 0, 0),
-                    EstadioId = Guid.Parse("20000000-0000-0000-0000-000000000001"), // ID do Maracan„
-                    EquipeCasaId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // ID do Fla no Brasileir„o
-                    EquipeVisitanteId = Guid.Parse("30000000-0000-0000-0000-000000000002"), // ID do Vasco no Brasileir„o
-                    PlacarCasa = null, // Ou um valor inicial se j· ocorreu
+                    EstadioId = Guid.Parse("20000000-0000-0000-0000-000000000001"), // ID do Maracan√£
+                    EquipeCasaId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // ID do Fla no Brasileir√£o
+                    EquipeVisitanteId = Guid.Parse("30000000-0000-0000-0000-000000000002"), // ID do Vasco no Brasileir√£o
+                    PlacarCasa = null, // Ou um valor inicial se j√° ocorreu
                     PlacarVisita = null,
                     Status = 0 // Ajuste conforme seu enum de status do jogo
                 }
@@ -295,7 +295,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 new ApostaRodada
                 {
                     Id = Guid.Parse("80000000-0000-0000-0000-000000000001"),
-                    ApostadorCampeonatoId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // Apostador Admin no Brasileir„o
+                    ApostadorCampeonatoId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // Apostador Admin no Brasileir√£o
                     RodadaId = Guid.Parse("60000000-0000-0000-0000-000000000001"), // Rodada 1
                     IdentificadorAposta = "APOSTA-ADMIN-R1",
                     DataHoraSubmissao = DateTime.Now,
@@ -328,7 +328,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 {
                     Id = Guid.Parse("A0000000-0000-0000-0000-000000000001"),
                     RodadaId = Guid.Parse("60000000-0000-0000-0000-000000000001"), // Rodada 1
-                    ApostadorCampeonatoId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // Apostador Admin no Brasileir„o
+                    ApostadorCampeonatoId = Guid.Parse("30000000-0000-0000-0000-000000000001"), // Apostador Admin no Brasileir√£o
                     Pontuacao = 0,
                     Posicao = 0,
                     DataAtualizacao = DateTime.Now
@@ -343,11 +343,11 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
                 {
                     Id = Guid.Parse("B0000000-0000-0000-0000-000000000001"), // Use seu GUID real
                     SaldoId = Guid.Parse("50000000-0000-0000-0000-000000000001"), // Saldo do Apostador Admin
-                    ApostaRodadaId = null, // Pode ser nulo se n„o for transaÁ„o de aposta
+                    ApostaRodadaId = null, // Pode ser nulo se n√£o for transa√ß√£o de aposta
                     Valor = 50.00m,
-                    Tipo = 0, // Ajuste conforme seu enum de tipo de transaÁ„o (ex: 0 para depÛsito)
+                    Tipo = 0, // Ajuste conforme seu enum de tipo de transa√ß√£o (ex: 0 para dep√≥sito)
                     DataTransacao = DateTime.Now,
-                    Descricao = "DepÛsito inicial via HasData"
+                    Descricao = "Dep√≥sito inicial via HasData"
                 }
                 // Adicione outras transacoes aqui
             );
@@ -360,7 +360,7 @@ namespace ApostasApp.Core.InfraStructure.Data.Context
         {
             foreach (var entry in ChangeTracker.Entries())
             {
-                // LÛgica de auditoria ou outras operaÁıes antes de salvar
+                // L√≥gica de auditoria ou outras opera√ß√µes antes de salvar
             }
             return base.SaveChangesAsync(cancellationToken);
         }
