@@ -9,7 +9,7 @@ using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identi
 using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
 using ApostasApp.Core.Infrastructure.Data.Context;
-using ApostasApp.Web.Configurations;
+//using ApostasApp.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -28,6 +28,7 @@ using System.Text; // Para Encoding
 using System.Text.Json;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Infrastructure.Services.Email;
+using ApostasApp.Core.Web.Configurations;
 
 
 var builder = WebApplication.CreateBuilder(args);

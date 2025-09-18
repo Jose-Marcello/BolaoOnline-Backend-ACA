@@ -39,12 +39,11 @@ using ApostasApp.Core.Infrastructure.Data.Repository.Financeiro;
 using ApostasApp.Core.Infrastructure.Data.Repository.Rodadas;
 using ApostasApp.Infrastructure.Data.Repository;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using SendGrid;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 
-namespace ApostasApp.Web.Configurations
+namespace ApostasApp.Core.Web.Configurations
 {
   public static class DependencyInjectionConfig
   {
@@ -56,7 +55,7 @@ namespace ApostasApp.Web.Configurations
       services.AddScoped<IUnitOfWork, UnitOfWork>();
 
       // CORREÇÃO: REGISTRO DO SERVIÇO DE E-MAIL SENDGRID AGORA ATIVO
-      //services.AddTransient<IEmailSender, EmailSender>();
+      services.AddTransient<IEmailSender, SendGridEmailSender>();
       services.AddScoped<ISendGridClient>(_ => new SendGridClient("SENDGRID_API_KEY"));
 
       services.AddScoped<IPagSeguroService, PagSeguroService>();
