@@ -21,15 +21,15 @@ stages:
 
     - script: |
         npm install
-        npm run build -- --output-path=../../dist/angular-app/browser
-      workingDirectory: '$(Build.SourcesDirectory)/BolaoOnlineProject/src/BolaoOnlineAppV5'
+        npm run build -- --output-path=dist/angular-app/browser
+      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
       displayName: 'Build do Frontend (Angular)'
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'publish'
         publishWebProjects: false
-        projects: '$(Build.SourcesDirectory)/BolaoOnlineProject/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
+        projects: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
         arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
         zipAfterPublish: false
       displayName: 'Publicar o Backend (.NET)'
@@ -37,7 +37,7 @@ stages:
     - task: CopyFiles@2
       inputs:
         # Caminho absoluto para os arquivos do Angular
-        SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineProject/src/BolaoOnlineAppV5/dist/angular-app/browser'
+        SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
       displayName: 'Copiar arquivos do Angular para a pasta wwwroot'
