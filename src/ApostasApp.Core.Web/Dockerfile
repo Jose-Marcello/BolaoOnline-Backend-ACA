@@ -1,16 +1,12 @@
 # Estágio 1: Build do Frontend (Angular)
-FROM node:18-alpine AS frontend-builder 
-# WORKDIR /app (alterada pela linha abaixo)
-WORKDIR /app/src/BolaoOnlineAppV5
-# Copia somente o package.json para otimizar o cache do Docker
-# COPY src/BolaoOnlineAppV5/package*.json ./src/BolaoOnlineAppV5/ (alterada p/linha abaixo)
+FROM node:18-alpine AS frontend-builder
+WORKDIR /app
+# Copia somente o package.json e o package-lock.json para otimizar o cache do Docker
 COPY src/BolaoOnlineAppV5/package*.json ./
 # Instala as dependências do frontend
-# RUN npm install --prefix ./src/BolaoOnlineAppV5 (alterada p/ linha abaixo)
 RUN npm install
 # Copia o restante do projeto Angular e faz o build
 COPY src/BolaoOnlineAppV5/ .
-#RUN npm run build --prefix ./src/BolaoOnlineAppV5 --output-path=/app/dist --base-href=/ (alterada p/ linha abaixo)
 RUN npm run build --output-path=/app/dist --base-href=/
 
 # Estágio 2: Build do Backend (ASP.NET Core)
