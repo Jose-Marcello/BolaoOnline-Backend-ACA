@@ -36,7 +36,6 @@ stages:
 
     - task: CopyFiles@2
       inputs:
-        # Caminho absoluto para os arquivos do Angular
         SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
@@ -70,10 +69,16 @@ stages:
           - download: current
             artifact: 'drop'
 
+          - task: ExtractFiles@1
+            inputs:
+              archiveFilePatterns: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              destinationFolder: '$(Pipeline.Workspace)/drop'
+            displayName: 'Descompactar Artefato'
+
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
               appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              package: '$(Pipeline.Workspace)/drop/publish'
