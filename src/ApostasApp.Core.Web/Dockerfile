@@ -1,6 +1,6 @@
 # Estágio 1: Build do Frontend (Angular)
 FROM node:18-alpine AS frontend-builder
-WORKDIR /app/src/BolaoOnlineAppV5
+WORKDIR /app/frontend
 # Copia somente o package.json para otimizar o cache do Docker
 COPY src/BolaoOnlineAppV5/package*.json ./
 RUN npm install
@@ -24,6 +24,6 @@ WORKDIR /app
 # Copia os arquivos publicados do backend
 COPY --from=backend-builder /app/publish .
 # Copia os arquivos compilados do frontend para a wwwroot
-COPY --from=frontend-builder /app/dist/ ./wwwroot/
+COPY --from=frontend-builder /app/frontend/dist/ ./wwwroot/
 # Ponto de entrada da aplicação
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
