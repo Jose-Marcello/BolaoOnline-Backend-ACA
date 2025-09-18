@@ -11,8 +11,12 @@ RUN npm run build -- --output-path=/app/dist --base-href=/
 # Estágio 2: Build do Backend (ASP.NET Core)
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-builder
 WORKDIR /app
+
 # Copia a solução e todos os projetos de uma vez
 COPY . .
+# Comando de diagnóstico: lista recursivamente todos os arquivos na pasta /app
+RUN ls -R /app
+
 # Restaura todas as dependências da solução inteira
 RUN dotnet restore "ApostasApp.Core.sln"
 # Publica a aplicação Web
