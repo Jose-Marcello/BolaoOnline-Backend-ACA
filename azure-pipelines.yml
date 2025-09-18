@@ -23,7 +23,7 @@ stages:
         containerRegistry: '$(dockerRegistryServiceConnection)'
         repository: '$(imageName)'
         command: 'buildAndPush'
-        Dockerfile: 'BolaoOnlineProject/Dockerfile'
+        Dockerfile: 'Dockerfile'
         buildContext: 'BolaoOnlineProject'
         tags: |
           $(Build.BuildId)
