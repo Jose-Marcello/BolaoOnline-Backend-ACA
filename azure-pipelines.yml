@@ -2,50 +2,77 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest' # MUDANÇA AQUI!
+  vmImage: 'ubuntu-latest'
 
 variables:
-  - group: BolaoOnline-ProdSecrets
-  - name: dockerRegistryServiceConnection
-    value: 'bolaoonline-docker-registry'
-  - name: imageName
-    value: 'bolaoonline-app'
-
+- group: BolaoOnline-ProdSecrets
+  
 stages:
-- stage: BuildAndPush
-  displayName: 'Build and Push Docker Image'
+- stage: Build
+  displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
-  - job: BuildDocker
-    displayName: 'Build and Push'
+  - job: BuildJob
+    displayName: 'Job de Build'
     steps:
-    - task: Docker@2
+    - task: NodeTool@0
       inputs:
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        repository: '$(imageName)'
-        command: 'buildAndPush'
-        Dockerfile: 'Dockerfile'
-        tags: |
-          $(Build.BuildId)
-          latest
+        versionSpec: '18.x'
+      displayName: 'Instalar Node.js'
+
+    - script: |
+        npm install
+        npm run build -- --output-path=dist
+      workingDirectory: 'BolaoOnlineAppV5'
+      displayName: 'Build do Frontend (Angular)'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
+        zipAfterPublish: false
+      displayName: 'Publicar o Backend (.NET)'
+
+    - task: CopyFiles@2
+      inputs:
+        # Caminho corrigido para corresponder ao angular.json
+        SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
+      displayName: 'Copiar arquivos do Angular para a pasta wwwroot'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+      displayName: 'Compactar arquivos para deployment'
+
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'drop'
+      displayName: 'Publicar Artefato'
 
 - stage: Deploy
-  displayName: 'Deploy to Test Environment'
+  displayName: 'Deploy para o Ambiente de Testes'
+  dependsOn: Build
+  condition: succeeded()
   jobs:
   - deployment: DeployJob
-    displayName: 'Deploy Job'
+    displayName: 'Job de Deploy'
     environment: AmbienteDeTestes
-    pool:
-      vmImage: 'ubuntu-latest' # MUDANÇA AQUI!
     strategy:
       runOnce:
         deploy:
           steps:
+          - download: current
+            artifact: 'drop'
+
           - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              appType: 'webAppContainer'
+              appType: 'webApp'
               appName: 'bolaoonline-testes'
-              dockerNamespace: 'bolaoonlineregistry.azurecr.io'
-              dockerRepository: '$(imageName)'
-              dockerImageTag: '$(Build.BuildId)'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+            displayName: 'Deploy do Azure Web App'
