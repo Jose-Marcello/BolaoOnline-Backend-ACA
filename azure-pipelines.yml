@@ -1,12 +1,3 @@
-trigger:
-- main
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-- group: BolaoOnline-ProdSecrets
-  
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -24,7 +15,14 @@ stages:
         npm run build -- --output-path=dist/angular-app/browser
       workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
       displayName: 'Build do Frontend (Angular)'
-
+      
+    - task: DotNetCoreCLI@2
+      displayName: 'Restaurar dependências e construir a solução'
+      inputs:
+        command: 'build'
+        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln' # Apontando para o arquivo de solução
+        arguments: '--configuration Release'
+        
     - task: DotNetCoreCLI@2
       inputs:
         command: 'publish'
@@ -53,32 +51,3 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: 'drop'
       displayName: 'Publicar Artefato'
-
-- stage: Deploy
-  displayName: 'Deploy para o Ambiente de Testes'
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - deployment: DeployJob
-    displayName: 'Job de Deploy'
-    environment: AmbienteDeTestes
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - download: current
-            artifact: 'drop'
-
-          - task: ExtractFiles@1
-            inputs:
-              archiveFilePatterns: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              destinationFolder: '$(Pipeline.Workspace)/drop'
-            displayName: 'Descompactar Artefato'
-
-          - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App'
-            inputs:
-              azureSubscription: 'Azure-BolaoOnline-Novo'
-              appType: 'webApp'
-              appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop/publish'
