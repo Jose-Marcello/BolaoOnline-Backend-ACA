@@ -6,73 +6,48 @@ pool:
 
 variables:
 - group: BolaoOnline-ProdSecrets
+- name: dockerRegistryServiceConnection
+  value: 'bolaoonline-docker-registry'
+- name: imageName
+  value: 'bolaoonline-app'
   
 stages:
-- stage: Build
-  displayName: 'Build e Empacotamento do Aplicativo'
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
   jobs:
-  - job: BuildJob
-    displayName: 'Job de Build'
+  - job: BuildDocker
+    displayName: 'Build e Push'
     steps:
-    - task: NodeTool@0
+    - task: Docker@2
       inputs:
-        versionSpec: '18.x'
-      displayName: 'Instalar Node.js'
-
-    - script: |
-        npm install
-        npm run build -- --output-path=dist
-      workingDirectory: 'BolaoOnlineAppV5'
-      displayName: 'Build do Frontend (Angular)'
-
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'publish'
-        publishWebProjects: true
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
-        zipAfterPublish: false
-      displayName: 'Publicar o Backend (.NET)'
-
-    - task: CopyFiles@2
-      inputs:
-        # Caminho corrigido para corresponder ao angular.json
-        SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
-        Contents: '**'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
-      displayName: 'Copiar arquivos do Angular para a pasta wwwroot'
-
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-      displayName: 'Compactar arquivos para deployment'
-
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      artifact: 'drop'
-      displayName: 'Publicar Artefato'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageName)'
+        command: 'buildAndPush'
+        Dockerfile: 'BolaoOnlineProject/Dockerfile'
+        buildContext: 'BolaoOnlineProject'
+        tags: |
+          $(Build.BuildId)
+          latest
 
 - stage: Deploy
   displayName: 'Deploy para o Ambiente de Testes'
-  dependsOn: Build
-  condition: succeeded()
+  dependsOn: BuildAndPush
   jobs:
   - deployment: DeployJob
     displayName: 'Job de Deploy'
     environment: AmbienteDeTestes
+    pool:
+      vmImage: 'ubuntu-latest'
     strategy:
       runOnce:
         deploy:
           steps:
-          - download: current
-            artifact: 'drop'
-
           - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              appType: 'webApp'
+              appType: 'webAppContainer'
               appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-            displayName: 'Deploy do Azure Web App'
+              dockerNamespace: 'bolaoonlineregistry.azurecr.io'
+              dockerRepository: '$(imageName)'
+              dockerImageTag: '$(Build.BuildId)'
