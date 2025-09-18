@@ -23,9 +23,9 @@ stages:
         containerRegistry: '$(dockerRegistryServiceConnection)'
         repository: '$(imageName)'
         command: 'buildAndPush'
-        # O caminho do Dockerfile agora é relativo ao buildContext
+        # O caminho do Dockerfile é relativo ao contexto de build
         Dockerfile: 'Dockerfile'
-        # O contexto de build ainda é a pasta do projeto
+        # Define o contexto de build como a pasta BolaoOnlineProject
         buildContext: '$(Build.SourcesDirectory)/BolaoOnlineProject'
         tags: |
           $(Build.BuildId)
