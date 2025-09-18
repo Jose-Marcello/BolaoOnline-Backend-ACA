@@ -21,22 +21,23 @@ stages:
 
     - script: |
         npm install
-        npm run build -- --output-path=dist
-      workingDirectory: 'BolaoOnlineAppV5'
+        npm run build -- --output-path=dist/angular-app/browser
+      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
       displayName: 'Build do Frontend (Angular)'
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'publish'
-        publishWebProjects: true
+        publishWebProjects: false
+        projects: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
         arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
         zipAfterPublish: false
       displayName: 'Publicar o Backend (.NET)'
 
     - task: CopyFiles@2
       inputs:
-        # Caminho corrigido para corresponder ao angular.json
-        SourceFolder: '$(Build.SourcesDirectory)/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+        # Caminho absoluto para os arquivos do Angular
+        SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
       displayName: 'Copiar arquivos do Angular para a pasta wwwroot'
@@ -70,9 +71,9 @@ stages:
             artifact: 'drop'
 
           - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
               appName: 'bolaoonline-testes'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-            displayName: 'Deploy do Azure Web App'
