@@ -2,10 +2,8 @@ stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
-  - job: BuildAndStage
-    displayName: 'Job de Build e Staging'
-    pool:
-      vmImage: 'ubuntu-latest'
+  - job: BuildJob
+    displayName: 'Job de Build'
     steps:
     - task: NodeTool@0
       inputs:
@@ -28,6 +26,7 @@ stages:
         ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/"
         
         echo "=== Etapa 2: Publicando o Backend .NET ==="
+        mkdir -p "$(Build.ArtifactStagingDirectory)/publish"
         dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish"
         
         echo "Listando a pasta de publicação do Backend:"
