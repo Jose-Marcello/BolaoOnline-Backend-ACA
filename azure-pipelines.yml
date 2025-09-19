@@ -1,79 +1,45 @@
+trigger:
+- main
+
+variables:
+  imageName: 'bolaoonline-app'
+  vmImageName: 'ubuntu-latest'
+
+resources:
+- repo: self
+
 stages:
 - stage: Build
-  displayName: 'Build e Empacotamento do Aplicativo'
+  displayName: 'Build e Publicação da Imagem Docker'
   jobs:
-  - job: BuildJob
-    displayName: 'Job de Build'
+  - job: BuildDockerImage
+    displayName: 'Construir Imagem Docker'
+    pool:
+      vmImage: $(vmImageName)
     steps:
-    - task: NodeTool@0
+    - task: Docker@2
       inputs:
-        versionSpec: '18.x'
-      displayName: 'Instalar Node.js'
-
-    - script: |
-        npm install
-        npm run build -- --output-path=$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser
-      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-      displayName: 'Build do Frontend (Angular)'
-      
-    - task: DotNetCoreCLI@2
-      displayName: 'Restaurar dependências e construir a solução'
-      inputs:
-        command: 'build'
-        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
-        arguments: '--configuration Release'
-
-    # --- INÍCIO: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
-    - task: DotNetCoreCLI@2
-      displayName: 'Publicar o Backend (.NET)'
-      inputs:
-        command: 'publish'
-        publishWebProjects: false
-        projects: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
-        zipAfterPublish: false
-      
-    - task: DeleteFiles@1
-      displayName: 'Remover pasta wwwroot do .NET'
-      inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)/publish'
-        Contents: 'wwwroot'
-
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
-        Contents: '**'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
-      displayName: 'Copiar o Frontend para a pasta wwwroot'
-
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-      displayName: 'Compactar arquivos para deployment'
-    # --- FIM: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
-
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      artifact: 'drop'
-      displayName: 'Publicar Artefato'
+        containerRegistry: 'bolaoonline-docker-registry'
+        repository: '$(imageName)'
+        command: 'buildAndPush'
+        Dockerfile: 'Dockerfile'
+        tags: |
+          $(Build.BuildId)
+          latest
 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
   jobs:
-  - deployment: DeployJob
-    displayName: 'Job de Deployment'
+  - deployment: DeployContainer
+    displayName: 'Deploy da Imagem Docker'
     environment: 'AmbienteDeTestes'
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: AzureWebApp@1
-            displayName: 'Implantar no Azure App Service'
+          - task: AzureWebAppContainer@1
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              containers: 'Azure-BolaoOnline-Novo.azurecr.io/$(imageName):$(Build.BuildId)'
