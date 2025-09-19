@@ -67,5 +67,5 @@ stages:
             displayName: 'Implantar no Azure App Service'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo' # Nome da sua conexão de serviço
-              appName: 'seu-app-service-name' # **Este é o único valor que você precisa alterar!**
+              appName: 'bolaoonline-testes' # **Este é o único valor que você precisa alterar!**
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
