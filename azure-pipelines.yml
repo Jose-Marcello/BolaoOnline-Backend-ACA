@@ -20,7 +20,7 @@ stages:
       displayName: 'Restaurar dependências e construir a solução'
       inputs:
         command: 'build'
-        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln' # Apontando para o arquivo de solução
+        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
         arguments: '--configuration Release'
         
     - task: DotNetCoreCLI@2
@@ -51,3 +51,21 @@ stages:
     - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: 'drop'
       displayName: 'Publicar Artefato'
+
+- stage: Deploy
+  displayName: 'Deploy para Azure'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Job de Deployment'
+    environment: 'seu-ambiente-de-producao' # Verifique se esse nome corresponde ao seu ambiente
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Implantar no Azure App Service'
+            inputs:
+              azureSubscription: 'Azure-BolaoOnline-Novo' # Nome da sua conexão de serviço
+              appName: 'seu-app-service-name' # **Este é o único valor que você precisa alterar!**
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
