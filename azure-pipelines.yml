@@ -12,7 +12,7 @@ stages:
 
     - script: |
         npm install
-        npm run build -- --output-path=dist/angular-app/browser
+        npm run build -- --output-path=$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser
       workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
       displayName: 'Build do Frontend (Angular)'
       
@@ -20,24 +20,32 @@ stages:
       displayName: 'Restaurar dependências e construir a solução'
       inputs:
         command: 'build'
-        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln' # Apontando para o arquivo de solução
+        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
         arguments: '--configuration Release'
-        
+
+    # --- INÍCIO: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
     - task: DotNetCoreCLI@2
+      displayName: 'Publicar o Backend (.NET)'
       inputs:
         command: 'publish'
         publishWebProjects: false
         projects: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish'
+        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish_output'
         zipAfterPublish: false
-      displayName: 'Publicar o Backend (.NET)'
 
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.ArtifactStagingDirectory)/publish_output/ApostasApp.Core.Web'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish'
+      displayName: 'Copiar o Backend para a pasta de publicação'
+      
     - task: CopyFiles@2
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
-      displayName: 'Copiar arquivos do Angular para a pasta wwwroot'
+      displayName: 'Copiar o Frontend para a pasta wwwroot'
 
     - task: ArchiveFiles@2
       inputs:
@@ -47,7 +55,26 @@ stages:
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
       displayName: 'Compactar arquivos para deployment'
+    # --- FIM: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
 
     - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: 'drop'
       displayName: 'Publicar Artefato'
+
+- stage: Deploy
+  displayName: 'Deploy para Azure'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployJob
+    displayName: 'Job de Deployment'
+    environment: 'AmbienteDeTestes'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Implantar no Azure App Service'
+            inputs:
+              azureSubscription: 'Azure-BolaoOnline-Novo'
+              appName: 'bolaoonline-testes'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
