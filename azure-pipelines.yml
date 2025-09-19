@@ -1,45 +1,77 @@
 trigger:
 - main
 
-variables:
-  imageName: 'bolaoonline-app'
-  vmImageName: 'ubuntu-latest'
-
-resources:
-- repo: self
-
 stages:
 - stage: Build
-  displayName: 'Build e Publicação da Imagem Docker'
+  displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
-  - job: BuildDockerImage
-    displayName: 'Construir Imagem Docker'
+  - job: BuildAndStage
+    displayName: 'Job de Build e Staging'
     pool:
-      vmImage: $(vmImageName)
+      vmImage: 'ubuntu-latest' # Mantenha o agente que você estava usando
     steps:
-    - task: Docker@2
+    - task: NodeTool@0
       inputs:
-        containerRegistry: 'bolaoonline-docker-registry'
-        repository: '$(imageName)'
-        command: 'buildAndPush'
-        Dockerfile: 'Dockerfile'
-        tags: |
-          $(Build.BuildId)
-          latest
+        versionSpec: '18.x'
+      displayName: 'Instalar Node.js'
+
+    - script: |
+        echo "=== Etapa 1: Fazendo o build do Frontend Angular ==="
+        npm install
+        npm run build
+        echo "Listando a pasta do Frontend depois do build:"
+        ls -R src/BolaoOnlineAppV5/dist/angular-app/browser/
+      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+      displayName: 'Build do Frontend (Angular)'
+      
+    - task: DotNetCoreCLI@2
+      displayName: 'Restaurar dependências e construir a solução'
+      inputs:
+        command: 'build'
+        projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
+        arguments: '--configuration Release'
+
+    - script: |
+        echo "=== Etapa 2: Publicando o Backend .NET ==="
+        dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish"
+        echo "Listando a pasta de publicação do Backend:"
+        ls -R "$(Build.ArtifactStagingDirectory)/publish"
+      displayName: 'Publicar Backend (.NET)'
+    
+    - script: |
+        echo "=== Etapa 3: Copiando Frontend para a pasta wwwroot ==="
+        cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
+        echo "Listando a pasta de publicação final:"
+        ls -R "$(Build.ArtifactStagingDirectory)/publish"
+      displayName: 'Copiar o Frontend para a pasta wwwroot'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+      displayName: 'Compactar arquivos para deployment'
+
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      artifact: 'drop'
+      displayName: 'Publicar Artefato'
 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
   jobs:
-  - deployment: DeployContainer
-    displayName: 'Deploy da Imagem Docker'
+  - deployment: DeployJob
+    displayName: 'Job de Deployment'
     environment: 'AmbienteDeTestes'
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: AzureWebAppContainer@1
+          - task: AzureWebApp@1
+            displayName: 'Implantar no Azure App Service'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appName: 'bolaoonline-testes'
-              containers: 'bolaoonline-docker-registry.azurecr.io/$(imageName):$(Build.BuildId)' # CAMINHO CORRIGIDO
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
