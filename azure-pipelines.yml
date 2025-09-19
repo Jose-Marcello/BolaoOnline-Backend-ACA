@@ -67,7 +67,7 @@ stages:
   jobs:
   - deployment: DeployJob
     displayName: 'Job de Deployment'
-    environment: 'seu-ambiente-de-producao'
+    environment: 'AmbienteDeTestes'
     strategy:
       runOnce:
         deploy:
@@ -76,5 +76,5 @@ stages:
             displayName: 'Implantar no Azure App Service'
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
-              appName: 'seu-app-service-name'
+              appName: 'bolaoonline-testes'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
