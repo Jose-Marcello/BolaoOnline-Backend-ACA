@@ -8,7 +8,7 @@ stages:
   - job: BuildAndStage
     displayName: 'Job de Build e Staging'
     pool:
-      vmImage: 'ubuntu-latest' # Mantenha o agente que você estava usando
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
@@ -20,7 +20,7 @@ stages:
         npm install
         npm run build
         echo "Listando a pasta do Frontend depois do build:"
-        ls -R src/BolaoOnlineAppV5/dist/angular-app/browser/
+        ls -R src/BolaoOnlineAppV5/dist/bolao-online-app-v5/
       workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
       displayName: 'Build do Frontend (Angular)'
       
@@ -40,7 +40,7 @@ stages:
     
     - script: |
         echo "=== Etapa 3: Copiando Frontend para a pasta wwwroot ==="
-        cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
+        cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
         echo "Listando a pasta de publicação final:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
       displayName: 'Copiar o Frontend para a pasta wwwroot'
