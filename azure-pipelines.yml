@@ -1,6 +1,3 @@
-trigger:
-- main
-
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -14,15 +11,6 @@ stages:
       inputs:
         versionSpec: '18.x'
       displayName: 'Instalar Node.js'
-
-    - script: |
-        echo "=== Etapa 1: Fazendo o build do Frontend Angular ==="
-        npm install
-        npm run build
-        echo "Listando a pasta do Frontend depois do build:"
-        ls -R src/BolaoOnlineAppV5/dist/bolao-online-app-v5/
-      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-      displayName: 'Build do Frontend (Angular)'
       
     - task: DotNetCoreCLI@2
       displayName: 'Restaurar dependências e construir a solução'
@@ -32,18 +20,25 @@ stages:
         arguments: '--configuration Release'
 
     - script: |
+        echo "=== Etapa 1: Fazendo o build do Frontend Angular ==="
+        npm install --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+        npm run build --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+        
+        echo "Listando a pasta do Frontend depois do build:"
+        ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/"
+        
         echo "=== Etapa 2: Publicando o Backend .NET ==="
         dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish"
+        
         echo "Listando a pasta de publicação do Backend:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
-      displayName: 'Publicar Backend (.NET)'
-    
-    - script: |
+        
         echo "=== Etapa 3: Copiando Frontend para a pasta wwwroot ==="
         cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
+        
         echo "Listando a pasta de publicação final:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
-      displayName: 'Copiar o Frontend para a pasta wwwroot'
+      displayName: 'Build, Publish e Copy em um só Script'
 
     - task: ArchiveFiles@2
       inputs:
