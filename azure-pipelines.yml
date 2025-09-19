@@ -27,12 +27,25 @@ stages:
         echo "=== Etapa 1: Preparando a pasta de publicação ==="
         mkdir -p "$(Build.ArtifactStagingDirectory)/publish"
         
-        echo "=== Etapa 2: Copiando os arquivos do Backend ==="
+        echo "=== Etapa 2: Copiando os arquivos do Backend da pasta bin ==="
         cp -R "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/bin/Release/net8.0/." "$(Build.ArtifactStagingDirectory)/publish"
         
         echo "=== Etapa 3: Copiando os arquivos do Frontend ==="
         mkdir -p "$(Build.ArtifactStagingDirectory)/publish/wwwroot"
         cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
+        
+        echo "=== Etapa 4: Criando o web.config para o IIS ==="
+        echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>" > "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "<configuration>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "  <location path=\".\" inheritInChildApplications=\"false\">" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "    <system.webServer>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "      <handlers>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "        <add name=\"aspNetCore\" path=\"*\" verb=\"*\" modules=\"AspNetCoreModuleV2\" resourceType=\"Unspecified\" />" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "      </handlers>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "      <aspNetCore processPath=\"dotnet\" arguments=\".\\ApostasApp.Core.Web.dll\" stdoutLogEnabled=\"false\" hostingModel=\"inprocess\" />" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "    </system.webServer>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "  </location>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
+        echo "</configuration>" >> "$(Build.ArtifactStagingDirectory)/publish/web.config"
         
         echo "Listando a pasta de publicação final:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
