@@ -35,7 +35,7 @@ stages:
 
     - task: CopyFiles@2
       inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)/publish_output/ApostasApp.Core.Web'
+        SourceFolder: '$(Build.ArtifactStagingDirectory)/publish_output'
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)/publish'
       displayName: 'Copiar o Backend para a pasta de publicação'
