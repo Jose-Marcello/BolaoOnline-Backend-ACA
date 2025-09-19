@@ -9,6 +9,12 @@ stages:
       inputs:
         versionSpec: '18.x'
       displayName: 'Instalar Node.js'
+
+    - script: |
+        npm install
+        npm run build
+      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+      displayName: 'Build do Frontend (Angular)'
       
     - task: DotNetCoreCLI@2
       displayName: 'Restaurar dependências e construir a solução'
@@ -18,25 +24,19 @@ stages:
         arguments: '--configuration Release'
 
     - script: |
-        echo "=== Etapa 1: Fazendo o build do Frontend Angular ==="
-        npm install --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-        npm run build --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-        
-        echo "Listando a pasta do Frontend depois do build:"
-        ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/"
+        echo "=== Etapa 1: Preparando a pasta de publicação ==="
+        mkdir -p "$(Build.ArtifactStagingDirectory)/publish"
         
         echo "=== Etapa 2: Publicando o Backend .NET ==="
-        mkdir -p "$(Build.ArtifactStagingDirectory)/publish"
-        dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish"
+        dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish" --no-restore
         
-        echo "Listando a pasta de publicação do Backend:"
-        ls -R "$(Build.ArtifactStagingDirectory)/publish"
-        
-        echo "=== Etapa 3: Copiando Frontend para a pasta wwwroot ==="
+        echo "=== Etapa 3: Criando a pasta wwwroot e copiando o frontend ==="
+        mkdir -p "$(Build.ArtifactStagingDirectory)/publish/wwwroot"
         cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
-        
+
         echo "Listando a pasta de publicação final:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
+
       displayName: 'Build, Publish e Copy em um só Script'
 
     - task: ArchiveFiles@2
