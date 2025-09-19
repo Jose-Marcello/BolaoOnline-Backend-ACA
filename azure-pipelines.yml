@@ -17,7 +17,7 @@ stages:
       displayName: 'Build do Frontend (Angular)'
       
     - task: DotNetCoreCLI@2
-      displayName: 'Restaurar dependências e construir a solução'
+      displayName: 'Construir o Backend (.NET)'
       inputs:
         command: 'build'
         projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
@@ -27,17 +27,16 @@ stages:
         echo "=== Etapa 1: Preparando a pasta de publicação ==="
         mkdir -p "$(Build.ArtifactStagingDirectory)/publish"
         
-        echo "=== Etapa 2: Publicando o Backend .NET ==="
-        dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish" --no-restore --no-self-contained
+        echo "=== Etapa 2: Copiando os arquivos do Backend ==="
+        cp -R "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/bin/Release/net8.0/." "$(Build.ArtifactStagingDirectory)/publish"
         
-        echo "=== Etapa 3: Criando a pasta wwwroot e copiando o frontend ==="
+        echo "=== Etapa 3: Copiando os arquivos do Frontend ==="
         mkdir -p "$(Build.ArtifactStagingDirectory)/publish/wwwroot"
         cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
-
+        
         echo "Listando a pasta de publicação final:"
         ls -R "$(Build.ArtifactStagingDirectory)/publish"
-
-      displayName: 'Build, Publish e Copy em um só Script'
+      displayName: 'Montar o Pacote de Implantação'
 
     - task: ArchiveFiles@2
       inputs:
