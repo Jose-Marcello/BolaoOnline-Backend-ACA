@@ -2,19 +2,15 @@ stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
-  - job: BuildJob
-    displayName: 'Job de Build'
+  - job: BuildAndStage
+    displayName: 'Job de Build e Staging'
+    pool:
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       inputs:
         versionSpec: '18.x'
       displayName: 'Instalar Node.js'
-
-    - script: |
-        npm install
-        npm run build -- --output-path=$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser
-      workingDirectory: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-      displayName: 'Build do Frontend (Angular)'
       
     - task: DotNetCoreCLI@2
       displayName: 'Restaurar dependências e construir a solução'
@@ -23,29 +19,26 @@ stages:
         projects: '$(Build.SourcesDirectory)/ApostasApp.Core.sln'
         arguments: '--configuration Release'
 
-    # --- INÍCIO: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
-    - task: DotNetCoreCLI@2
-      displayName: 'Publicar o Backend (.NET)'
-      inputs:
-        command: 'publish'
-        publishWebProjects: false
-        projects: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
-        arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)/publish_output'
-        zipAfterPublish: false
-
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.ArtifactStagingDirectory)/publish_output/ApostasApp.Core.Web'
-        Contents: '**'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish'
-      displayName: 'Copiar o Backend para a pasta de publicação'
-      
-    - task: CopyFiles@2
-      inputs:
-        SourceFolder: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/angular-app/browser'
-        Contents: '**'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish/wwwroot'
-      displayName: 'Copiar o Frontend para a pasta wwwroot'
+    - script: |
+        echo "=== Etapa 1: Fazendo o build do Frontend Angular ==="
+        npm install --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+        npm run build --prefix "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+        
+        echo "Listando a pasta do Frontend depois do build:"
+        ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/"
+        
+        echo "=== Etapa 2: Publicando o Backend .NET ==="
+        dotnet publish "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" --configuration Release --output "$(Build.ArtifactStagingDirectory)/publish"
+        
+        echo "Listando a pasta de publicação do Backend:"
+        ls -R "$(Build.ArtifactStagingDirectory)/publish"
+        
+        echo "=== Etapa 3: Copiando Frontend para a pasta wwwroot ==="
+        cp -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/." "$(Build.ArtifactStagingDirectory)/publish/wwwroot/"
+        
+        echo "Listando a pasta de publicação final:"
+        ls -R "$(Build.ArtifactStagingDirectory)/publish"
+      displayName: 'Build, Publish e Copy em um só Script'
 
     - task: ArchiveFiles@2
       inputs:
@@ -55,7 +48,6 @@ stages:
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
       displayName: 'Compactar arquivos para deployment'
-    # --- FIM: NOVAS TAREFAS DE PUBLICAÇÃO E CÓPIA ---
 
     - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: 'drop'
