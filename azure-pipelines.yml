@@ -42,4 +42,4 @@ stages:
             inputs:
               azureSubscription: 'Azure-BolaoOnline-Novo'
               appName: 'bolaoonline-testes'
-              containers: 'Azure-BolaoOnline-Novo.azurecr.io/$(imageName):$(Build.BuildId)'
+              containers: 'bolaoonline-docker-registry.azurecr.io/$(imageName):$(Build.BuildId)' # CAMINHO CORRIGIDO
