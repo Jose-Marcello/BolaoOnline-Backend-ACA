@@ -6,6 +6,9 @@ pool:
 
 variables:
   buildConfiguration: "Release"
+  # Nome da pasta de destino para os arquivos publicados
+  # Use um nome que evite conflitos
+  appPublishDir: "$(Build.ArtifactStagingDirectory)/BolaoOnlineApp"
 
 stages:
   - stage: Build
@@ -14,18 +17,17 @@ stages:
       - job: BuildJob
         displayName: "Job de Build"
         steps:
-          # Instala o Node.js para o Angular
+          # Instala o Node.js
           - task: NodeTool@0
             displayName: "Instalar Node.js"
             inputs:
               versionSpec: "18.x"
 
-          # Restaura dependências do Node.js
+          # Restaura as dependências do Angular e compila o projeto
           - script: npm install
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             displayName: "Instalar dependências do Frontend (Angular)"
 
-          # Compila o projeto Angular
           - script: npm run build
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             displayName: "Compilar Frontend (Angular)"
@@ -35,40 +37,21 @@ stages:
             displayName: "Publicar Backend (.NET)"
             inputs:
               command: "publish"
-              publishWebProjects: true
               projects: "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
-              arguments: "--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/app"
+              arguments: "--configuration $(buildConfiguration) --output $(appPublishDir)"
               zipAfterPublish: false
               
-          # Copia os arquivos compilados do Angular para a pasta wwwroot do backend
+          # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
           - task: CopyFiles@2
             displayName: "Copiar arquivos do Frontend para a wwwroot"
             inputs:
               SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
-              TargetFolder: "$(Build.ArtifactStagingDirectory)/app/wwwroot"
+              TargetFolder: "$(appPublishDir)/wwwroot"
               cleanTargetFolder: true
 
           # Publica o artefato de build
           - task: PublishBuildArtifacts@1
             displayName: "Publicar o Artefato de Build"
             inputs:
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)/app"
+              PathtoPublish: "$(appPublishDir)"
               ArtifactName: "drop"
-
-  - stage: Deploy
-    displayName: "Deploy para Azure"
-    dependsOn: Build
-    jobs:
-    - deployment: DeployJob
-      displayName: "Job de Deployment"
-      environment: "AmbienteDeTestes"
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - task: AzureWebApp@1
-                displayName: "Implantar no Azure App Service"
-                inputs:
-                  azureSubscription: "Azure-BolaoOnline-Novo"
-                  appName: "bolaoonline-testes"
-                  package: "$(Pipeline.Workspace)/drop"
