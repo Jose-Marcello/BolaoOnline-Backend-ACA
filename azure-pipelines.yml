@@ -42,12 +42,13 @@ stages:
               zipAfterPublish: false
               
           # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
+          # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
           - task: CopyFiles@2
             displayName: "Copiar arquivos do Frontend para a wwwroot"
             inputs:
-              SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
-              TargetFolder: "$(appPublishDir)/wwwroot"
-              cleanTargetFolder: true
+               SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser" # AJUSTE AQUI
+               TargetFolder: "$(appPublishDir)/wwwroot"
+               cleanTargetFolder: true
 
           # Publica o artefato de build
           - task: PublishBuildArtifacts@1
