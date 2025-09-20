@@ -1,0 +1,51 @@
+trigger:
+  - main
+
+pool:
+  vmImage: "windows-latest"
+
+variables:
+  buildConfiguration: "Release"
+
+stages:
+  - stage: Build
+    displayName: "Build e Empacotamento"
+    jobs:
+      - job: BuildJob
+        displayName: "Job de Build"
+        steps:
+          # Instala o Node.js para o Angular
+          - task: NodeTool@0
+            displayName: "Instalar Node.js"
+            inputs:
+              versionSpec: "18.x"
+
+          # Compila o Frontend (Angular)
+          - script: |
+              npm install
+              npm run build
+            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+            displayName: "Compilar Frontend (Angular)"
+
+          # Publica o artefato do Frontend (Angular)
+          - task: PublishBuildArtifacts@1
+            displayName: "Publicar Artefato do Frontend"
+            inputs:
+              PathtoPublish: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
+              ArtifactName: "frontend-drop"
+
+          # Publica o Backend (.NET)
+          - task: DotNetCoreCLI@2
+            displayName: "Publicar Backend (.NET)"
+            inputs:
+              command: "publish"
+              projects: "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
+              arguments: "--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/app"
+              zipAfterPublish: true # Deixa o .NET publicar como ZIP
+              
+          # Publica o artefato do Backend (.NET)
+          - task: PublishBuildArtifacts@1
+            displayName: "Publicar Artefato do Backend"
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/app.zip"
+              ArtifactName: "backend-drop"
