@@ -28,6 +28,12 @@ stages:
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             displayName: "Compilar Frontend (Angular)"
 
+          # Nova tarefa de listagem para encontrar o caminho correto
+          - script: |
+              echo "Listando o diretório de build do Angular para encontrar a pasta 'dist'..."
+              ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+            displayName: "Listar Saída do Build do Angular"
+
           # Publica o backend do .NET
           - task: DotNetCoreCLI@2
             displayName: "Publicar Backend (.NET)"
