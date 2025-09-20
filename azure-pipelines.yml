@@ -6,9 +6,7 @@ pool:
 
 variables:
   buildConfiguration: "Release"
-  # Nome da pasta de destino para os arquivos publicados
-  # Use um nome que evite conflitos
-  appPublishDir: "$(Build.ArtifactStagingDirectory)/BolaoOnlineApp"
+  appPublishDir: "$(Build.ArtifactStagingDirectory)/app"
 
 stages:
   - stage: Build
@@ -24,11 +22,9 @@ stages:
               versionSpec: "18.x"
 
           # Restaura as dependências do Angular e compila o projeto
-          - script: npm install
-            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-            displayName: "Instalar dependências do Frontend (Angular)"
-
-          - script: npm run build
+          - script: |
+              npm install
+              npm run build
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             displayName: "Compilar Frontend (Angular)"
 
@@ -42,35 +38,44 @@ stages:
               zipAfterPublish: false
               
           # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
-          # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
           - task: CopyFiles@2
             displayName: "Copiar arquivos do Frontend para a wwwroot"
             inputs:
-               SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser" # AJUSTE AQUI
-               TargetFolder: "$(appPublishDir)/wwwroot"
-               cleanTargetFolder: true
+              SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
+              TargetFolder: "$(appPublishDir)/wwwroot"
+              cleanTargetFolder: true
 
-          # Publica o artefato de build
+          # Compacta a pasta de DEPLOY final em um único arquivo ZIP
+          - task: ArchiveFiles@2
+            displayName: "Compactar Artefato Final"
+            inputs:
+              rootFolderOrFile: "$(appPublishDir)"
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/BolaoOnline.zip"
+              replaceExistingArchive: true
+
+          # Publica o único artefato de build (o arquivo ZIP)
           - task: PublishBuildArtifacts@1
             displayName: "Publicar o Artefato de Build"
             inputs:
-              PathtoPublish: "$(appPublishDir)"
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/BolaoOnline.zip"
               ArtifactName: "drop"
-              
+
   - stage: Deploy
     displayName: "Deploy para Azure"
     dependsOn: Build
     jobs:
-    - deployment: DeployJob
-      displayName: "Job de Deployment"
-      environment: "AmbienteDeTestes"
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - task: AzureWebApp@1
-                displayName: "Implantar no Azure App Service"
-                inputs:
-                  azureSubscription: "Azure-BolaoOnline-Novo"
-                  appName: "bolaoonline-testes"
-                  package: "$(Pipeline.Workspace)/drop"
+      - deployment: DeployJob
+        displayName: "Job de Deployment"
+        environment: "AmbienteDeTestes"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  displayName: "Implantar no Azure App Service"
+                  inputs:
+                    azureSubscription: "Azure-BolaoOnline-Novo"
+                    appName: "bolaoonline-testes"
+                    package: "$(Pipeline.Workspace)/drop/BolaoOnline.zip"
