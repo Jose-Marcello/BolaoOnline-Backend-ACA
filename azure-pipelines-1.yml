@@ -5,92 +5,33 @@ pool:
   vmImage: "windows-latest"
 
 variables:
-  buildConfiguration: "Release"
-  appPublishDir: "$(Build.ArtifactStagingDirectory)/app"
+  # Define o caminho para a sua aplicação Angular
+  angularAppDir: "src/BolaoOnlineAppV5"
 
-stages:
-  - stage: Build
-    displayName: "Build e Empacotamento do Aplicativo"
-    jobs:
-      - job: BuildJob
-        displayName: "Job de Build"
-        steps:
-          # Instala o Node.js
-          - task: NodeTool@0
-            displayName: "Instalar Node.js"
-            inputs:
-              versionSpec: "18.x"
+jobs:
+  - job: BuildAngular
+    displayName: "Build do Frontend (Angular)"
+    steps:
+      # Instala o Node.js e o npm
+      - task: NodeTool@0
+        displayName: "Instalar Node.js"
+        inputs:
+          versionSpec: "18.x"
 
-          # Restaura dependências do Node.js
-          - script: npm install
-            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-            displayName: "Instalar dependências do Frontend (Angular)"
+      # Restaura as dependências do npm
+      - script: npm install
+        workingDirectory: "$(Build.SourcesDirectory)/$(angularAppDir)"
+        displayName: "Instalar dependências do Frontend"
 
-          # Compila o projeto Angular
-          - script: npm run build
-            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-            displayName: "Compilar Frontend (Angular)"
+      # Compila o projeto Angular. A flag --output-path garante que os arquivos de build
+      # serão colocados em uma pasta chamada 'dist-angular' na raiz do projeto
+      - script: npm run build
+        workingDirectory: "$(Build.SourcesDirectory)/$(angularAppDir)"
+        displayName: "Compilar Frontend (Angular)"
 
-          # Encontra a pasta 'dist' do Angular e define uma variável de pipeline
-          - script: |
-              echo "Encontrando a pasta 'dist' do Angular..."
-              ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist"
-              
-              # Isso irá encontrar o nome da pasta de saída do build do Angular
-              $angularDistDir = Get-ChildItem -Path "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist" | Where-Object { $_.PSIsContainer }
-              $angularDistPath = "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/$angularDistDir"
-              
-              echo "##vso[task.setvariable variable=angularDistPath]$angularDistPath"
-            displayName: "Encontrar Pasta de Build do Angular"
-            
-          # Publica o backend do .NET
-          - task: DotNetCoreCLI@2
-            displayName: "Publicar Backend (.NET)"
-            inputs:
-              command: "publish"
-              projects: "$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj"
-              arguments: "--configuration $(buildConfiguration) --output $(appPublishDir)"
-              zipAfterPublish: false
-              
-          # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
-          - task: CopyFiles@2
-            displayName: "Copiar arquivos do Frontend para a wwwroot"
-            inputs:
-              SourceFolder: "$(angularDistPath)"
-              TargetFolder: "$(appPublishDir)/wwwroot"
-              cleanTargetFolder: true
-
-          # Compacta a pasta de DEPLOY final em um único arquivo ZIP
-          - task: ArchiveFiles@2
-            displayName: "Compactar Artefato Final"
-            inputs:
-              rootFolderOrFile: "$(appPublishDir)"
-              includeRootFolder: false
-              archiveType: "zip"
-              archiveFile: "$(Build.ArtifactStagingDirectory)/BolaoOnline.zip"
-              replaceExistingArchive: true
-
-          # Publica o único artefato de build (o arquivo ZIP)
-          - task: PublishBuildArtifacts@1
-            displayName: "Publicar o Artefato de Build"
-            inputs:
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)/BolaoOnline.zip"
-              ArtifactName: "drop"
-
-  - stage: Deploy
-    displayName: "Deploy para Azure"
-    dependsOn: Build
-    jobs:
-      - deployment: DeployJob
-        displayName: "Job de Deployment"
-        environment: "AmbienteDeTestes"
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - task: AzureWebApp@1
-                  displayName: "Implantar no Azure App Service"
-                  inputs:
-                    azureSubscription: "Azure-BolaoOnline-Novo"
-                    appName: "bolaoonline-testes"
-                    package: "$(Pipeline.Workspace)/drop/BolaoOnline.zip"
+      # Publica o artefato de build do Angular
+      - task: PublishBuildArtifacts@1
+        displayName: "Publicar Artefato do Frontend"
+        inputs:
+          PathtoPublish: "$(Build.SourcesDirectory)/$(angularAppDir)/dist"
+          ArtifactName: "frontend-dist"
