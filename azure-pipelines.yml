@@ -55,3 +55,21 @@ stages:
             inputs:
               PathtoPublish: "$(appPublishDir)"
               ArtifactName: "drop"
+              
+  - stage: Deploy
+    displayName: "Deploy para Azure"
+    dependsOn: Build
+    jobs:
+    - deployment: DeployJob
+      displayName: "Job de Deployment"
+      environment: "AmbienteDeTestes"
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - task: AzureWebApp@1
+                displayName: "Implantar no Azure App Service"
+                inputs:
+                  azureSubscription: "Azure-BolaoOnline-Novo"
+                  appName: "bolaoonline-testes"
+                  package: "$(Pipeline.Workspace)/drop"
