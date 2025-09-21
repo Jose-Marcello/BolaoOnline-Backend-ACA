@@ -28,6 +28,12 @@ stages:
               npm run build --prod
             displayName: "Compilar Frontend (Angular)"
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+            
+          # Diagnostica a saída do build para confirmar o caminho da pasta dist
+          - script: |
+              echo "Listando o conteúdo da pasta do projeto Angular para encontrar a pasta 'dist'..."
+              dir /s /b "$(Build.SourcesDirectory)\src\BolaoOnlineAppV5"
+            displayName: "Diagnosticar - Encontrar Saída do Build"
 
           # Publica o backend do .NET
           - task: DotNetCoreCLI@2
