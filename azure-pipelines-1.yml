@@ -5,20 +5,19 @@ pool:
   vmImage: "windows-latest"
 
 stages:
-  - stage: Build
+  - stage: BuildFrontend
     displayName: "Build do Frontend (Diagnóstico)"
     jobs:
-      - job: BuildJob
-        displayName: "Job de Build"
+      - job: FrontendJob
+        displayName: "Job de Build do Frontend"
         steps:
-          # Instala o Node.js
+          # 1. Instala o Node.js
           - task: NodeTool@0
             displayName: "Instalar Node.js"
             inputs:
               versionSpec: "18.x"
 
-          # Compila o Frontend (Angular)
-          # A saída detalhada nos dirá exatamente o que está errado.
+          # 2. Compila o Frontend (Angular)
           - script: |
               cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
               npm install
