@@ -23,9 +23,9 @@ stages:
 
           # Compila o Frontend (Angular)
           - script: |
+              cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
               npm install
               npm run build
-            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             displayName: "Compilar Frontend (Angular)"
 
           # Publica o backend do .NET
