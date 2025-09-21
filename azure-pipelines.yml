@@ -7,6 +7,7 @@ pool:
 variables:
   buildConfiguration: "Release"
   appPublishDir: "$(Build.ArtifactStagingDirectory)/app"
+  frontendPublishDir: "$(Build.ArtifactStagingDirectory)/dist-frontend"
 
 stages:
   - stage: Build
@@ -15,25 +16,19 @@ stages:
       - job: BuildJob
         displayName: "Job de Build"
         steps:
-          # Instala o Node.js
+          # Instala o Node.js e o npm para o frontend
           - task: NodeTool@0
             displayName: "Instalar Node.js"
             inputs:
               versionSpec: "18.x"
 
-          # Restaura as dependências do Angular e compila o projeto
+          # Compila o Frontend (Angular) e força a pasta de saída
           - script: |
+              cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
               npm install
-              npm run build
-            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+              npm run build --prod --output-path=$(frontendPublishDir) --base-href=/
             displayName: "Compilar Frontend (Angular)"
-
-          # Nova tarefa de listagem para encontrar o caminho correto
-          - script: |
-              echo "Listando o diretório de build do Angular para encontrar a pasta 'dist'..."
-              ls -R "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
-            displayName: "Listar Saída do Build do Angular"
-
+          
           # Publica o backend do .NET
           - task: DotNetCoreCLI@2
             displayName: "Publicar Backend (.NET)"
@@ -43,11 +38,12 @@ stages:
               arguments: "--configuration $(buildConfiguration) --output $(appPublishDir)"
               zipAfterPublish: false
               
-          # Copia os arquivos compilados do Angular para a wwwroot que foi criada pelo .NET
+          # Copia os arquivos compilados do Angular para a wwwroot do .NET
           - task: CopyFiles@2
             displayName: "Copiar arquivos do Frontend para a wwwroot"
             inputs:
-              SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
+              SourceFolder: "$(frontendPublishDir)"
+              Contents: '**'
               TargetFolder: "$(appPublishDir)/wwwroot"
               cleanTargetFolder: true
 
