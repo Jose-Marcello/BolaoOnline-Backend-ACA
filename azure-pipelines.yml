@@ -6,13 +6,9 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  # Caminho para o diretório de build do projeto .NET no agente
   backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # Caminho para o diretório de saída do build do Angular
   frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
-  # Caminho para o diretório de staging temporário do backend
   backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
-  # Caminho para o diretório final que será zipado para deploy
   finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
@@ -26,7 +22,8 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        projects: '$(backendProjectDir)/*.csproj'
+        # AQUI ESTÁ O AJUSTE. Usamos o caminho exato para o .csproj
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
@@ -39,20 +36,17 @@ stages:
       inputs:
         command: 'custom'
         workingDir: '$(backendProjectDir)'
-        # Define o caminho de saída para a pasta temporária de frontend
         customCommand: 'run build --prod --output-path=$(frontendDistDir)'
-    
-    # 1. Publica o projeto .NET em uma pasta temporária sem o frontend.
+
     - task: DotNetCoreCLI@2
       displayName: 'Publicar Backend'
       inputs:
         command: 'publish'
         publishWebProjects: false
-        projects: '$(backendProjectDir)/*.csproj'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
 
-    # 2. Mescla o frontend e o backend na pasta de deploy final.
     - script: |
         echo "Copiando arquivos do Backend para a pasta de deploy final..."
         xcopy "$(backendPublishDir)" "$(finalDeployDir)" /s /e /y
@@ -60,7 +54,6 @@ stages:
         xcopy "$(frontendDistDir)" "$(finalDeployDir)\wwwroot" /s /e /y
       displayName: 'Mesclar Frontend e Backend'
       
-    # 3. Empacota a pasta de deploy final.
     - task: ArchiveFiles@2
       displayName: 'Empacotar Artefato para Deploy'
       inputs:
@@ -90,7 +83,7 @@ stages:
     strategy:
       runOnce:
         deploy:
-          steps:  
+          steps:
           - task: AzureWebApp@1
             displayName: 'Deploy para Azure App Service'
             inputs:
