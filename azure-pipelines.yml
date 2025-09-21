@@ -24,7 +24,6 @@ stages:
 
           # Compila o Frontend (Angular) e força a pasta de saída
           - script: |
-              echo "Iniciando build do Angular..."
               cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
               npm install
               npm run build --prod --output-path=$(frontendPublishDir) --base-href=/ || exit 1
