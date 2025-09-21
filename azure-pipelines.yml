@@ -21,18 +21,13 @@ stages:
             inputs:
               versionSpec: "18.x"
 
-          # Instala as dependências do Frontend
+          # 2. Compila o Frontend (Angular)
           - script: |
-              cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
               npm install
-            displayName: "Instalar dependências (Frontend)"
-
-          # Compila o Frontend (Angular)
-          - script: |
-              cd $(Build.SourcesDirectory)/src/BolaoOnlineAppV5
-              npm run build
+              npm run build --prod --output-path=$(frontendPublishDir) --base-href=/
             displayName: "Compilar Frontend (Angular)"
-          
+            workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
+
           # Publica o backend do .NET
           - task: DotNetCoreCLI@2
             displayName: "Publicar Backend (.NET)"
@@ -50,6 +45,13 @@ stages:
               Contents: '**'
               TargetFolder: "$(appPublishDir)/wwwroot"
               cleanTargetFolder: true
+
+          # NOVA TAREFA: Adiciona um arquivo de texto com a versão do build
+          - script: |
+              echo "Criando arquivo de versão..."
+              echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
+              echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
+            displayName: 'Adicionar arquivo de Versão do Build'
 
           # Compacta a pasta de DEPLOY final em um único arquivo ZIP
           - task: ArchiveFiles@2
