@@ -1,3 +1,4 @@
+
 trigger:
 - main
 
@@ -6,9 +7,13 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  # Define o caminho para o diretório de build do projeto .NET no agente.
   backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  # Define o caminho de saída para o build do Angular em uma pasta temporária.
   frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
+  # Define o diretório de staging temporário do backend.
   backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
+  # Define o diretório final que será empacotado para o deploy.
   finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
@@ -22,7 +27,7 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        # AQUI ESTÁ O AJUSTE. Usamos o caminho exato para o .csproj
+        # A correção para o erro: o caminho exato para o arquivo .csproj
         projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
@@ -36,6 +41,7 @@ stages:
       inputs:
         command: 'custom'
         workingDir: '$(backendProjectDir)'
+        # Direciona o build para a pasta temporária.
         customCommand: 'run build --prod --output-path=$(frontendDistDir)'
 
     - task: DotNetCoreCLI@2
@@ -82,7 +88,7 @@ stages:
       vmImage: 'windows-latest'
     strategy:
       runOnce:
-        deploy:
+        deploy:        
           steps:
           - task: AzureWebApp@1
             displayName: 'Deploy para Azure App Service'
