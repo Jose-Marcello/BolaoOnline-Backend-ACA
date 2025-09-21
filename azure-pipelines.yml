@@ -7,7 +7,8 @@ pool:
 variables:
   buildConfiguration: "Release"
   appPublishDir: "$(Build.ArtifactStagingDirectory)/app"
-  
+  frontendDistDir: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
+
 stages:
   - stage: Build
     displayName: "Build e Empacotamento do Aplicativo"
@@ -24,7 +25,7 @@ stages:
           # 2. Compila o Frontend (Angular)
           - script: |
               npm install
-              npm run build --prod --output-path=$(frontendPublishDir) --base-href=/
+              npm run build --prod
             displayName: "Compilar Frontend (Angular)"
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
 
@@ -41,7 +42,7 @@ stages:
           - task: CopyFiles@2
             displayName: "Copiar arquivos do Frontend para a wwwroot"
             inputs:
-              SourceFolder: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5"
+              SourceFolder: "$(frontendDistDir)"
               Contents: '**'
               TargetFolder: "$(appPublishDir)/wwwroot"
               cleanTargetFolder: true
