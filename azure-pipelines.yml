@@ -6,7 +6,10 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
+  # Define o local de saída do build do Angular em uma pasta temporária.
+  frontendTempDir: '$(Build.SourcesDirectory)/temp/angular'
+  # Define o diretório wwwroot do projeto .NET.
+  backendWwwrootDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/wwwroot'
   
 stages:
 - stage: Build
@@ -32,44 +35,23 @@ stages:
       inputs:
         command: 'custom'
         workingDir: 'src/BolaoOnlineAppV5'
-        customCommand: 'run build --prod --output-path=$(frontendDistDir)'
-    
-    # Nova tarefa: Copia os arquivos do frontend para o diretório de staging
+        # Direciona o build para a pasta temporária.
+        customCommand: 'run build --prod --output-path=$(frontendTempDir)'
+
     - task: CopyFiles@2
-      displayName: 'Copiar arquivos do Frontend para Staging'
+      displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
       inputs:
-        SourceFolder: '$(frontendDistDir)'
+        SourceFolder: '$(frontendTempDir)'
         Contents: '**'
-        TargetFolder: '$(Build.ArtifactStagingDirectory)/App'
-        
-    - task: DotNetCoreCLI@2
-      displayName: 'Compilar Backend'
-      inputs:
-        command: 'build'
-        projects: '**/*.csproj'
-        arguments: '--configuration $(buildConfiguration)'
+        TargetFolder: '$(backendWwwrootDir)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Publicar Backend para Staging'
+      displayName: 'Publicar Backend com Frontend'
       inputs:
         command: 'publish'
         publishWebProjects: true
-        # Adiciona o parâmetro para não compactar, pois faremos isso em seguida
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/Backend --no-self-contained'
-        zipAfterPublish: false
-
-    - script: |
-        # Script para mover os arquivos do backend para a pasta da aplicação
-        xcopy "$(Build.ArtifactStagingDirectory)\Backend" "$(Build.ArtifactStagingDirectory)\App" /s /e /y
-        
-    - task: ArchiveFiles@2
-      displayName: 'Empacotar Artefato para Deploy'
-      inputs:
-        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/App'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publicar Artefato da Aplicação'
@@ -98,5 +80,4 @@ stages:
               azureSubscription: "Azure-BolaoOnline-Novo"
               appType: 'webApp'
               appName: "bolaoonline-testes"
-              # O nome do pacote é ajustado para o novo arquivo zip
               package: '$(Pipeline.Workspace)/drop/**/*.zip'
