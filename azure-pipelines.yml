@@ -46,6 +46,13 @@ stages:
               TargetFolder: "$(appPublishDir)/wwwroot"
               cleanTargetFolder: true
 
+          # NOVA TAREFA: Adiciona um arquivo de texto com a versão do build
+          - script: |
+              echo "Criando arquivo de versão..."
+              echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
+              echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
+            displayName: 'Adicionar arquivo de Versão do Build'
+
           # Compacta a pasta de DEPLOY final em um único arquivo ZIP
           - task: ArchiveFiles@2
             displayName: "Compactar Artefato Final"
