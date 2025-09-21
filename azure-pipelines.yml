@@ -25,7 +25,7 @@ stages:
           # 2. Compila o Frontend (Angular)
           - script: |
               npm install
-              npm run build --prod
+              npm run build --prod --output-path=$(frontendDistDir)
             displayName: "Compilar Frontend (Angular)"
             workingDirectory: "$(Build.SourcesDirectory)/src/BolaoOnlineAppV5"
             
