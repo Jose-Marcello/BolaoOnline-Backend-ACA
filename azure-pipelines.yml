@@ -6,10 +6,14 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  # Define o local de saída do build do Angular em uma pasta temporária.
-  frontendTempDir: '$(Build.SourcesDirectory)/temp/angular'
-  # Define o diretório wwwroot do projeto .NET.
-  backendWwwrootDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/wwwroot'
+  # Caminho para o diretório de build do projeto .NET no agente.
+  backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  # Caminho para o diretório de saída do build do Angular
+  frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
+  # Caminho para o diretório de staging temporário do backend.
+  backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
+  # Caminho para o diretório final que será empacotado para o deploy.
+  finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
 - stage: Build
@@ -22,36 +26,49 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        projects: '**/*.csproj'
+        # Adiciona o diretório de trabalho correto
+        workingDirectory: '$(backendProjectDir)'
+        projects: 'ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
       inputs:
         command: 'install'
-        workingDir: 'src/BolaoOnlineAppV5'
+        workingDir: '$(backendProjectDir)'
         
     - task: Npm@1
       displayName: 'Compilar Frontend'
       inputs:
         command: 'custom'
-        workingDir: 'src/BolaoOnlineAppV5'
-        # Direciona o build para a pasta temporária.
-        customCommand: 'run build --prod --output-path=$(frontendTempDir)'
-
-    - task: CopyFiles@2
-      displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
-      inputs:
-        SourceFolder: '$(frontendTempDir)'
-        Contents: '**'
-        TargetFolder: '$(backendWwwrootDir)'
+        workingDir: '$(backendProjectDir)'
+        customCommand: 'run build --prod --output-path=$(frontendDistDir)'
 
     - task: DotNetCoreCLI@2
-      displayName: 'Publicar Backend com Frontend'
+      displayName: 'Publicar Backend'
       inputs:
         command: 'publish'
-        publishWebProjects: true
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-        zipAfterPublish: true
+        publishWebProjects: false
+        # Adiciona o diretório de trabalho correto
+        workingDirectory: '$(backendProjectDir)'
+        projects: 'ApostasApp.Core.Web.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
+        zipAfterPublish: false
+
+    - script: |
+        echo "Copiando arquivos do Backend para a pasta de deploy final..."
+        xcopy "$(backendPublishDir)" "$(finalDeployDir)" /s /e /y
+        echo "Copiando arquivos do Frontend para a pasta wwwroot..."
+        xcopy "$(frontendDistDir)" "$(finalDeployDir)\wwwroot" /s /e /y
+      displayName: 'Mesclar Frontend e Backend'
+      
+    - task: ArchiveFiles@2
+      displayName: 'Empacotar Artefato para Deploy'
+      inputs:
+        rootFolderOrFile: '$(finalDeployDir)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publicar Artefato da Aplicação'
@@ -71,7 +88,7 @@ stages:
     pool:
       vmImage: 'windows-latest'
     strategy:
-      runOnce:
+      runOnce:        
         deploy:
           steps:
           - task: AzureWebApp@1
