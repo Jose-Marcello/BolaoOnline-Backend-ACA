@@ -53,7 +53,7 @@ stages:
     # 4. Mescla o Frontend e o Backend
     - script: |
         echo "Copiando arquivos do Frontend para a wwwroot do Backend..."
-        xcopy "$(frontendDistDir)" "$(backendPublishDir)\wwwroot" /s /e /y
+        xcopy "$(frontendDistDir)\*" "$(backendPublishDir)\wwwroot" /s /e /y
       displayName: 'Mesclar Frontend e Backend'
       
     # 5. Compacta a pasta de deploy final em um único arquivo ZIP
