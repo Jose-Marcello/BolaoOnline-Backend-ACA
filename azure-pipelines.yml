@@ -26,14 +26,24 @@ stages:
         inputs:
           versionSpec: '18.x'
 
-      # 2. Instala e compila o Frontend (Angular)
-      - script: |
-          npm install
-          npm run build --configuration=$(buildConfiguration) --output-path="$(frontendProjectDir)/dist/bolao-online-app-v5"
+      # 2. Instala as dependências do Frontend (Angular)
+      - script: npm install
+        displayName: 'Instalar dependências do Frontend'
+        workingDirectory: '$(frontendProjectDir)'
+
+      # 3. Compila o Frontend (Angular)
+      - script: npm run build --configuration=Release --verbose
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
-      
-      # 3. Publica o backend do .NET
+
+      # 4. Diagnosticar a saída do build para confirmar o caminho da pasta dist
+      # Esta etapa irá listar o conteúdo da pasta do projeto Angular para encontrar a pasta 'dist'
+      - script: |
+          echo "Listando o conteúdo da pasta do projeto Angular..."
+          dir /s "$(frontendProjectDir)"
+        displayName: 'Diagnosticar - Onde está a pasta dist?'
+
+      # 5. Publica o backend do .NET
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -42,7 +52,7 @@ stages:
           arguments: '--configuration $(buildConfiguration) --output $(finalPackageDir)'
           zipAfterPublish: false
       
-      # 4. Copia os arquivos compilados do Angular para a wwwroot do .NET
+      # 6. Copia os arquivos compilados do Angular para a wwwroot do .NET
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
@@ -51,14 +61,14 @@ stages:
           TargetFolder: '$(finalPackageDir)/wwwroot'
           cleanTargetFolder: true
 
-      # 5. Adiciona um arquivo de texto com a versão do build
+      # 7. Adiciona um arquivo de texto com a versão do build
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(finalPackageDir)/build.version.txt"
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(finalPackageDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # 6. Compacta a pasta de DEPLOY final em um único arquivo ZIP
+      # 8. Compacta a pasta de DEPLOY final em um único arquivo ZIP
       - task: ArchiveFiles@2
         displayName: 'Compactar Artefato Final'
         inputs:
@@ -68,7 +78,7 @@ stages:
           archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
           replaceExistingArchive: true
 
-      # 7. Publica o único artefato de build (o arquivo ZIP)
+      # 9. Publica o único artefato de build (o arquivo ZIP)
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
