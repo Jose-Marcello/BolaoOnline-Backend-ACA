@@ -27,7 +27,7 @@ stages:
       # 2. Instala e compila o Frontend (Angular)
       - script: |
           npm install
-          npx ng build --configuration=$(buildConfiguration) --output-path=$(frontendProjectDir)/dist/bolao-online-app-v5
+          npx ng build --configuration=$(buildConfiguration) --output-path=dist/bolao-online-app-v5
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
 
