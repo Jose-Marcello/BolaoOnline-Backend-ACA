@@ -46,17 +46,15 @@ stages:
     # 3. Instala e compila o Frontend (Angular)
     - script: |
         npm install
-        npm run build --prod --output-path=$(frontendDistDir)
+        npm run build --prod
       displayName: 'Instalar e compilar Frontend (Angular)'
       workingDirectory: '$(frontendProjectDir)'
     
     # NOVA ETAPA DE DIAGNÓSTICO
     - script: |
-        echo "Listando o conteúdo da pasta de artefatos para encontrar o build do Angular..."
-        dir "$(Build.ArtifactStagingDirectory)" /s
-        echo "Listando a pasta do projeto Angular para encontrar a pasta de build..."
-        dir "$(frontendProjectDir)" /s
-      displayName: 'Diagnosticar - Encontrar Saída do Build'
+        echo "Listando o conteúdo do diretório do projeto Angular para encontrar a pasta de build..."
+        dir "$(frontendProjectDir)"
+      displayName: 'Diagnosticar - Encontrar Saída do Build do Angular'
       
     # 4. Mescla o Frontend e o Backend
     - script: |
