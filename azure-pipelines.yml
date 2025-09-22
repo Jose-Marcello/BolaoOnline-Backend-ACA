@@ -49,7 +49,13 @@ stages:
         npm run build --prod --output-path=$(frontendDistDir)
       displayName: 'Instalar e compilar Frontend (Angular)'
       workingDirectory: '$(frontendProjectDir)'
-
+    
+    # NOVA ETAPA DE DIAGNÓSTICO
+    - script: |
+        echo "Listando o conteúdo da pasta de artefatos para encontrar o build do Angular..."
+        dir "$(Build.ArtifactStagingDirectory)" /s
+      displayName: 'Diagnosticar - Encontrar Saída do Build'
+      
     # 4. Mescla o Frontend e o Backend
     - script: |
         echo "Copiando arquivos do Frontend para a wwwroot do Backend..."
