@@ -22,11 +22,11 @@ stages:
   - job: BuildJob
     displayName: 'Compilar e Publicar Artefatos'
     steps:
-    - task: DotNetCoreCLI@2
+    # CORREÇÃO: Usamos um script simples para restaurar dependências
+    - script: |
+        dotnet restore
       displayName: 'Restaurar dependências do Backend'
-      inputs:
-        command: 'restore'
-        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+      workingDirectory: '$(backendProjectDir)'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
@@ -46,7 +46,8 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: false
-        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+        workingDirectory: '$(backendProjectDir)'
+        projects: '**/*.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
 
