@@ -1,4 +1,3 @@
-
 trigger:
 - main
 
@@ -7,13 +6,13 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  # Define o caminho para o diretório de build do projeto .NET no agente.
+  # Caminho para o diretório de build do projeto .NET no agente.
   backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # Define o caminho de saída para o build do Angular
+  # Caminho para o diretório de saída do build do Angular
   frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
-  # Define o diretório de staging temporário do backend
+  # Caminho para o diretório de staging temporário do backend.
   backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
-  # Define o diretório final que será empacotado para o deploy
+  # Caminho para o diretório final que será empacotado para o deploy.
   finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
@@ -27,8 +26,9 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        # PASSANDO O CAMINHO ABSOLUTO: Esta é a correção definitiva.
-        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+        # Adiciona o diretório de trabalho E o projeto de forma mais robusta.
+        workingDirectory: '$(backendProjectDir)'
+        projects: '**/*.csproj'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
@@ -48,8 +48,8 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: false
-        # PASSANDO O CAMINHO ABSOLUTO: Fazemos o mesmo aqui para consistência.
-        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+        workingDirectory: '$(backendProjectDir)'
+        projects: '**/*.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
 
@@ -87,7 +87,7 @@ stages:
     pool:
       vmImage: 'windows-latest'
     strategy:
-      runOnce:        
+      runOnce:
         deploy:        
           steps:
           - task: AzureWebApp@1
