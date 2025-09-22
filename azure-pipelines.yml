@@ -22,14 +22,20 @@ stages:
       - task: NodeTool@0
         displayName: 'Instalar Node.js'
         inputs:
-          versionSpec: '18.x' # Use uma versão LTS do Node.js
+          versionSpec: '18.x'
 
       # 2. Instala e compila o Frontend (Angular)
       - script: |
           npm install
-          npx ng build --configuration=$(buildConfiguration) --output-path=dist/bolao-online-app-v5
+          npx ng build --configuration=$(buildConfiguration)
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
+      
+      # 🚨 NOVA ETAPA DE DIAGNÓSTICO
+      - script: |
+          echo "Listando o conteúdo da pasta do projeto Angular para encontrar a pasta 'dist'..."
+          dir /s "$(frontendProjectDir)"
+        displayName: 'Diagnosticar - Onde está a pasta dist?'
 
       # 3. Publica o backend do .NET
       - task: DotNetCoreCLI@2
