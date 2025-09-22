@@ -44,12 +44,11 @@ stages:
         zipAfterPublish: false
     
     # 3. Instala e compila o Frontend (Angular)
-    - task: Npm@1
+    - script: |
+        npm install
+        npm run build --prod --output-path=$(frontendDistDir)
       displayName: 'Instalar e compilar Frontend (Angular)'
-      inputs:
-        command: 'custom'
-        workingDir: '$(frontendProjectDir)'
-        customCommand: 'install && run build --prod --output-path=$(frontendDistDir)'
+      workingDirectory: '$(frontendProjectDir)'
 
     # 4. Mescla o Frontend e o Backend
     - script: |
