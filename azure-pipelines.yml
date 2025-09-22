@@ -26,9 +26,7 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        # Adiciona o diretório de trabalho correto
-        workingDirectory: '$(backendProjectDir)'
-        projects: 'ApostasApp.Core.Web.csproj'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
@@ -41,16 +39,24 @@ stages:
       inputs:
         command: 'custom'
         workingDir: '$(backendProjectDir)'
-        customCommand: 'run build --prod --output-path=$(frontendDistDir)'
+        # Removemos o parâmetro de saída para que ele use o padrão do Angular
+        customCommand: 'run build --prod'
+    
+    # NOVO PASSO: Copia o build do Angular do diretório padrão para a nossa pasta temporária.
+    - task: CopyFiles@2
+      displayName: 'Copiar Build do Frontend para Pasta Temporária'
+      inputs:
+        # A pasta padrão de saída do Angular é dist/<nome-do-projeto>
+        SourceFolder: '$(backendProjectDir)/dist/bolao-online-app-v5'
+        Contents: '**'
+        TargetFolder: '$(frontendDistDir)'
 
     - task: DotNetCoreCLI@2
       displayName: 'Publicar Backend'
       inputs:
         command: 'publish'
         publishWebProjects: false
-        # Adiciona o diretório de trabalho correto
-        workingDirectory: '$(backendProjectDir)'
-        projects: 'ApostasApp.Core.Web.csproj'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
 
@@ -88,13 +94,13 @@ stages:
     pool:
       vmImage: 'windows-latest'
     strategy:
-      runOnce:        
+      runOnce:
         deploy:
           steps:
           - task: AzureWebApp@1
             displayName: 'Deploy para Azure App Service'
             inputs:
-              azureSubscription: "Azure-BolaoOnline-Novo"
+              azureSubscription: 'Azure-BolaoOnline-Novo'
               appType: 'webApp'
-              appName: "bolaoonline-testes"
+              appName: 'bolaoonline-testes'
               package: '$(Pipeline.Workspace)/drop/**/*.zip'
