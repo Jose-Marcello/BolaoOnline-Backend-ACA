@@ -26,9 +26,7 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        # Adiciona o diretório de trabalho E o projeto de forma mais robusta.
-        workingDirectory: '$(backendProjectDir)'
-        projects: '**/*.csproj'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
       displayName: 'Instalar dependências do Frontend'
@@ -48,8 +46,7 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: false
-        workingDirectory: '$(backendProjectDir)'
-        projects: '**/*.csproj'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
 
@@ -88,7 +85,7 @@ stages:
       vmImage: 'windows-latest'
     strategy:
       runOnce:
-        deploy:        
+        deploy:
           steps:
           - task: AzureWebApp@1
             displayName: 'Deploy para Azure App Service'
