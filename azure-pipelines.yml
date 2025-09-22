@@ -9,11 +9,11 @@ variables:
   buildConfiguration: 'Release'
   # Define o caminho para o diretório de build do projeto .NET no agente.
   backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # Define o caminho de saída para o build do Angular em uma pasta temporária.
+  # Define o caminho de saída para o build do Angular
   frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
-  # Define o diretório de staging temporário do backend.
+  # Define o diretório de staging temporário do backend
   backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
-  # Define o diretório final que será empacotado para o deploy.
+  # Define o diretório final que será empacotado para o deploy
   finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
@@ -27,7 +27,7 @@ stages:
       displayName: 'Restaurar dependências do Backend'
       inputs:
         command: 'restore'
-        # A correção para o erro: o caminho exato para o arquivo .csproj
+        # PASSANDO O CAMINHO ABSOLUTO: Esta é a correção definitiva.
         projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         
     - task: Npm@1
@@ -41,7 +41,6 @@ stages:
       inputs:
         command: 'custom'
         workingDir: '$(backendProjectDir)'
-        # Direciona o build para a pasta temporária.
         customCommand: 'run build --prod --output-path=$(frontendDistDir)'
 
     - task: DotNetCoreCLI@2
@@ -49,6 +48,7 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: false
+        # PASSANDO O CAMINHO ABSOLUTO: Fazemos o mesmo aqui para consistência.
         projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
         zipAfterPublish: false
@@ -87,7 +87,7 @@ stages:
     pool:
       vmImage: 'windows-latest'
     strategy:
-      runOnce:
+      runOnce:        
         deploy:        
           steps:
           - task: AzureWebApp@1
