@@ -11,7 +11,7 @@ variables:
   # Diretório do projeto Angular no agente
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   # Diretório para onde o build do Angular será direcionado
-  frontendDistDir: '$(Build.ArtifactStagingDirectory)/frontend-dist'
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   # Diretório de publicação do Backend
   backendPublishDir: '$(Build.ArtifactStagingDirectory)/backend-publish'
   # Diretório final que será empacotado para o deploy
@@ -54,12 +54,14 @@ stages:
     - script: |
         echo "Listando o conteúdo da pasta de artefatos para encontrar o build do Angular..."
         dir "$(Build.ArtifactStagingDirectory)" /s
+        echo "Listando a pasta do projeto Angular para encontrar a pasta de build..."
+        dir "$(frontendProjectDir)" /s
       displayName: 'Diagnosticar - Encontrar Saída do Build'
       
     # 4. Mescla o Frontend e o Backend
     - script: |
         echo "Copiando arquivos do Frontend para a wwwroot do Backend..."
-        xcopy "$(frontendDistDir)\*" "$(backendPublishDir)\wwwroot" /s /e /y
+        xcopy "$(frontendDistDir)\*" "$(backendPublishDir)\ApostasApp.Core.Web\wwwroot" /s /e /y
       displayName: 'Mesclar Frontend e Backend'
       
     # 5. Compacta a pasta de deploy final em um único arquivo ZIP
