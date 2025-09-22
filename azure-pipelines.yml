@@ -1,97 +1,93 @@
 trigger:
-- main
+  - main
 
 pool:
   vmImage: 'windows-latest'
 
 variables:
   buildConfiguration: 'Release'
-  # Caminho para o diretório de build do projeto .NET no agente.
-  backendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # Caminho para o diretório de saída do build do Angular
-  frontendDistDir: '$(Build.SourcesDirectory)/dist/frontend'
-  # Caminho para o diretório de staging temporário do backend.
-  backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
-  # Caminho para o diretório final que será empacotado para o deploy.
+  # Diretório do projeto .NET no agente
+  backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+  # Diretório do projeto Angular no agente
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  # Diretório para onde o build do Angular será direcionado
+  frontendDistDir: '$(Build.ArtifactStagingDirectory)/frontend-dist'
+  # Diretório de publicação do Backend
+  backendPublishDir: '$(Build.ArtifactStagingDirectory)/backend-publish'
+  # Diretório final que será empacotado para o deploy
   finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
   
 stages:
 - stage: Build
-  displayName: 'Build do Projeto'
+  displayName: 'Build e Empacotamento do Projeto'
   jobs:
   - job: BuildJob
-    displayName: 'Compilar e Publicar Artefatos'
+    displayName: 'Job de Build'
     steps:
-    # CORREÇÃO: Usamos um script simples para restaurar dependências
-    - script: |
-        dotnet restore
-      displayName: 'Restaurar dependências do Backend'
-      workingDirectory: '$(backendProjectDir)'
-        
-    - task: Npm@1
-      displayName: 'Instalar dependências do Frontend'
-      inputs:
-        command: 'install'
-        workingDir: '$(backendProjectDir)'
-        
-    - task: Npm@1
-      displayName: 'Compilar Frontend'
-      inputs:
-        command: 'custom'
-        workingDir: '$(backendProjectDir)'
-        customCommand: 'run build --prod --output-path=$(frontendDistDir)'
-
+    
+    # 1. Instala e restaura as dependências do .NET Backend
     - task: DotNetCoreCLI@2
-      displayName: 'Publicar Backend'
+      displayName: 'Restaurar dependências do Backend'
+      inputs:
+        command: 'restore'
+        workingDirectory: '$(backendProjectDir)'
+        projects: '**/*.csproj'
+
+    # 2. Publica o .NET Backend
+    - task: DotNetCoreCLI@2
+      displayName: 'Publicar Backend (.NET)'
       inputs:
         command: 'publish'
         publishWebProjects: false
-        workingDirectory: '$(backendProjectDir)'
-        projects: '**/*.csproj'
-        arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir) --no-self-contained'
+        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir)'
         zipAfterPublish: false
+    
+    # 3. Instala e compila o Frontend (Angular)
+    - task: Npm@1
+      displayName: 'Instalar e compilar Frontend (Angular)'
+      inputs:
+        command: 'custom'
+        workingDir: '$(frontendProjectDir)'
+        customCommand: 'install && run build --prod --output-path=$(frontendDistDir)'
 
+    # 4. Mescla o Frontend e o Backend
     - script: |
-        echo "Copiando arquivos do Backend para a pasta de deploy final..."
-        xcopy "$(backendPublishDir)" "$(finalDeployDir)" /s /e /y
-        echo "Copiando arquivos do Frontend para a pasta wwwroot..."
-        xcopy "$(frontendDistDir)" "$(finalDeployDir)\wwwroot" /s /e /y
+        echo "Copiando arquivos do Frontend para a wwwroot do Backend..."
+        xcopy "$(frontendDistDir)" "$(backendPublishDir)\wwwroot" /s /e /y
       displayName: 'Mesclar Frontend e Backend'
       
+    # 5. Compacta a pasta de deploy final em um único arquivo ZIP
     - task: ArchiveFiles@2
-      displayName: 'Empacotar Artefato para Deploy'
+      displayName: 'Compactar Artefato Final'
       inputs:
-        rootFolderOrFile: '$(finalDeployDir)'
+        rootFolderOrFile: '$(backendPublishDir)'
         includeRootFolder: false
         archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
         replaceExistingArchive: true
 
+    # 6. Publica o único artefato de build (o arquivo ZIP)
     - task: PublishBuildArtifacts@1
-      displayName: 'Publicar Artefato da Aplicação'
+      displayName: 'Publicar o Artefato de Build'
       inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
         ArtifactName: 'drop'
-        publishLocation: 'Container'
 
 - stage: Deploy
-  displayName: 'Deploy para o Azure'
+  displayName: 'Deploy para Azure'
   dependsOn: Build
-  condition: succeeded()
   jobs:
   - deployment: DeployJob
-    displayName: 'Implantar Aplicação Web'
-    environment: 'Produção'
-    pool:
-      vmImage: 'windows-latest'
+    displayName: 'Job de Deployment'
+    environment: 'AmbienteDeTestes'
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: AzureWebApp@1
-            displayName: 'Deploy para Azure App Service'
-            inputs:
-              azureSubscription: 'Azure-BolaoOnline-Novo'
-              appType: 'webApp'
-              appName: 'bolaoonline-testes'
-              package: '$(Pipeline.Workspace)/drop/**/*.zip'
+            - task: AzureWebApp@1
+              displayName: 'Implantar no Azure App Service'
+              inputs:
+                azureSubscription: 'Azure-BolaoOnline-Novo'
+                appName: 'bolaoonline-testes'
+                package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
