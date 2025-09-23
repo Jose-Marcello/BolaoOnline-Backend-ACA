@@ -10,7 +10,7 @@ variables:
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  # Novo diretório para o pacote final para garantir a estrutura correta
+  # Diretório para o pacote final para garantir a estrutura correta
   finalPackageDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
 
 stages:
@@ -32,12 +32,11 @@ stages:
         workingDirectory: '$(frontendProjectDir)'
 
       # 3. Compila o Frontend (Angular)
-      - script: npm run build --configuration=Release --verbose
+      - script: npm run build --configuration=$(buildConfiguration) --verbose
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
 
       # 4. Diagnosticar a saída do build para confirmar o caminho da pasta dist
-      # Esta etapa irá listar o conteúdo da pasta do projeto Angular para encontrar a pasta 'dist'
       - script: |
           echo "Listando o conteúdo da pasta do projeto Angular..."
           dir /s "$(frontendProjectDir)"
@@ -102,3 +101,7 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
                   package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
+                  # Esta é a linha que vai garantir a limpeza do deploy anterior.
+                  # Ele remove arquivos que não estão no pacote do deploy.
+                  RemoveAdditionalFilesFromFolders: true
+                  enable_msdeploy_web_rule: true
