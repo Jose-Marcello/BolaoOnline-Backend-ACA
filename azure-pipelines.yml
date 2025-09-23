@@ -82,11 +82,11 @@ stages:
         runOnce:
           deploy:
             steps:
-              - task: AzureCLI@2
-                displayName: 'Implantar via Azure CLI'
+              # AQUI ESTÁ A NOVA TAREFA RECOMENDADA
+              - task: AzureWebApp@1
+                displayName: 'Implantar no Azure App Service'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
-                  scriptType: 'bash'
-                  scriptLocation: 'inlineScript'
-                  inlineScript: |
-                    az webapp deploy --name bolaoonline-testes --resource-group [SEU_GRUPO_DE_RECURSOS] --src-path "$(Pipeline.Workspace)/drop" --clean true
+                  appType: 'webApp'
+                  appName: 'bolaoonline-testes'
+                  package: '$(Pipeline.Workspace)/drop'
