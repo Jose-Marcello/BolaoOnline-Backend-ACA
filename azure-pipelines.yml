@@ -6,93 +6,90 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  # Diretório do projeto .NET no agente
-  backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  # Diretório do projeto Angular no agente
+  appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # Diretório para onde o build do Angular será direcionado
-  frontendDistDir: '$(Build.ArtifactStagingDirectory)/frontend-dist'
-  # Diretório de publicação do Backend
-  backendPublishDir: '$(Build.ArtifactStagingDirectory)/backend-publish'
-  # Diretório final que será empacotado para o deploy
-  finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
-  
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
+  backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+
 stages:
 - stage: Build
-  displayName: 'Build e Empacotamento do Projeto'
+  displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
   - job: BuildJob
     displayName: 'Job de Build'
     steps:
-    
-    # 1. Instala e restaura as dependências do .NET Backend
-    - task: DotNetCoreCLI@2
-      displayName: 'Restaurar dependências do Backend'
-      inputs:
-        command: 'restore'
-        workingDirectory: '$(backendProjectDir)'
-        projects: '**/*.csproj'
+      # 1. Garante que a versão correta do Node.js está instalada
+      - task: NodeTool@0
+        displayName: 'Instalar Node.js'
+        inputs:
+          versionSpec: '18.x'
 
-    # 2. Publica o .NET Backend
-    - task: DotNetCoreCLI@2
-      displayName: 'Publicar Backend (.NET)'
-      inputs:
-        command: 'publish'
-        publishWebProjects: false
-        projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-        arguments: '--configuration $(buildConfiguration) --output $(backendPublishDir)'
-        zipAfterPublish: false
-    
-    # 3. Instala e compila o Frontend (Angular)
-    - script: |
-        npm install
-        npm run build --prod --output-path=$(frontendDistDir)
-      displayName: 'Instalar e compilar Frontend (Angular)'
-      workingDirectory: '$(frontendProjectDir)'
-    
-    # NOVA ETAPA DE DIAGNÓSTICO
-    - script: |
-        echo "Listando o conteúdo da pasta de artefatos para encontrar o build do Angular..."
-        dir "$(Build.ArtifactStagingDirectory)" /s
-      displayName: 'Diagnosticar - Encontrar Saída do Build'
-      
-    # 4. Mescla o Frontend e o Backend
-    - script: |
-        echo "Copiando arquivos do Frontend para a wwwroot do Backend..."
-        xcopy "$(frontendDistDir)\*" "$(backendPublishDir)\wwwroot" /s /e /y
-      displayName: 'Mesclar Frontend e Backend'
-      
-    # 5. Compacta a pasta de deploy final em um único arquivo ZIP
-    - task: ArchiveFiles@2
-      displayName: 'Compactar Artefato Final'
-      inputs:
-        rootFolderOrFile: '$(backendPublishDir)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
-        replaceExistingArchive: true
+      # 2. Instala e compila o Frontend (Angular)
+      - script: |
+          npm install
+          npm run build --configuration=$(buildConfiguration) --verbose
+        displayName: 'Compilar Frontend (Angular)'
+        workingDirectory: '$(frontendProjectDir)'
 
-    # 6. Publica o único artefato de build (o arquivo ZIP)
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publicar o Artefato de Build'
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
-        ArtifactName: 'drop'
+      # 3. Publica o backend do .NET
+      - task: DotNetCoreCLI@2
+        displayName: 'Publicar Backend (.NET)'
+        inputs:
+          command: 'publish'
+          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+          # Removido --no-build para que a publish possa gerar os arquivos de assets.
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
+          zipAfterPublish: false
+      
+      # 4. Copia os arquivos compilados do Angular para a wwwroot do .NET
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para a wwwroot'
+        inputs:
+          SourceFolder: '$(frontendDistDir)'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          cleanTargetFolder: true
+
+      # 5. Adiciona um arquivo de texto com a versão do build
+      - script: |
+          echo "Criando arquivo de versão..."
+          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
+          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
+        displayName: 'Adicionar arquivo de Versão do Build'
+
+      # 6. Compacta a pasta de DEPLOY final em um único arquivo ZIP
+      - task: ArchiveFiles@2
+        displayName: 'Compactar Artefato Final'
+        inputs:
+          rootFolderOrFile: '$(appPublishDir)'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
+          replaceExistingArchive: true
+
+      # 7. Publica o único artefato de build (o arquivo ZIP)
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publicar o Artefato de Build'
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
+          ArtifactName: 'drop'
 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
   jobs:
-  - deployment: DeployJob
-    displayName: 'Job de Deployment'
-    environment: 'AmbienteDeTestes'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-            - task: AzureWebApp@1
-              displayName: 'Implantar no Azure App Service'
-              inputs:
-                azureSubscription: 'Azure-BolaoOnline-Novo'
-                appName: 'bolaoonline-testes'
-                package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
+    - deployment: DeployJob
+      displayName: 'Job de Deployment'
+      environment: 'AmbienteDeTestes'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - task: AzureWebApp@1
+                displayName: 'Implantar no Azure App Service'
+                inputs:
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
+                  appName: 'bolaoonline-testes'
+                  package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
+                  RemoveAdditionalFilesFromFolders: true
+                  enable_msdeploy_web_rule: true
