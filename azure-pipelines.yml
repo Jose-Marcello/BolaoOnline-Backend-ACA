@@ -27,7 +27,7 @@ stages:
       # 2. Instala e compila o Frontend (Angular)
       - script: |
           npm install
-          npm run build --configuration=$(buildConfiguration)
+          npm run build --configuration=$(buildConfiguration) --verbose
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
 
@@ -37,8 +37,7 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          # Aqui está a alteração crucial para o deploy:
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)" --no-build'
           zipAfterPublish: false
       
       # 4. Copia os arquivos compilados do Angular para a wwwroot do .NET
