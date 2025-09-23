@@ -10,8 +10,6 @@ variables:
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  # Diretório para o pacote final para garantir a estrutura correta
-  finalPackageDir: '$(Build.ArtifactStagingDirectory)/FinalPackage'
 
 stages:
 - stage: Build
@@ -26,58 +24,50 @@ stages:
         inputs:
           versionSpec: '18.x'
 
-      # 2. Instala as dependências do Frontend (Angular)
-      - script: npm install
-        displayName: 'Instalar dependências do Frontend'
-        workingDirectory: '$(frontendProjectDir)'
-
-      # 3. Compila o Frontend (Angular)
-      - script: npm run build --configuration=$(buildConfiguration) --verbose
+      # 2. Instala e compila o Frontend (Angular)
+      - script: |
+          npm install
+          npm run build --configuration=$(buildConfiguration)
         displayName: 'Compilar Frontend (Angular)'
         workingDirectory: '$(frontendProjectDir)'
 
-      # 4. Diagnosticar a saída do build para confirmar o caminho da pasta dist
-      - script: |
-          echo "Listando o conteúdo da pasta do projeto Angular..."
-          dir /s "$(frontendProjectDir)"
-        displayName: 'Diagnosticar - Onde está a pasta dist?'
-
-      # 5. Publica o backend do .NET
+      # 3. Publica o backend do .NET
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output $(finalPackageDir)'
+          # Aqui está a alteração crucial para o deploy:
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
-      # 6. Copia os arquivos compilados do Angular para a wwwroot do .NET
+      # 4. Copia os arquivos compilados do Angular para a wwwroot do .NET
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(finalPackageDir)/wwwroot'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           cleanTargetFolder: true
 
-      # 7. Adiciona um arquivo de texto com a versão do build
+      # 5. Adiciona um arquivo de texto com a versão do build
       - script: |
           echo "Criando arquivo de versão..."
-          echo "Versao do Build: $(Build.BuildId)" > "$(finalPackageDir)/build.version.txt"
-          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(finalPackageDir)/build.version.txt"
+          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
+          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # 8. Compacta a pasta de DEPLOY final em um único arquivo ZIP
+      # 6. Compacta a pasta de DEPLOY final em um único arquivo ZIP
       - task: ArchiveFiles@2
         displayName: 'Compactar Artefato Final'
         inputs:
-          rootFolderOrFile: '$(finalPackageDir)'
+          rootFolderOrFile: '$(appPublishDir)'
           includeRootFolder: false
           archiveType: 'zip'
           archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
           replaceExistingArchive: true
 
-      # 9. Publica o único artefato de build (o arquivo ZIP)
+      # 7. Publica o único artefato de build (o arquivo ZIP)
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
@@ -101,7 +91,5 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
                   package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
-                  # Esta é a linha que vai garantir a limpeza do deploy anterior.
-                  # Ele remove arquivos que não estão no pacote do deploy.
                   RemoveAdditionalFilesFromFolders: true
                   enable_msdeploy_web_rule: true
