@@ -98,5 +98,5 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
                   package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
-                  RemoveAdditionalFilesFromFolders: true
+                  RemoveAdditionalFilesFromFolders: false # Alterado para false
                   enable_msdeploy_web_rule: true
