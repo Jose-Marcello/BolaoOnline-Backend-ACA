@@ -64,21 +64,11 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # 7. Compacta a pasta de DEPLOY final em um único arquivo ZIP
-      - task: ArchiveFiles@2
-        displayName: 'Compactar Artefato Final'
-        inputs:
-          rootFolderOrFile: '$(appPublishDir)'
-          includeRootFolder: false
-          archiveType: 'zip'
-          archiveFile: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
-          replaceExistingArchive: true
-
-      # 8. Publica o único artefato de build (o arquivo ZIP)
+      # 7. Publica o artefato de build (a pasta de DEPLOY final)
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)/BolaoOnline.zip'
+          PathtoPublish: '$(appPublishDir)'
           ArtifactName: 'drop'
 
 - stage: Deploy
@@ -97,6 +87,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
-                  package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
-                  RemoveAdditionalFilesFromFolders: false # Alterado para false
+                  package: '$(Pipeline.Workspace)/drop'
+                  RemoveAdditionalFilesFromFolders: false
                   enable_msdeploy_web_rule: true
