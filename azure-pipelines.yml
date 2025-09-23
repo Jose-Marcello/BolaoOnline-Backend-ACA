@@ -87,6 +87,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
-                  package: '$(Pipeline.Workspace)/drop/app' # Alterado para apontar para a subpasta 'app'
+                  package: '$(Pipeline.Workspace)/drop/app'
                   RemoveAdditionalFilesFromFolders: false
                   enable_msdeploy_web_rule: true
