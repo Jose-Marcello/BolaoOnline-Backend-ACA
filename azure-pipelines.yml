@@ -37,7 +37,7 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)" --no-build'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
       # 4. Copia os arquivos compilados do Angular para a wwwroot do .NET
