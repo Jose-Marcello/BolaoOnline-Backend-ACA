@@ -5,7 +5,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  buildConfiguration: 'Release'
+  buildConfiguration: 'production'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
@@ -98,5 +98,5 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appName: 'bolaoonline-testes'
                   package: '$(Pipeline.Workspace)/drop/BolaoOnline.zip'
-                  RemoveAdditionalFilesFromFolders: true
+                  RemoveAdditionalFilesFromFolders: false # Alterado para false
                   enable_msdeploy_web_rule: true
