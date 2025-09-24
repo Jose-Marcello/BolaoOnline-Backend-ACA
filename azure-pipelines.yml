@@ -9,6 +9,8 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+  zipName: 'bolao-app-$(Build.BuildId).zip'
+  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
 stages:
 - stage: Build
@@ -40,9 +42,18 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/temp"'
           zipAfterPublish: false
       
+      # CORREÇÃO DEFINITIVA: Mover o conteúdo da subpasta ApostasApp.Core.Web para a raiz do deploy
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Backend para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/temp/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)'
+          cleanTargetFolder: true
+
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Angular para a wwwroot'
         inputs:
@@ -56,10 +67,18 @@ stages:
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
+      - task: PowerShell@2
+        displayName: 'Compactar o Artefato com PowerShell'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Compress-Archive -Path '$(appPublishDir)\*' -DestinationPath '$(zipPath)'
+          pwsh: true
+
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(appPublishDir)'
+          PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
 
 - stage: Deploy
@@ -79,4 +98,4 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  package: '$(Pipeline.Workspace)/drop'
+                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
