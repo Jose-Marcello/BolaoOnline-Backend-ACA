@@ -69,4 +69,5 @@ stages:
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
                   package: '$(Pipeline.Workspace)/drop'
-                  deploymentMethod: 'WebDeploy'
+                  # Remova a linha abaixo
+                  # deploymentMethod: 'WebDeploy'
