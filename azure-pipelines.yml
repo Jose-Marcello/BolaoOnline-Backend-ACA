@@ -6,7 +6,9 @@ pool:
 
 variables:
   buildConfiguration: 'production'
+  # Publica em uma pasta temporária para ajustar a estrutura
   publishTempDir: '$(Build.ArtifactStagingDirectory)/publish-temp'
+  # Pasta final para o deploy
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
@@ -36,7 +38,7 @@ stages:
         displayName: 'npm build'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration) --output-path=$(backendProjectDir)/wwwroot'
+          customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
@@ -44,15 +46,16 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(publishTempDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
+      # Correção: Copiar os arquivos do Angular para a pasta wwwroot criada pelo .NET
       - task: CopyFiles@2
-        displayName: 'Ajustar Estrutura de Pastas'
+        displayName: 'Copiar Arquivos do Frontend'
         inputs:
-          SourceFolder: '$(publishTempDir)/ApostasApp.Core.Web'
+          SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           cleanTargetFolder: true
 
       - script: |
