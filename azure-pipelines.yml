@@ -6,15 +6,8 @@ pool:
 
 variables:
   buildConfiguration: 'production'
-  # Publica em uma pasta temporária para ajustar a estrutura
-  publishTempDir: '$(Build.ArtifactStagingDirectory)/publish-temp'
-  # Pasta final para o deploy
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  zipName: 'bolao-app-$(Build.BuildId).zip'
-  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
 stages:
 - stage: Build
@@ -28,54 +21,33 @@ stages:
         inputs:
           versionSpec: '18.x'
 
+      # A compilação do Angular é feita de dentro da pasta do projeto .NET
       - task: Npm@1
         displayName: 'npm install'
         inputs:
           command: 'install'
-          workingDir: '$(frontendProjectDir)'
+          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
 
       - task: Npm@1
         displayName: 'npm build'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
-          workingDir: '$(frontendProjectDir)'
+          customCommand: 'run build'
+          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
 
+      # O dotnet publish já inclui a wwwroot
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
-          zipAfterPublish: false
-      
-      # Correção: Copiar os arquivos do Angular para a pasta wwwroot criada pelo .NET
-      - task: CopyFiles@2
-        displayName: 'Copiar Arquivos do Frontend'
-        inputs:
-          SourceFolder: '$(frontendDistDir)'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          cleanTargetFolder: true
-
-      - script: |
-          echo "Criando arquivo de versão..."
-          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
-          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
-        displayName: 'Adicionar arquivo de Versão do Build'
-
-      - task: PowerShell@2
-        displayName: 'Compactar o Artefato com PowerShell'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Compress-Archive -Path '$(appPublishDir)\*' -DestinationPath '$(zipPath)'
-          pwsh: true
+          zipAfterPublish: true
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(appPublishDir)'
           ArtifactName: 'drop'
 
 - stage: Deploy
@@ -95,5 +67,4 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  deploymentMethod: 'zipDeploy'
+                  package: '$(Pipeline.Workspace)/drop'
