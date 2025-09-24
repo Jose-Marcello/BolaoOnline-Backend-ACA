@@ -6,6 +6,7 @@ pool:
 
 variables:
   buildConfiguration: 'production'
+  publishTempDir: '$(Build.ArtifactStagingDirectory)/publish-temp'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
@@ -35,7 +36,7 @@ stages:
         displayName: 'npm build'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --output-path=$(backendProjectDir)/wwwroot'
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
@@ -43,16 +44,16 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(publishTempDir)"'
           zipAfterPublish: false
       
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para a wwwroot'
+        displayName: 'Ajustar Estrutura de Pastas'
         inputs:
-          SourceFolder: '$(frontendDistDir)'
+          SourceFolder: '$(publishTempDir)/ApostasApp.Core.Web'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
+          TargetFolder: '$(appPublishDir)'
+          cleanTargetFolder: true
 
       - script: |
           echo "Criando arquivo de versão..."
@@ -60,7 +61,6 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # CORREÇÃO DEFINITIVA: Novo passo para compactar a pasta usando PowerShell
       - task: PowerShell@2
         displayName: 'Compactar o Artefato com PowerShell'
         inputs:
