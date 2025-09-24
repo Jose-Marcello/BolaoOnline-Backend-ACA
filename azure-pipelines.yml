@@ -18,20 +18,17 @@ stages:
   - job: BuildJob
     displayName: 'Job de Build'
     steps:
-      # 1. Garante que a versão correta do Node.js está instalada
       - task: NodeTool@0
         displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
 
-      # 2. Instala os pacotes do Frontend (Angular)
       - task: Npm@1
         displayName: 'npm install'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
 
-      # 3. Compila o Frontend (Angular)
       - task: Npm@1
         displayName: 'npm build'
         inputs:
@@ -39,7 +36,6 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
-      # 4. Publica o backend do .NET
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -55,16 +51,14 @@ stages:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          cleanTargetFolder: true
+          flattenFolders: true
 
-      # 6. Adiciona um arquivo de texto com a versão do build
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # 7. Publica o artefato de build (a pasta de DEPLOY final)
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
@@ -82,11 +76,10 @@ stages:
         runOnce:
           deploy:
             steps:
-              # AQUI ESTÁ A NOVA TAREFA RECOMENDADA
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes'
+                  appName: 'bolaonline-teste2'
                   package: '$(Pipeline.Workspace)/drop'
