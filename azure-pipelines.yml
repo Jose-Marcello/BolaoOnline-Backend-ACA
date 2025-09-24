@@ -83,5 +83,5 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   # CORREÇÃO 2: Nome do App Service correto
-                  appName: 'bolaonline-testes2'
+                  appName: 'bolaoonline-testes2'
                   package: '$(Pipeline.Workspace)/drop'
