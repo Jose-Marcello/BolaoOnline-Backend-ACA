@@ -7,7 +7,10 @@ pool:
 variables:
   buildConfiguration: 'production'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+  zipName: 'bolao-app-$(Build.BuildId).zip'
+  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
 stages:
 - stage: Build
@@ -21,21 +24,19 @@ stages:
         inputs:
           versionSpec: '18.x'
 
-      # A compilação do Angular é feita de dentro da pasta do projeto .NET
       - task: Npm@1
         displayName: 'npm install'
         inputs:
           command: 'install'
-          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
+          workingDir: '$(frontendProjectDir)'
 
       - task: Npm@1
         displayName: 'npm build'
         inputs:
           command: 'custom'
           customCommand: 'run build'
-          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
+          workingDir: '$(frontendProjectDir)'
 
-      # O dotnet publish já inclui a wwwroot
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -68,3 +69,4 @@ stages:
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
                   package: '$(Pipeline.Workspace)/drop'
+                  deploymentMethod: 'WebDeploy'
