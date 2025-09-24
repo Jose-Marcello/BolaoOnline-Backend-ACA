@@ -60,16 +60,15 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # NOVO PASSO: Cria um arquivo zip a partir da pasta de publicação
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
+      # CORREÇÃO DEFINITIVA: Novo passo para compactar a pasta usando PowerShell
+      - task: PowerShell@2
+        displayName: 'Compactar o Artefato com PowerShell'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
+          targetType: 'inline'
+          script: |
+            Compress-Archive -Path '$(appPublishDir)\*' -DestinationPath '$(zipPath)'
+          pwsh: true
 
-      # O passo de publicação agora aponta para o novo arquivo zip
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
@@ -93,7 +92,5 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  # O pacote agora é o arquivo zip gerado
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  # Define o método de implantação explicitamente
                   deploymentMethod: 'zipDeploy'
