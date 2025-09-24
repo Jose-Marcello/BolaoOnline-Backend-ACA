@@ -9,8 +9,6 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  zipName: 'bolao-app-$(Build.BuildId).zip'
-  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
 stages:
 - stage: Build
@@ -25,13 +23,13 @@ stages:
           versionSpec: '18.x'
 
       - task: Npm@1
-        displayName: 'npm install'
+        displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
 
       - task: Npm@1
-        displayName: 'npm build'
+        displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
           customCommand: 'run build'
@@ -43,34 +41,20 @@ stages:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
-          zipAfterPublish: false
+          zipAfterPublish: true
 
       - task: CopyFiles@2
-        displayName: 'Copiar Arquivos do Frontend para wwwroot'
+        displayName: 'Copiar arquivos do Angular para a wwwroot'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           cleanTargetFolder: true
 
-      - script: |
-          echo "Criando arquivo de versão..."
-          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
-          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
-        displayName: 'Adicionar arquivo de Versão do Build'
-
-      - task: PowerShell@2
-        displayName: 'Compactar o Artefato com PowerShell'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Compress-Archive -Path '$(appPublishDir)\*' -DestinationPath '$(zipPath)'
-          pwsh: true
-
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(appPublishDir)'
           ArtifactName: 'drop'
 
 - stage: Deploy
@@ -90,5 +74,4 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  deploymentMethod: 'WebDeploy'
+                  package: '$(Pipeline.Workspace)/drop'
