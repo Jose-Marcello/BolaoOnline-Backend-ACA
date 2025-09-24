@@ -96,4 +96,4 @@ stages:
                   # O pacote agora é o arquivo zip gerado
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   # Define o método de implantação explicitamente
-                  deploymentMethod: 'zipDeploy'
+                  # deploymentMethod: 'zipDeploy'
