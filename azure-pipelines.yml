@@ -95,5 +95,4 @@ stages:
                   appName: 'bolaoonline-testes2'
                   # O pacote agora é o arquivo zip gerado
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  # Define o método de implantação explicitamente
-                  # deploymentMethod: 'zipDeploy'
+                
