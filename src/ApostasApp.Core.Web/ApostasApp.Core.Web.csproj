@@ -5,10 +5,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- ALTERADO -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+        
    <!-- <IsPublishable>false</IsPublishable>-->
   </PropertyGroup>
-
+  
+  
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.18" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.18" />
