@@ -7,7 +7,11 @@ pool:
 variables:
   buildConfiguration: 'production'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+  zipName: 'bolao-app-$(Build.BuildId).zip'
+  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
 stages:
 - stage: Build
@@ -21,33 +25,55 @@ stages:
         inputs:
           versionSpec: '18.x'
 
-      # A compilação do Angular é feita de dentro da pasta do projeto .NET
       - task: Npm@1
         displayName: 'npm install'
         inputs:
           command: 'install'
-          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
+          workingDir: '$(frontendProjectDir)'
 
       - task: Npm@1
         displayName: 'npm build'
         inputs:
           command: 'custom'
-          customCommand: 'run build'
-          workingDir: '$(backendProjectDir)/BolaoOnlineAppV5'
+          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          workingDir: '$(frontendProjectDir)'
 
-      # O dotnet publish já inclui a wwwroot
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
-          zipAfterPublish: true
+          zipAfterPublish: false
+      
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para a wwwroot'
+        inputs:
+          SourceFolder: '$(frontendDistDir)'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: true
 
+      - script: |
+          echo "Criando arquivo de versão..."
+          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
+          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
+        displayName: 'Adicionar arquivo de Versão do Build'
+
+      # NOVO PASSO: Cria um arquivo zip a partir da pasta de publicação
+      - task: ArchiveFiles@2
+        displayName: 'Compactar o Artefato para Deploy'
+        inputs:
+          rootFolderOrFile: '$(appPublishDir)/'          
+          archiveType: 'zip'
+          archiveFile: '$(zipPath)'
+          replaceExistingArchive: true
+
+      # O passo de publicação agora aponta para o novo arquivo zip
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(appPublishDir)'
+          PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
 
 - stage: Deploy
@@ -67,4 +93,6 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  package: '$(Pipeline.Workspace)/drop'
+                  # O pacote agora é o arquivo zip gerado
+                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
+                
