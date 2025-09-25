@@ -61,8 +61,13 @@ stages:
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: false
+
+      - task: DeleteFiles@1
+        displayName: 'Deletar a pasta ApostasApp.Core.Web'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'ApostasApp.Core.Web'
       
-      # CORREÇÃO PONTUAL 1: MOVER O CONTEÚDO DO SEGUNDO wwwroot PARA O PRIMEIRO
       - task: CopyFiles@2
         displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
         inputs:
@@ -72,17 +77,22 @@ stages:
           flattenFolders: true
 
       - task: DeleteFiles@1
-        displayName: 'Deletar a pasta ApostasApp.Core.Web'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot'
-          Contents: 'ApostasApp.Core.Web'
-
-      # CORREÇÃO PONTUAL 2: DELETAR O SEGUNDO wwwroot
-      - task: DeleteFiles@1
         displayName: 'Deletar o segundo wwwroot'
         inputs:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
+      
+      - script: |
+          $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
+          $content = [xml](Get-Content $webConfigPath)
+          $coreNode = $content.SelectSingleNode("//aspNetCore")
+          if ($coreNode) {
+              $coreNode.SetAttribute("stdoutLogEnabled", "true")
+              $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+              $content.Save($webConfigPath)
+          }
+        displayName: 'Habilitar Log de Saída no web.config'
+        condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
       - script: |
           echo "Criando arquivo de versão..."
