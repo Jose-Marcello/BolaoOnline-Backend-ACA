@@ -82,17 +82,20 @@ stages:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
       
-      - script: |
-          $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
-          $content = [xml](Get-Content $webConfigPath)
-          $coreNode = $content.SelectSingleNode("//aspNetCore")
-          if ($coreNode) {
-              $coreNode.SetAttribute("stdoutLogEnabled", "true")
-              $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
-              $content.Save($webConfigPath)
-          }
+      # CORREÇÃO: TROCANDO 'script' POR 'PowerShell@2'
+      - task: PowerShell@2
         displayName: 'Habilitar Log de Saída no web.config'
-        condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+        inputs:
+          targetType: 'inline'
+          script: |
+            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
+            $content = [xml](Get-Content $webConfigPath)
+            $coreNode = $content.SelectSingleNode("//aspNetCore")
+            if ($coreNode) {
+                $coreNode.SetAttribute("stdoutLogEnabled", "true")
+                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $content.Save($webConfigPath)
+            }
 
       - script: |
           echo "Criando arquivo de versão..."
