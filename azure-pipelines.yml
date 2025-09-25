@@ -6,8 +6,6 @@ pool:
 
 variables:
   buildConfiguration: 'production'
-  # A pasta de publicação agora será criada dentro da pasta temporária,
-  # mas o que será compactado e enviado será apenas o conteúdo dela.
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
@@ -40,7 +38,6 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
-      # NOVA LÓGICA: PUBLICA O BACKEND DIRETAMENTE NA PASTA wwwroot
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -49,7 +46,6 @@ stages:
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
-      # COPIA OS ARQUIVOS DO FRONTEND PARA A MESMA PASTA wwwroot
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
@@ -64,7 +60,6 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # NOVA LÓGICA: COMPACTA APENAS O CONTEÚDO DA PASTA wwwroot
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
@@ -72,7 +67,8 @@ stages:
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
-
+          includeRootFolder: false     # <--- A LINHA MÁGICA FINAL AQUI
+          
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
