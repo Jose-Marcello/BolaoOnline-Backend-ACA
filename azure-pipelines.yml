@@ -38,12 +38,13 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
+      # A ÚLTIMA CORREÇÃO: PUBLICAÇÃO SELF-CONTAINED
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot" --self-contained true --runtime win-x64'
           zipAfterPublish: false
       
       - task: CopyFiles@2
@@ -61,8 +62,13 @@ stages:
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: false
+
+      - task: DeleteFiles@1
+        displayName: 'Deletar a pasta ApostasApp.Core.Web'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'ApostasApp.Core.Web'
       
-      # CORREÇÃO PONTUAL 1: MOVER O CONTEÚDO DO SEGUNDO wwwroot PARA O PRIMEIRO
       - task: CopyFiles@2
         displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
         inputs:
@@ -72,18 +78,27 @@ stages:
           flattenFolders: true
 
       - task: DeleteFiles@1
-        displayName: 'Deletar a pasta ApostasApp.Core.Web'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot'
-          Contents: 'ApostasApp.Core.Web'
-
-      # CORREÇÃO PONTUAL 2: DELETAR O SEGUNDO wwwroot
-      - task: DeleteFiles@1
         displayName: 'Deletar o segundo wwwroot'
         inputs:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
-
+      
+      - task: PowerShell@2
+        displayName: 'Habilitar Log de Saída no web.config'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
+            $content = [xml](Get-Content $webConfigPath)
+            $coreNode = $content.SelectSingleNode("//aspNetCore")
+            if ($coreNode) {
+                $coreNode.SetAttribute("stdoutLogEnabled", "true")
+                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $coreNode.SetAttribute("processPath", ".\ApostasApp.Core.Web.exe")
+                $coreNode.SetAttribute("arguments", "")
+                $content.Save($webConfigPath)
+            }
+      
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
