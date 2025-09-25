@@ -26,13 +26,13 @@ stages:
           versionSpec: '18.x'
 
       - task: Npm@1
-        displayName: 'npm install'
+        displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
 
       - task: Npm@1
-        displayName: 'npm build'
+        displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
@@ -43,7 +43,7 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
       - task: CopyFiles@2
@@ -53,23 +53,52 @@ stages:
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
+      
+      - task: CopyFiles@2
+        displayName: 'Copiar Conteúdo do Backend para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: false
+      
+      # CORREÇÃO PONTUAL 1: MOVER O CONTEÚDO DO SEGUNDO wwwroot PARA O PRIMEIRO
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: true
+
+      - task: DeleteFiles@1
+        displayName: 'Deletar a pasta ApostasApp.Core.Web'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'ApostasApp.Core.Web'
+
+      # CORREÇÃO PONTUAL 2: DELETAR O SEGUNDO wwwroot
+      - task: DeleteFiles@1
+        displayName: 'Deletar o segundo wwwroot'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'wwwroot'
 
       - script: |
           echo "Criando arquivo de versão..."
-          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/build.version.txt"
-          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/build.version.txt"
+          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
+          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # NOVO PASSO: Cria um arquivo zip a partir da pasta de publicação
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)/'          
+          rootFolderOrFile: '$(appPublishDir)/wwwroot/'      
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
-
-      # O passo de publicação agora aponta para o novo arquivo zip
+          includeRootFolder: false
+          
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
@@ -93,6 +122,4 @@ stages:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
-                  # O pacote agora é o arquivo zip gerado
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                
