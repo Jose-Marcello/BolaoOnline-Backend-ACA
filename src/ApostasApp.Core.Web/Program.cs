@@ -275,10 +275,6 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
-
-// Adicione UseRouting() explicitamente
-app.UseRouting();
-
 // AQUI: O UseCors deve vir AGORA, depois de UseRouting
 app.UseCors("AllowSpecificOrigin");
 
@@ -291,6 +287,8 @@ app.MapControllers();
 
 // Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
 app.UseStaticFiles();
+
+app.UseRouting();
 
 // Adicione esta linha para garantir que todas as rotas de frontend (Angular)
 // sejam direcionadas para o index.html.
