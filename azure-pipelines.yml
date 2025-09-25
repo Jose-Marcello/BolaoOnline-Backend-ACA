@@ -83,7 +83,7 @@ stages:
           Contents: 'wwwroot'
       
       - task: PowerShell@2
-        displayName: 'Habilitar Log de Saída no web.config'
+        displayName: 'Ajustar Web.config'
         inputs:
           targetType: 'inline'
           script: |
