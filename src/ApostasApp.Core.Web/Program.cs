@@ -285,10 +285,12 @@ app.UseAuthorization();
 // As requisições são mapeadas para os controladores
 app.MapControllers();
 
+app.UseRouting();
+
 // Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
 app.UseStaticFiles();
 
-app.UseRouting();
+
 
 // Adicione esta linha para garantir que todas as rotas de frontend (Angular)
 // sejam direcionadas para o index.html.
