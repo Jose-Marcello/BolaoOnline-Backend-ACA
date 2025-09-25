@@ -1,4 +1,3 @@
-# AQUI ESTA O CÓDIGO DO NOVO YAML COMPLETO
 trigger:
   - master
 
@@ -83,14 +82,20 @@ stages:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
       
-      # NOVO PASSO: COPIAR O web.config CORRETO
-      - task: CopyFiles@2
-        displayName: 'Copiar web.config correto'
+      - task: PowerShell@2
+        displayName: 'Habilitar Log de Saída no web.config'
         inputs:
-          SourceFolder: '$(backendProjectDir)'
-          Contents: 'web.config'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          
+          targetType: 'inline'
+          script: |
+            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
+            $content = [xml](Get-Content $webConfigPath)
+            $coreNode = $content.SelectSingleNode("//aspNetCore")
+            if ($coreNode) {
+                $coreNode.SetAttribute("stdoutLogEnabled", "true")
+                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $content.Save($webConfigPath)
+            }
+      
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
