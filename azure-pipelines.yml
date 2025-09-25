@@ -38,7 +38,6 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
-      # PASSO 1: PUBLICA O BACKEND. ISSO AINDA VAI CRIAR A PASTA ApostasApp.Core.Web.
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -47,7 +46,6 @@ stages:
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
-      # PASSO 2: COPIA OS ARQUIVOS DO FRONTEND PARA A PASTA wwwroot
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
@@ -56,7 +54,6 @@ stages:
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
       
-      # PASSO ESSENCIAL E PONTUAL: COPIA O CONTEÚDO DA PASTA DO BACKEND PARA A PASTA RAIZ wwwroot
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a Raiz'
         inputs:
@@ -64,13 +61,28 @@ stages:
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: false
+      
+      # CORREÇÃO PONTUAL 1: MOVER O CONTEÚDO DO SEGUNDO wwwroot PARA O PRIMEIRO
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: true
 
-      # PASSO ESSENCIAL E PONTUAL: DELETA A PASTA QUE NÃO PRECISAMOS
       - task: DeleteFiles@1
         displayName: 'Deletar a pasta ApostasApp.Core.Web'
         inputs:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'ApostasApp.Core.Web'
+
+      # CORREÇÃO PONTUAL 2: DELETAR O SEGUNDO wwwroot
+      - task: DeleteFiles@1
+        displayName: 'Deletar o segundo wwwroot'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'wwwroot'
 
       - script: |
           echo "Criando arquivo de versão..."
@@ -78,7 +90,6 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
-      # PASSO 3: COMPACTA O CONTEÚDO DA PASTA wwwroot
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
