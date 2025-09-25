@@ -38,12 +38,13 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
+      # A ÚLTIMA CORREÇÃO: PUBLICAÇÃO SELF-CONTAINED
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot" --self-contained true --runtime win-x64'
           zipAfterPublish: false
       
       - task: CopyFiles@2
@@ -93,6 +94,8 @@ stages:
             if ($coreNode) {
                 $coreNode.SetAttribute("stdoutLogEnabled", "true")
                 $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $coreNode.SetAttribute("processPath", ".\ApostasApp.Core.Web.exe")
+                $coreNode.SetAttribute("arguments", "")
                 $content.Save($webConfigPath)
             }
       
