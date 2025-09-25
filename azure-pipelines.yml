@@ -82,14 +82,19 @@ stages:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
       
-      # CORREÇÃO: SCRIPT MAIS ROBUSTO PARA ALTERAR O ATRIBUTO
       - task: PowerShell@2
         displayName: 'Habilitar Log de Saída no web.config'
         inputs:
           targetType: 'inline'
           script: |
             $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
-            (Get-Content -Path $webConfigPath) -replace 'stdoutLogEnabled="false"', 'stdoutLogEnabled="true"' | Set-Content -Path $webConfigPath
+            $content = [xml](Get-Content $webConfigPath)
+            $coreNode = $content.SelectSingleNode("//aspNetCore")
+            if ($coreNode) {
+                $coreNode.SetAttribute("stdoutLogEnabled", "true")
+                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $content.Save($webConfigPath)
+            }
       
       - script: |
           echo "Criando arquivo de versão..."
