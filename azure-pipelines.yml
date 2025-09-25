@@ -1,3 +1,4 @@
+# AQUI ESTA O CÓDIGO DO NOVO YAML COMPLETO
 trigger:
   - master
 
@@ -38,13 +39,12 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
-      # A ÚLTIMA CORREÇÃO: PUBLICAÇÃO SELF-CONTAINED
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot" --self-contained true --runtime win-x64'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
       - task: CopyFiles@2
@@ -83,22 +83,14 @@ stages:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
       
-      - task: PowerShell@2
-        displayName: 'Habilitar Log de Saída no web.config'
+      # NOVO PASSO: COPIAR O web.config CORRETO
+      - task: CopyFiles@2
+        displayName: 'Copiar web.config correto'
         inputs:
-          targetType: 'inline'
-          script: |
-            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
-            $content = [xml](Get-Content $webConfigPath)
-            $coreNode = $content.SelectSingleNode("//aspNetCore")
-            if ($coreNode) {
-                $coreNode.SetAttribute("stdoutLogEnabled", "true")
-                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
-                $coreNode.SetAttribute("processPath", ".\ApostasApp.Core.Web.exe")
-                $coreNode.SetAttribute("arguments", "")
-                $content.Save($webConfigPath)
-            }
-      
+          SourceFolder: '$(backendProjectDir)'
+          Contents: 'web.config'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
