@@ -6,6 +6,7 @@ pool:
 
 variables:
   buildConfiguration: 'production'
+  # A pasta de publicação agora será criada dentro da pasta temporária
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
@@ -38,6 +39,7 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
 
+      # PUBLICA O BACKEND. ISSO AINDA VAI CRIAR A PASTA ApostasApp.Core.Web.
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -46,6 +48,7 @@ stages:
           arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
+      # COPIA OS ARQUIVOS DO FRONTEND PARA A PASTA wwwroot
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
@@ -53,6 +56,15 @@ stages:
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
+      
+      # NOVO PASSO: COPIA O CONTEÚDO DA PASTA DO BACKEND PARA A PASTA RAIZ wwwroot
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Backend para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: false
 
       - script: |
           echo "Criando arquivo de versão..."
@@ -60,6 +72,7 @@ stages:
           echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
         displayName: 'Adicionar arquivo de Versão do Build'
 
+      # COMPACTA O CONTEÚDO DA PASTA wwwroot
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
@@ -67,7 +80,7 @@ stages:
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
-          includeRootFolder: false     # <--- A LINHA MÁGICA FINAL AQUI
+          includeRootFolder: false
           
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
