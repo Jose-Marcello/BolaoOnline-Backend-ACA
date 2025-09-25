@@ -291,7 +291,6 @@ app.UseRouting();
 app.UseStaticFiles();
 
 
-
 // Adicione esta linha para garantir que todas as rotas de frontend (Angular)
 // sejam direcionadas para o index.html.
 app.MapFallbackToFile("index.html");
