@@ -82,21 +82,15 @@ stages:
           SourceFolder: '$(appPublishDir)/wwwroot'
           Contents: 'wwwroot'
       
-      # CORREÇÃO: TROCANDO SCRIPT PARA O CÓDIGO FINAL
+      # CORREÇÃO: SCRIPT MAIS ROBUSTO PARA ALTERAR O ATRIBUTO
       - task: PowerShell@2
-        displayName: 'Ajustar Web.config para o Azure App Service'
+        displayName: 'Habilitar Log de Saída no web.config'
         inputs:
           targetType: 'inline'
           script: |
             $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
-            $content = [xml](Get-Content $webConfigPath)
-            $coreNode = $content.SelectSingleNode("//aspNetCore")
-            if ($coreNode) {
-                $coreNode.SetAttribute("processPath", ".\ApostasApp.Core.Web.exe")
-                $coreNode.SetAttribute("arguments", "")
-                $content.Save($webConfigPath)
-            }
-        
+            (Get-Content -Path $webConfigPath) -replace 'stdoutLogEnabled="false"', 'stdoutLogEnabled="true"' | Set-Content -Path $webConfigPath
+      
       - script: |
           echo "Criando arquivo de versão..."
           echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
