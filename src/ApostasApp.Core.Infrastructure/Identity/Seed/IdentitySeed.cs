@@ -33,13 +33,13 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
                 // Cria o usuário admin
                 adminUser = new Usuario
                 {
-                    UserName = "admin@apostasapp.com",
-                    Email = "admin@apostasapp.com",
-                    Apelido = "AdminMaster",
-                    CPF = "999.999.999-99", // CPF de exemplo
-                    Celular = "99999999999", // Celular de exemplo
-                    EmailConfirmed = true, // Confirma o e-mail para o admin
-                    RegistrationDate = DateTime.Now
+                  UserName = "josemarcellogardeldealemar@gmail.com",
+                  Email = "josemarcellogardeldealemar@gmail.com",
+                  Apelido = "AdminMaster",
+                  CPF = "84062274787", // CPF de exemplo corrigido
+                  Celular = "21999734776", // Celular de exemplo
+                  EmailConfirmed = true, // Confirma o e-mail para o admin
+                  RegistrationDate = DateTime.Now
                 };
 
                 var result = await userManager.CreateAsync(adminUser, "Admin@123"); // Senha forte para o admin
