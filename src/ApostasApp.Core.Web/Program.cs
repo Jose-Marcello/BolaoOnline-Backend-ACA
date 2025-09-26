@@ -36,10 +36,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ===================================================================================================
 builder.Services.AddDbContext<MeuDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .LogTo(Console.WriteLine, LogLevel.Information) // Adicionado para ver o SQL no console
-           .EnableSensitiveDataLogging()); // Adicionado para ver os valores dos parâmetros
-
+{
+  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+      sqlServerOptionsAction: sqlOptions =>
+      {
+        sqlOptions.EnableRetryOnFailure(
+              maxRetryCount: 10,
+              maxRetryDelay: TimeSpan.FromSeconds(30),
+              errorNumbersToAdd: null);
+      })
+      .LogTo(Console.WriteLine, LogLevel.Information)
+      .EnableSensitiveDataLogging();
+});
 
 // ===================================================================================================
 // Configuração do Banco de Dados de Identidade (IdentityDbContext)
