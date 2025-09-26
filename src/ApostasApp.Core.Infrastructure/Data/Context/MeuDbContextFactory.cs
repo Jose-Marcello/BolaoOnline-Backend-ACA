@@ -1,3 +1,33 @@
+using ApostasApp.Core.Infrastructure.Data.Context;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+
+namespace ApostasApp.Core.Infrastructure
+{
+  public class MeuDbContextFactory : IDesignTimeDbContextFactory<MeuDbContext>
+  {
+    public MeuDbContext CreateDbContext(string[] args)
+    {
+      var configuration = new ConfigurationBuilder()
+          .SetBasePath(Directory.GetCurrentDirectory())
+          .AddJsonFile("appsettings.Production.json")
+          .Build();
+
+      var builder = new DbContextOptionsBuilder<MeuDbContext>();
+      var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+      builder.UseSqlServer(connectionString);
+
+      return new MeuDbContext(builder.Options);
+    }
+  }
+}
+
+
+
+/*
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration; // Necessário para IConfiguration
@@ -31,3 +61,4 @@ namespace ApostasApp.Core.Infrastructure.Data.Context
         }
     }
 }
+*/
