@@ -43,7 +43,7 @@ stages:
         inputs:
           command: 'publish'
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
       - task: CopyFiles@2
@@ -57,7 +57,7 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)/wwwroot/'
+          rootFolderOrFile: '$(appPublishDir)/'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
