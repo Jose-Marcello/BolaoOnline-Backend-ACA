@@ -2,6 +2,8 @@
 
 @import '@angular/material/prebuilt-themes/deeppurple-amber.css';
 
+$caminho-da-imagem: 'assets/images/fundo_bolao.png';
+
 /* Importação do Tailwind CSS */
 @tailwind base;
 @tailwind components;
@@ -13,7 +15,7 @@ html, body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   /* Fundo da imagem principal aplicado ao body para cobrir tudo */
-  background-image: url('~assets/images/fundo_bolao.png') !important;
+  background-image: url($caminho-da-imagem) !important;
   background-size: cover !important;
   background-position: center !important;
   background-attachment: fixed !important;
