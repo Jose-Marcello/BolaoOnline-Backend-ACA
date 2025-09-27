@@ -92,7 +92,7 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes2'
+                  appName: 'bolaoonline-testes3'
                   # O pacote agora é o arquivo zip gerado
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                 
