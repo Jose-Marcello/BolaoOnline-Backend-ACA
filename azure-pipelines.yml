@@ -1,9 +1,9 @@
 trigger:
   - master
-
+  
 pool:
   vmImage: 'windows-latest'
-
+  
 variables:
   buildConfiguration: 'production'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
@@ -12,7 +12,7 @@ variables:
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-
+  
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -24,20 +24,20 @@ stages:
         displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
-
+          
       - task: Npm@1
         displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+          
       - task: Npm@1
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href /'
           workingDir: '$(frontendProjectDir)'
-
+          
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend (.NET)'
         inputs:
@@ -68,7 +68,7 @@ stages:
         inputs:
           PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
-
+          
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
