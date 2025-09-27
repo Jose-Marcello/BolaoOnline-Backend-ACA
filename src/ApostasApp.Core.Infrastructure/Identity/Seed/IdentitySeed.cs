@@ -40,7 +40,7 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
                   Celular = "21999734776", // Celular de exemplo
                   EmailConfirmed = true, // Confirma o e-mail para o admin
                   RegistrationDate = DateTime.Now,
-                  RefreshToken = "", // Adicione um valor padrão
+                  RefreshToken = "", // Adicione um valor padrão 
                   RefreshTokenExpiryTime = DateTime.UtcNow, // Adicione um valor padrão
                   TwoFactorEnabled = false,
                   AccessFailedCount = 0,
