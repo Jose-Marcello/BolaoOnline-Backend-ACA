@@ -9,9 +9,10 @@ variables:
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  backendPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
+  appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  backendPublishTempDir: '$(Build.ArtifactStagingDirectory)/BackendPublishTemp'
 
 stages:
 - stage: Build
@@ -44,21 +45,29 @@ stages:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(backendPublishDir)"'
+          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(backendPublishTempDir)"'
           zipAfterPublish: false
-      
+
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Backend para Pasta de Publicação Final'
+        inputs:
+          SourceFolder: '$(backendPublishTempDir)/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)'
+          flattenFolders: false
+
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(backendPublishDir)/wwwroot'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(backendPublishDir)'
+          rootFolderOrFile: '$(appPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
