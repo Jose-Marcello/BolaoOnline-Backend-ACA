@@ -7,13 +7,10 @@ pool:
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  # CORREÇÃO CRÍTICA: Caminho para a pasta final de build do Angular
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-  backendPublishTempDir: '$(Build.ArtifactStagingDirectory)/BackendPublishTemp'
 
 stages:
 - stage: Build
@@ -41,43 +38,18 @@ stages:
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend (Autocontido)'
+        displayName: 'Publicar Backend com Frontend'
         inputs:
           command: 'publish'
-          publishWebProjects: false
+          publishWebProjects: true
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(backendPublishTempDir)"'
-          zipAfterPublish: false
-
-      - task: CopyFiles@2
-        displayName: 'Mover Conteúdo do Backend para Pasta de Publicação Final'
-        inputs:
-          SourceFolder: '$(backendPublishTempDir)/ApostasApp.Core.Web'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)'
-          flattenFolders: false
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
-        inputs:
-          SourceFolder: '$(frontendDistDir)'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
-      
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
-        inputs:
-          rootFolderOrFile: '$(appPublishDir)'
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
-          includeRootFolder: false
-
+          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(appPublishDir)"'
+          zipAfterPublish: true
+          
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(appPublishDir).zip'
           ArtifactName: 'drop'
 
 - stage: Deploy
