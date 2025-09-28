@@ -45,7 +45,7 @@ stages:
           Contents: '**'
           TargetFolder: '$(backendProjectDir)/wwwroot'
           flattenFolders: true
-
+      
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
