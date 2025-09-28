@@ -44,7 +44,9 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
                   RefreshTokenExpiryTime = DateTime.UtcNow, // Adicione um valor padrão
                   TwoFactorEnabled = false,
                   AccessFailedCount = 0,
-                  TermsAccepted = false // Ou true, dependendo da sua regra de negócio
+                  TermsAccepted = false, // Ou true, dependendo da sua regra de negócio
+                  PhoneNumber = "21999734776", // Corrigido
+                  FotoPerfil = "" // Corrigido
                 };
 
                 var result = await userManager.CreateAsync(adminUser, "Admin@123"); // Senha forte para o admin
