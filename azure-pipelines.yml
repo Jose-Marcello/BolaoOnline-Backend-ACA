@@ -7,6 +7,7 @@ pool:
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
@@ -38,18 +39,35 @@ stages:
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend com Frontend'
+        displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: true
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(appPublishDir)"'
-          zipAfterPublish: true
-          
+          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained false --output "$(appPublishDir)"'
+          zipAfterPublish: false
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        inputs:
+          SourceFolder: '$(frontendDistDir)'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: true
+
+      - task: ArchiveFiles@2
+        displayName: 'Compactar o Artefato para Deploy'
+        inputs:
+          rootFolderOrFile: '$(appPublishDir)'
+          archiveType: 'zip'
+          archiveFile: '$(zipPath)'
+          replaceExistingArchive: true
+          includeRootFolder: false
+
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(appPublishDir).zip'
+          PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
 
 - stage: Deploy
