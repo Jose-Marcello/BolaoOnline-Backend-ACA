@@ -283,8 +283,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
 // AQUI: O UseCors deve vir AGORA, depois de UseRouting
 app.UseCors("AllowSpecificOrigin");
 
@@ -292,14 +294,11 @@ app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// As requisições são mapeadas para os controladores
-app.MapControllers();
-
-app.UseRouting();
-
 // Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
 app.UseStaticFiles();
 
+// As requisições são mapeadas para os controladores
+app.MapControllers();
 
 // Adicione esta linha para garantir que todas as rotas de frontend (Angular)
 // sejam direcionadas para o index.html.
