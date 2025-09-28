@@ -46,7 +46,9 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
               errorNumbersToAdd: null);
       })
       .LogTo(Console.WriteLine, LogLevel.Information)
-      .EnableSensitiveDataLogging();
+      .EnableSensitiveDataLogging()
+      .LogTo(Console.WriteLine, LogLevel.Information);
+
 });
 
 // ===================================================================================================
