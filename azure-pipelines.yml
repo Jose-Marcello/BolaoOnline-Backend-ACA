@@ -7,7 +7,8 @@ pool:
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
+  # CORREÇÃO CRÍTICA: Caminho para a pasta final de build do Angular
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
