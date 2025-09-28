@@ -36,7 +36,7 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href /'
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
