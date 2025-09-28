@@ -295,13 +295,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
+// Adicione esta linha antes para garantir que o UseStaticFiles encontre o index.html
+app.UseDefaultFiles();
 app.UseStaticFiles();
+
 
 // As requisições são mapeadas para os controladores
 app.MapControllers();
 
-// Adicione esta linha para garantir que todas as rotas de frontend (Angular)
-// sejam direcionadas para o index.html.
-app.MapFallbackToFile("index.html");
+// A correção aqui é usar um Endpoint mais robusto para SPA
+app.UseEndpoints(endpoints =>
+{
+  endpoints.MapControllers();
+  // A rota padrão do SPA deve ser a última na lista
+  endpoints.MapFallbackToFile("wwwroot/index.html");
+});
 
 app.Run();
