@@ -12,6 +12,7 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  backendPublishTempDir: '$(Build.ArtifactStagingDirectory)/BackendPublishTemp'
 
 stages:
 - stage: Build
@@ -44,11 +45,19 @@ stages:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(appPublishDir)"'
+          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained true --output "$(backendPublishTempDir)"'
           zipAfterPublish: false
-      
+
       - task: CopyFiles@2
-        displayName: 'Copiar Conteúdo do Frontend para wwwroot do Backend'
+        displayName: 'Mover Conteúdo do Backend para Pasta de Publicação Final'
+        inputs:
+          SourceFolder: '$(backendPublishTempDir)/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)'
+          flattenFolders: false
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
