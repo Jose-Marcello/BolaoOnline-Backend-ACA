@@ -38,6 +38,14 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href /'
           workingDir: '$(frontendProjectDir)'
 
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        inputs:
+          SourceFolder: '$(frontendDistDir)'
+          Contents: '**'
+          TargetFolder: '$(backendProjectDir)/wwwroot'
+          flattenFolders: true
+      
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
@@ -45,29 +53,12 @@ stages:
           publishWebProjects: true
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) -r win-x64 --self-contained false --output "$(appPublishDir)"'
-          zipAfterPublish: false
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
-        inputs:
-          SourceFolder: '$(frontendDistDir)'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
-
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
-        inputs:
-          rootFolderOrFile: '$(appPublishDir)'
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
-          includeRootFolder: false
-
+          zipAfterPublish: true
+          
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(appPublishDir).zip'
           ArtifactName: 'drop'
 
 - stage: Deploy
