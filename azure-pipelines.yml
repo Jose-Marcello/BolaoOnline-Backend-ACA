@@ -84,7 +84,6 @@ stages:
         runOnce:
           deploy:
             steps:
-              # CORRIGIDO: Agora usamos o Azure CLI para um deploy mais robusto.
               - task: AzureCLI@2
                 displayName: 'Implantar com Azure CLI'
                 inputs:
@@ -93,7 +92,7 @@ stages:
                   scriptLocation: 'inlineScript'
                   inlineScript: |
                     az webapp deploy \
-                      --resource-group "bolaoonline-rg" \
+                      --resource-group "ApostasAppRG" \
                       --name "bolaoonline-testes3" \
                       --src-path "$(Pipeline.Workspace)/drop/$(zipName)" \
                       --clean=true
