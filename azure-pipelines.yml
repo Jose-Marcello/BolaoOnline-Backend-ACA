@@ -84,6 +84,19 @@ stages:
         runOnce:
           deploy:
             steps:
+              # NOVO PASSO: Remove a variável que causa o modo "somente leitura"
+              - task: AzureCLI@2
+                displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE'
+                inputs:
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    az webapp config appsettings delete \
+                      --name "bolaoonline-testes3" \
+                      --resource-group "ApostasAppRG" \
+                      --setting-names WEBSITE_RUN_FROM_PACKAGE
+
               - task: AzureCLI@2
                 displayName: 'Implantar com Azure CLI'
                 inputs:
