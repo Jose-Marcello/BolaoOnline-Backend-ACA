@@ -36,25 +36,25 @@ stages:
         inputs:
           command: 'custom'
           customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href /'
-          workingDir: 'src/BolaoOnlineAppV5'
+          workingDir: '$(frontendProjectDir)'
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Publicar Backend (Autocontido)'
+        inputs:
+          command: 'publish'
+          publishWebProjects: false
+          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+          arguments: '-c $(buildConfiguration) -o "$(appPublishDir)"'
+          zipAfterPublish: false
 
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend Publicado'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(backendProjectDir)/wwwroot'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
       
-      - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend'
-        inputs:
-          command: 'publish'
-          publishWebProjects: true
-          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -r win-x64 --self-contained false --output "$(appPublishDir)"'
-          zipAfterPublish: true
-
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
