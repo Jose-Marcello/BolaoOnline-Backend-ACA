@@ -61,7 +61,6 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          # CORRIGIDO: Compacta o conteúdo da pasta, não a pasta em si
           rootFolderOrFile: '$(appPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
@@ -85,12 +84,16 @@ stages:
         runOnce:
           deploy:
             steps:
-              # CORRIGIDO: Usando a versão @1, que é a que o seu ambiente aceita
-              - task: AzureWebApp@1
-                displayName: 'Implantar no Azure App Service'
+              # CORRIGIDO: Agora usamos o Azure CLI para um deploy mais robusto.
+              - task: AzureCLI@2
+                displayName: 'Implantar com Azure CLI'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
-                  appType: 'webApp'
-                  appName: 'bolaoonline-testes3'
-                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  removeAdditionalFilesFromFolders: true
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: |
+                    az webapp deploy \
+                      --resource-group "bolaoonline-rg" \
+                      --name "bolaoonline-testes3" \
+                      --src-path "$(Pipeline.Workspace)/drop/$(zipName)" \
+                      --clean=true
