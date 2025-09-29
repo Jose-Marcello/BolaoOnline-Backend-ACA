@@ -91,3 +91,6 @@ stages:
                   appType: 'webApp'
                   appName: 'bolaoonline-testes3'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
+                  # Adicione esta linha para garantir que o deploy seja limpo
+                  # e não crie pastas aninhadas.
+                  removeAdditionalFilesFromFolders: true
