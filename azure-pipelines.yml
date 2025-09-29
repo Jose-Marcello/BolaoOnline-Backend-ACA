@@ -61,6 +61,7 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
+          # CORRIGIDO: Compacta o conteúdo da pasta, não a pasta em si
           rootFolderOrFile: '$(appPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
@@ -84,6 +85,7 @@ stages:
         runOnce:
           deploy:
             steps:
+              # CORRIGIDO: Usando a versão @1, que é a que o seu ambiente aceita
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
@@ -92,5 +94,3 @@ stages:
                   appName: 'bolaoonline-testes3'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
-                  # Adicione esta linha para forçar o método de deploy
-                  deploymentMethod: 'webDeploy'
