@@ -35,26 +35,29 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href /'
+          customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
-
+      
+      # PASSO 1: PUBLICAR O BACKEND EM UMA PASTA RAIZ TEMPORÁRIA
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend (Autocontido)'
+        displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) -o "$(appPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
-
+      
+      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA WWWROOT DO BACKEND PUBLICADO
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend Publicado'
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
       
+      # PASSO 3: COMPACTAR O ARTEFATO FINAL, COM TUDO NO LUGAR CERTO
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
