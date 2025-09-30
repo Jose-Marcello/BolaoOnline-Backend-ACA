@@ -84,7 +84,7 @@ stages:
         runOnce:
           deploy:
             steps:
-              # NOVO PASSO: Remover a variável usando o Azure CLI para maior confiabilidade
+              # PASSO CORRETO: Remover a variável usando o Azure CLI para maior confiabilidade
               - task: AzureCLI@2
                 displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE via CLI'
                 inputs:
