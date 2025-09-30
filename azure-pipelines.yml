@@ -1,141 +1,81 @@
 trigger:
-  - master
+- master
 
 pool:
   vmImage: 'windows-latest'
 
 variables:
-  buildConfiguration: 'production'
-  appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
+  buildConfiguration: 'Release'
+  appProject: 'src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
-  backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  zipName: 'bolao-app-$(Build.BuildId).zip'
-  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+  appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
 
 stages:
 - stage: Build
-  displayName: 'Build e Empacotamento do Aplicativo'
+  displayName: 'Build'
   jobs:
   - job: BuildJob
-    displayName: 'Job de Build'
+    displayName: 'Build and Publish'
     steps:
       - task: NodeTool@0
-        displayName: 'Instalar Node.js'
+        displayName: 'Install Node.js'
         inputs:
           versionSpec: '18.x'
 
       - task: Npm@1
-        displayName: 'npm install do frontend'
+        displayName: 'npm install'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+      
       - task: Npm@1
-        displayName: 'npm build do frontend'
+        displayName: 'npm build'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          customCommand: 'run build -- --configuration=production'
           workingDir: '$(frontendProjectDir)'
 
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend (.NET)'
+        displayName: 'Publish Backend'
         inputs:
           command: 'publish'
-          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
-          zipAfterPublish: false
+          publishWebProjects: false
+          projects: '$(appProject)'
+          # CORRIGIDO: Publica para o diretório de app, sem wwwroot aninhado
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)"'
       
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para a wwwroot'
+        displayName: 'Copy Frontend to wwwroot'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
+          # Copia para a wwwroot que o .NET já criou
           TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
-      
-      # Corrigindo a estrutura de arquivos para o deploy
-      - task: CopyFiles@2
-        displayName: 'Copiar Conteúdo do Backend para a Raiz'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot/ApostasApp.Core.Web'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: false
-
-      - task: DeleteFiles@1
-        displayName: 'Deletar a pasta ApostasApp.Core.Web'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot'
-          Contents: 'ApostasApp.Core.Web'
-      
-      - task: CopyFiles@2
-        displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot/wwwroot'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
-
-      - task: DeleteFiles@1
-        displayName: 'Deletar o segundo wwwroot'
-        inputs:
-          SourceFolder: '$(appPublishDir)/wwwroot'
-          Contents: 'wwwroot'
-
-      - task: PowerShell@2
-        displayName: 'Ajustar Web.config'
-        inputs:
-          targetType: 'inline'
-          script: |
-            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
-            $content = [xml](Get-Content $webConfigPath)
-            $coreNode = $content.SelectSingleNode("//aspNetCore")
-            if ($coreNode) {
-                $coreNode.SetAttribute("stdoutLogEnabled", "true")
-                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
-                $content.Save($webConfigPath)
-            }
-      
-      - script: |
-          echo "Criando arquivo de versão..."
-          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
-          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
-        displayName: 'Adicionar arquivo de Versão do Build'
-
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
-        inputs:
-          rootFolderOrFile: '$(appPublishDir)/wwwroot/'      
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
-          includeRootFolder: false
+          cleanTargetFolder: true
 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publicar o Artefato de Build'
+        displayName: 'Publish Artifact'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(appPublishDir)'
           ArtifactName: 'drop'
 
 - stage: Deploy
-  displayName: 'Deploy para Azure'
+  displayName: 'Deploy'
   dependsOn: Build
   jobs:
     - deployment: DeployJob
-      displayName: 'Job de Deployment'
+      displayName: 'Deploy to App Service'
       environment: 'AmbienteDeTestes'
       strategy:
         runOnce:
           deploy:
             steps:
-              - task: AzureWebApp@1
-                displayName: 'Implantar no Azure App Service'
-                inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo'
-                  appType: 'webApp'
-                  appName: 'bolaoonline-testes2'
-                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  # NOVO: Garante que o deploy limpe a pasta de destino
-                  removeAdditionalFilesFromFolders: true
-
+            - task: AzureWebApp@1
+              displayName: 'Deploy Azure Web App'
+              inputs:
+                azureSubscription: 'Azure-BolaoOnline-Novo'
+                appType: 'webApp'
+                appName: 'bolaoonline-testes3'
+                package: '$(Pipeline.Workspace)/drop'
+                removeAdditionalFilesFromFolders: true
