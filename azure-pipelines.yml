@@ -84,7 +84,14 @@ stages:
         runOnce:
           deploy:
             steps:
-              # REMOVE A VARIÁVEL WEBSITE_RUN_FROM_PACKAGE
+              # PASSO NOVO: Baixa o artefato de build da pipeline
+              - task: DownloadBuildArtifacts@1
+                displayName: 'Baixar o Artefato de Build'
+                inputs:
+                  artifactName: 'drop'
+                  downloadPath: '$(Pipeline.Workspace)'
+
+              # PASSO 1: Remove a variável WEBSITE_RUN_FROM_PACKAGE
               - task: AzureCLI@2
                 displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE'
                 inputs:
@@ -97,15 +104,16 @@ stages:
                       --resource-group "ApostasAppRG" \
                       --setting-names WEBSITE_RUN_FROM_PACKAGE
 
-              # NOVA TAREFA DEPLOY: USA COMANDO ESPECÍFICO PARA IMPLANTAÇÃO ZIP
+              # PASSO 2: Implantar com o comando recomendado pelo Azure CLI
               - task: AzureCLI@2
-                displayName: 'Implantar pacote zip para o App Service'
+                displayName: 'Implantar com Azure CLI'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   scriptType: 'bash'
                   scriptLocation: 'inlineScript'
                   inlineScript: |
-                    az webapp deployment source config-zip \
+                    az webapp deploy \
                       --resource-group "ApostasAppRG" \
                       --name "bolaoonline-testes3" \
-                      --src "$(zipPath)"
+                      --src-path "$(Pipeline.Workspace)/drop/$(zipName)" \
+                      --clean=true
