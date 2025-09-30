@@ -136,4 +136,6 @@ stages:
                   appType: 'webApp'
                   appName: 'bolaoonline-testes2'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
+                    # NOVO: Garante que o deploy limpe a pasta de destino
+                  removeAdditionalFilesFromFolders: true
 
