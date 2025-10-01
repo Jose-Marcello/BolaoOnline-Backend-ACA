@@ -110,7 +110,7 @@ stages:
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
-          includeRootFolder: false
+          includeRootFolder: true
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
