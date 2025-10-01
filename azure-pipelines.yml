@@ -10,6 +10,7 @@ variables:
   frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
+  backendTempPublishDir: '$(appPublishDir)/temp' 
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
@@ -38,30 +39,39 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: Publicar o backend na pasta temporária.
-      # Esta tarefa já cria a pasta "wwwroot" com os arquivos do backend.
+      # PASSO 1: Publicar o backend em uma pasta temporária.
+      # O output do comando dotnet publish sempre cria uma pasta extra. 
+      # Vamos usar isso ao nosso favor.
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend'
+        displayName: 'Publicar Backend para pasta temporária'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(backendTempPublishDir)"'
           zipAfterPublish: false
       
-      # PASSO 2: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
+      # PASSO 2: Mover o conteúdo da pasta temporária para o diretório de publicação final.
+      # Isso achata a estrutura, deixando a pasta "ApostasApp.Core.Web" de fora.
+      - task: CopyFiles@2
+        displayName: 'Mover conteúdo publicado para pasta final'
+        inputs:
+          SourceFolder: '$(backendTempPublishDir)/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)'
+          flattenFolders: false
+      
+      # PASSO 3: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
       # A pasta "wwwroot" já existe. Esta tarefa copia o conteúdo do frontend para dentro dela.
       - task: CopyFiles@2
-        displayName: 'Copiar e Mesclar arquivos do Frontend na wwwroot do Backend'
+        displayName: 'Copiar e Mesclar arquivos do Frontend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          # Esta linha garante que a estrutura de subpastas como "assets" seja mantida.
           flattenFolders: false
       
-      # PASSO 3: Compactar todo o conteúdo do diretório de publicação.
-      # O ZIP final vai conter as .dlls, o web.config e a pasta "wwwroot" com os arquivos de ambos os projetos.
+      # PASSO 4: Compactar todo o conteúdo do diretório de publicação.
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
