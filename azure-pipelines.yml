@@ -45,7 +45,7 @@ stages:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(backendTempPublishDir)"'
           zipAfterPublish: false
       
      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA PASTA DE PUBLICAÇÃO DO BACKEND
