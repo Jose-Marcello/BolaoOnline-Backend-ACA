@@ -38,28 +38,17 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: PUBLICAR O BACKEND EM UMA PASTA TEMPORÁRIA
-      - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend'
-        inputs:
-          command: 'publish'
-          publishWebProjects: false
-          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
-          zipAfterPublish: false
-      
       # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA PASTA DE PUBLICAÇÃO DO BACKEND
-      # A remoção do "flattenFolders" garante que a estrutura de diretórios seja mantida.
+      # Ajuste na 'TargetFolder' para garantir que a pasta 'browser' seja criada.
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)'
-          # O "flattenFolders" foi removido.
+          TargetFolder: '$(appPublishDir)/browser'
 
       # PASSO 3: RENOMEAR A PASTA "browser" PARA "wwwroot"
-      # Este é o passo crucial que resolve o problema da estrutura de diretórios.
+      # Esta tarefa agora encontrará a pasta "browser" e a renomeará.
       - task: PowerShell@2
         displayName: 'Renomear pasta browser para wwwroot'
         inputs:
