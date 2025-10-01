@@ -38,26 +38,30 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA PASTA DE PUBLICAÇÃO DO BACKEND
-      # Ajuste na 'TargetFolder' para garantir que a pasta 'browser' seja criada.
+      # PASSO 1: Publicar o backend na pasta temporária.
+      # Esta tarefa já cria a pasta "wwwroot" com os arquivos do backend.
+      - task: DotNetCoreCLI@2
+        displayName: 'Publicar Backend'
+        inputs:
+          command: 'publish'
+          publishWebProjects: false
+          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
+          zipAfterPublish: false
+      
+      # PASSO 2: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
+      # A pasta "wwwroot" já existe. Esta tarefa copia o conteúdo do frontend para dentro dela.
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend'
+        displayName: 'Copiar e Mesclar arquivos do Frontend na wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/browser'
-
-      # PASSO 3: RENOMEAR A PASTA "browser" PARA "wwwroot"
-      # Esta tarefa agora encontrará a pasta "browser" e a renomeará.
-      - task: PowerShell@2
-        displayName: 'Renomear pasta browser para wwwroot'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Rename-Item -Path "$(appPublishDir)/browser" -NewName "wwwroot"
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          # Esta linha garante que a estrutura de subpastas como "assets" seja mantida.
+          flattenFolders: false
       
-      # PASSO 4: COMPACTAR O ARTEFATO FINAL
-      # O "includeRootFolder: false" garante que o .zip não contenha a pasta "AppPublish" extra.
+      # PASSO 3: Compactar todo o conteúdo do diretório de publicação.
+      # O ZIP final vai conter as .dlls, o web.config e a pasta "wwwroot" com os arquivos de ambos os projetos.
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
