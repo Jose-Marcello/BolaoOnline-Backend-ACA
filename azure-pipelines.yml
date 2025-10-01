@@ -102,3 +102,4 @@ stages:
                   appName: 'bolaoonline-testes3'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
+                  appSettings: '-WEBSITE_RUN_FROM_PACKAGE false'
