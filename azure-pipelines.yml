@@ -106,7 +106,7 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)/wwwroot/'      
+          rootFolderOrFile: '$(appPublishDir)/wwwroot'      
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
