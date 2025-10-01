@@ -84,7 +84,14 @@ stages:
         runOnce:
           deploy:
             steps:
-              # REMOVIDO: A tarefa de remover a variável, pois não precisaremos mais dela
+              # NOVO PASSO: DESATIVAR explicitamente o RUN_FROM_PACKAGE via CLI
+              - task: AzureCLI@2
+                displayName: 'Desativar RUN_FROM_PACKAGE via CLI'
+                inputs:
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: 'az webapp config appsettings set --name bolaoonline-testes3 --resource-group BolaoOnline --settings WEBSITE_RUN_FROM_PACKAGE=0'
               
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
@@ -94,5 +101,3 @@ stages:
                   appName: 'bolaoonline-testes3'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
-                  # NOVO PASSO: Impedir que a variável seja criada
-                  appSettings: '-WEBSITE_RUN_FROM_PACKAGE false'
