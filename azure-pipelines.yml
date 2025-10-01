@@ -52,7 +52,7 @@ stages:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
+          # Removido: flattenFolders: true
       
       # Corrigindo a estrutura de arquivos para o deploy
       - task: CopyFiles@2
