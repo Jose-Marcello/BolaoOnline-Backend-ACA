@@ -84,15 +84,15 @@ stages:
         runOnce:
           deploy:
             steps:
-              # CORREÇÃO 1: Remover a variável de ambiente (agora que as permissões estão OK)
+              # CORREÇÃO 1: Definir a variável para um valor nulo para desativar a funcionalidade
               - task: AzureCLI@2
-                displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE via CLI'
+                displayName: 'Definir WEBSITE_RUN_FROM_PACKAGE para nulo'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo-2'
                   scriptType: 'bash'
                   scriptLocation: 'inlineScript'
-                  inlineScript: 'az webapp config appsettings delete --name bolaoonline-testes3 --resource-group BolaoOnline --setting-names WEBSITE_RUN_FROM_PACKAGE'
-              
+                  inlineScript: 'az webapp config appsettings set --name bolaoonline-testes3 --resource-group BolaoOnline --settings WEBSITE_RUN_FROM_PACKAGE=""'
+
               # CORREÇÃO 2: O deploy do pacote que a sua pipeline já cria
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
