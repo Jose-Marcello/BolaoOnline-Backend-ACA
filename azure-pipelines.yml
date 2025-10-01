@@ -84,15 +84,15 @@ stages:
         runOnce:
           deploy:
             steps:
-              # NOVO PASSO: DESATIVAR explicitamente o RUN_FROM_PACKAGE via CLI
+              # PASSO DEFINITIVO: Remover a variável usando o Azure CLI
               - task: AzureCLI@2
-                displayName: 'Desativar RUN_FROM_PACKAGE via CLI'
+                displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE via CLI'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   scriptType: 'bash'
                   scriptLocation: 'inlineScript'
-                  inlineScript: 'az webapp config appsettings set --name bolaoonline-testes3 --resource-group BolaoOnline --settings WEBSITE_RUN_FROM_PACKAGE=0'
-              
+                  inlineScript: 'az webapp config appsettings delete --name bolaoonline-testes3 --resource-group BolaoOnline --setting-names WEBSITE_RUN_FROM_PACKAGE'
+
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
