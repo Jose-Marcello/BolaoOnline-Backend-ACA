@@ -55,7 +55,7 @@ stages:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
+          # Removido: flattenFolders: true
       
       # PASSO 3: COMPACTAR O ARTEFATO FINAL, COM TUDO NO LUGAR CERTO
       - task: ArchiveFiles@2
