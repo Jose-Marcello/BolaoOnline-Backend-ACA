@@ -87,7 +87,7 @@ stages:
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo'
+                  azureSubscription: 'Azure-BolaoOnline-Novo-2'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes3'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
