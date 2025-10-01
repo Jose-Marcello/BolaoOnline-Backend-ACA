@@ -106,11 +106,11 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)/wwwroot'      
+          rootFolderOrFile: '$(appPublishDir)'  # <-- CORRIGIDO: Aponte para a pasta de publicação inteira
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
-          includeRootFolder: true
+          includeRootFolder: false
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
