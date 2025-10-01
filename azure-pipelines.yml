@@ -6,10 +6,10 @@ pool:
 
 variables:
   buildConfiguration: 'production'
+  appPublishDir: '$(Build.ArtifactStagingDirectory)/app'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+  frontendDistDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5/dist/bolao-online-app-v5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
@@ -37,31 +37,76 @@ stages:
           command: 'custom'
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
-      
-      # PASSO 1: PUBLICAR O BACKEND EM UMA PASTA RAIZ TEMPORÁRIA
+
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend'
+        displayName: 'Publicar Backend (.NET)'
         inputs:
           command: 'publish'
-          publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '--configuration $(buildConfiguration) --output "$(appPublishDir)/wwwroot"'
           zipAfterPublish: false
       
-      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA WWWROOT DO BACKEND PUBLICADO
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar arquivos do Frontend para a wwwroot'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: true
       
-      # PASSO 3: COMPACTAR O ARTEFATO FINAL, COM TUDO NO LUGAR CERTO
+      # Corrigindo a estrutura de arquivos para o deploy
+      - task: CopyFiles@2
+        displayName: 'Copiar Conteúdo do Backend para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: false
+
+      - task: DeleteFiles@1
+        displayName: 'Deletar a pasta ApostasApp.Core.Web'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'ApostasApp.Core.Web'
+      
+      - task: CopyFiles@2
+        displayName: 'Mover Conteúdo do Segundo wwwroot para a Raiz'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: true
+
+      - task: DeleteFiles@1
+        displayName: 'Deletar o segundo wwwroot'
+        inputs:
+          SourceFolder: '$(appPublishDir)/wwwroot'
+          Contents: 'wwwroot'
+
+      - task: PowerShell@2
+        displayName: 'Ajustar Web.config'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $webConfigPath = "$(appPublishDir)/wwwroot/web.config"
+            $content = [xml](Get-Content $webConfigPath)
+            $coreNode = $content.SelectSingleNode("//aspNetCore")
+            if ($coreNode) {
+                $coreNode.SetAttribute("stdoutLogEnabled", "true")
+                $coreNode.SetAttribute("stdoutLogFile", ".\logs\stdout")
+                $content.Save($webConfigPath)
+            }
+      
+      - script: |
+          echo "Criando arquivo de versão..."
+          echo "Versao do Build: $(Build.BuildId)" > "$(appPublishDir)/wwwroot/build.version.txt"
+          echo "Origem do Commit: $(Build.SourceVersion)" >> "$(appPublishDir)/wwwroot/build.version.txt"
+        displayName: 'Adicionar arquivo de Versão do Build'
+
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
+          rootFolderOrFile: '$(appPublishDir)/wwwroot/'      
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
@@ -84,20 +129,10 @@ stages:
         runOnce:
           deploy:
             steps:
-              # PASSO DEFINITIVO: Remover a variável usando o Azure CLI
-              - task: AzureCLI@2
-                displayName: 'Remover WEBSITE_RUN_FROM_PACKAGE via CLI'
-                inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo-2'
-                  scriptType: 'bash'
-                  scriptLocation: 'inlineScript'
-                  inlineScript: 'az webapp config appsettings delete --name bolaoonline-testes3 --resource-group BolaoOnline --setting-names WEBSITE_RUN_FROM_PACKAGE'
-
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo-2'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes3'
+                  appName: 'bolaoonline-testes2'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  removeAdditionalFilesFromFolders: true
