@@ -48,24 +48,23 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
-      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA WWWROOT DO BACKEND PUBLICADO
+     # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA PASTA DE PUBLICAÇÃO DO BACKEND
+      # Ajuste na 'TargetFolder' para garantir que a pasta 'browser' seja criada.
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar arquivos do Frontend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          # Removido: flattenFolders: true
-      
-      # PASSO 3: COMPACTAR O ARTEFATO FINAL, COM TUDO NO LUGAR CERTO
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
+          TargetFolder: '$(appPublishDir)/browser'
+
+      # PASSO 3: RENOMEAR A PASTA "browser" PARA "wwwroot"
+      # Esta tarefa agora encontrará a pasta "browser" e a renomeará.
+      - task: PowerShell@2
+        displayName: 'Renomear pasta browser para wwwroot'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
-          includeRootFolder: true
+          targetType: 'inline'
+          script: |
+            Rename-Item -Path "$(appPublishDir)/browser" -NewName "wwwroot"
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
