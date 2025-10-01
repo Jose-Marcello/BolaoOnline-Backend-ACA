@@ -38,24 +38,26 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: PUBLICAR O BACKEND EM UMA PASTA RAIZ TEMPORÁRIA
+      # PASSO 1: Publicar o backend na pasta temporária.
+      # Esta tarefa já cria a pasta "wwwroot" com os arquivos do backend.
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(backendTempPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
       
-     # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA PASTA DE PUBLICAÇÃO DO BACKEND
-      # Ajuste na 'TargetFolder' para garantir que a pasta 'browser' seja criada.
+      # PASSO 2: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
+      # A pasta "wwwroot" já existe. Esta tarefa copia o conteúdo do frontend para dentro dela.
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend'
+        displayName: 'Copiar e Mesclar arquivos do Frontend na wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/browser'
+          TargetFolder: '$(appPublishDir)/wwwroot'
+          flattenFolders: false
 
       # PASSO 3: RENOMEAR A PASTA "browser" PARA "wwwroot"
       # Esta tarefa agora encontrará a pasta "browser" e a renomeará.
