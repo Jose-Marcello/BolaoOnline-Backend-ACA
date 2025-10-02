@@ -1,4 +1,5 @@
-// Localização: Program.cs (no projeto da API
+// Localização: Program.cs (no projeto da API)
+
 // Usings para componentes do ASP.NET Core
 // Usings para seus projetos e namespaces específicos
 using ApostasApp.Core.Application.MappingProfiles;
@@ -33,12 +34,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.SpaServices;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 // ===================================================================================================
+// Configurações de Serviços - Services
+// ===================================================================================================
+
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -55,16 +61,8 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 
 });
 
-// ===================================================================================================
-// Configuração do Banco de Dados de Identidade (IdentityDbContext)
-// ===================================================================================================
-//builder.Services.AddDbContext<IdentityDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
 
-// ===================================================================================================
 // Configuração do ASP.NET Core Identity
-// ===================================================================================================
-
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
   options.SignIn.RequireConfirmedAccount = true;
@@ -77,19 +75,13 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
   options.Lockout.MaxFailedAccessAttempts = 5;
   options.Lockout.AllowedForNewUsers = true;
   options.User.RequireUniqueEmail = true;
-  //options.Stores.ProtectPersonalData = false; //provisório
 
 })
 .AddEntityFrameworkStores<MeuDbContext>()
-.AddDefaultTokenProviders(); // <- O único ponto e vírgula aqui
-
-//builder.Services.AddDataProtection();
-//builder.Services.AddScoped<IPersonalDataProtector, PersonalDataProtectorService>();
+.AddDefaultTokenProviders();
 
 
-// ===================================================================================================
 // Configuração JWT Bearer Authentication
-// ===================================================================================================
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -112,16 +104,11 @@ builder.Services.AddAuthentication(options =>
   };
 });
 
-// Adicione esta linha!
+
 System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
-
-//builder.Services.Configure<MercadoPagoSettings>(builder.Configuration.GetSection("MercadoPagoSettings"));
-
-// 1. Configura o PagSeguroSettings
 builder.Services.Configure<PagSeguroSettings>(builder.Configuration.GetSection("PagSeguroSettings"));
 
-// 2. Registra o PagSeguroService e configura o HttpClient
 builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProvider, client) =>
 {
   var pagSeguroSettings = serviceProvider.GetRequiredService<IOptions<PagSeguroSettings>>().Value;
@@ -130,60 +117,27 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
   client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
 });
 
-
-
 builder.Services.ResolveDependencies();
 
-// ===================================================================================================
-// Lógica para Injeção Condicional do Serviço de E-mail
-// ===================================================================================================
+
 var emailSimulationMode = builder.Configuration.GetValue<bool>("EmailSettings:EmailSimulationMode");
 
 if (emailSimulationMode)
 {
-  // Se a flag for TRUE, registre o serviço de simulação
   builder.Services.AddTransient<IBolaoEmailSender, MockEmailSender>();
 }
 else
 {
-  // Se a flag for FALSE, use o seu serviço SMTP real (Mailtrap ou SendGrid)
   builder.Services.AddTransient<IBolaoEmailSender, SmtpEmailSender>();
 }
 
-/*
-
-// <<-- NOVO: CONFIGURAÇÃO E REGISTRO DO SENDGRID E EMAILSENDER AQUI -->>
-// Configurações do SendGrid (lê do appsettings.json)
-builder.Services.Configure<SendGridSettings>(builder.Configuration.GetSection("SendGrid"));
-
-// Registra o cliente SendGrid
-builder.Services.AddTransient<ISendGridClient>(s =>
-{
-    var apiKey = s.GetRequiredService<IOptions<SendGridSettings>>().Value.ApiKey;
-    return new SendGridClient(apiKey);
-});
-
-// Registra sua implementação de IEmailSender (usando a interface padrão do Identity UI)
-builder.Services.AddTransient<IEmailSender, SendGridEmailSender>();
-*/
-
-
-// ===================================================================================================
-// Configuração do AutoMapper
-// ===================================================================================================
-// Adiciona AutoMapper e busca o MappingProfile na assembly do projeto de Application
-// Usando a sobrecarga que aceita uma Action para configuração, que é mais robusta.
 builder.Services.AddAutoMapper(cfg =>
 {
-  cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile está em ApostasApp.Core.Application
+  cfg.AddMaps(typeof(MappingProfile).Assembly);
 });
-
-
-
 
 if (builder.Environment.IsDevelopment())
 {
-  // Adicione os controllers da sua aplicação E O TestController em uma só linha
   builder.Services.AddControllers()
       .AddJsonOptions(options =>
       {
@@ -195,7 +149,6 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-  // Apenas os controllers de produção
   builder.Services.AddControllers()
       .AddJsonOptions(options =>
       {
@@ -205,17 +158,11 @@ else
       });
 }
 
-
-
-// ===================================================================================================
-// Configuração do Swagger/OpenAPI
-// ===================================================================================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
   c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
 
-  // Configuração para JWT Bearer Authentication no Swagger UI
   c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
   {
     Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
@@ -245,25 +192,22 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-// ===================================================================================================
-// Configuração CORS
-// ===================================================================================================
+// Configuração CORS - Agora fora dos blocos de desenvolvimento
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowSpecificOrigin",
-      policy => policy.WithOrigins("http://localhost:4200") // Substitua pelo seu frontend Angular
+      policy => policy.WithOrigins(builder.Configuration["FrontendUrls:BaseUrl"])
                            .AllowAnyHeader()
                            .AllowAnyMethod()
-                           .AllowCredentials()); // Permitir cookies e credenciais
+                           .AllowCredentials());
 });
 
 var app = builder.Build();
 
 // ===================================================================================================
-// <<-- INÍCIO DA SEÇÃO CORRIGIDA -->>
-// Pipeline de Requisições HTTP
+// Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
-// Seed de dados de identidade (usuários e roles)
+
 using (var scope = app.Services.CreateScope())
 {
   var services = scope.ServiceProvider;
@@ -288,31 +232,35 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseRouting();
 
-// AQUI: O UseCors deve vir AGORA, depois de UseRouting
+// <<-- CORREÇÃO FINAL DA ORDEM -->>
 app.UseCors("AllowSpecificOrigin");
 
-// Os middlewares de autenticação e autorização vêm em seguida
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
-// Permite a utilização de rotas para o frontend
-app.UseRouting();
-
-// Mapeia todas as requisições que não começam com "/api" para o frontend
-app.MapWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"), appBuilder =>
+// Se o seu frontend for um SPA, essa configuração é crucial.
+app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
 {
-  // Configura a pasta "wwwroot" para ser o diretório de arquivos estáticos do SPA
-  appBuilder.UseSpaStaticFiles();
-  appBuilder.UseSpa(spa =>
+  // Usa arquivos estáticos de dentro do "wwwroot"
+  appBuilder.UseStaticFiles();
+  appBuilder.Run(async context =>
   {
-    spa.Options.SourcePath = "wwwroot";
+    context.Response.ContentType = "text/html";
+    // Serve o index.html como fallback para todas as rotas do Angular
+    await context.Response.SendFileAsync(
+        Path.Combine(app.Environment.WebRootPath, "index.html")
+    );
   });
-});// <<-- FIM DA SEÇÃO CORRIGIDA -->>
+});
+// <<-- FIM DA SEÇÃO CORRIGIDA E CONSOLIDADA -->>
+
 
 // As requisições são mapeadas para os controladores
 app.MapControllers();
