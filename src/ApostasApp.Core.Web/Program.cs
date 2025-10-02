@@ -29,6 +29,10 @@ using System.Text.Json;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.Web.Configurations;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.SpaServices;
+using Microsoft.AspNetCore.Builder;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,17 +67,17 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 6;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
-    options.User.RequireUniqueEmail = true;
-    //options.Stores.ProtectPersonalData = false; //provisório
+  options.SignIn.RequireConfirmedAccount = true;
+  options.Password.RequireDigit = true;
+  options.Password.RequireLowercase = true;
+  options.Password.RequireUppercase = true;
+  options.Password.RequireNonAlphanumeric = true;
+  options.Password.RequiredLength = 6;
+  options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+  options.Lockout.MaxFailedAccessAttempts = 5;
+  options.Lockout.AllowedForNewUsers = true;
+  options.User.RequireUniqueEmail = true;
+  //options.Stores.ProtectPersonalData = false; //provisório
 
 })
 .AddEntityFrameworkStores<MeuDbContext>()
@@ -88,24 +92,24 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 // ===================================================================================================
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+  options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+  options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+  options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = false; // Em produção, deve ser true
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]))
-    };
+  options.SaveToken = true;
+  options.RequireHttpsMetadata = false; // Em produção, deve ser true
+  options.TokenValidationParameters = new TokenValidationParameters()
+  {
+    ValidateIssuer = true,
+    ValidateAudience = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]))
+  };
 });
 
 // Adicione esta linha!
@@ -120,10 +124,10 @@ builder.Services.Configure<PagSeguroSettings>(builder.Configuration.GetSection("
 // 2. Registra o PagSeguroService e configura o HttpClient
 builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProvider, client) =>
 {
-    var pagSeguroSettings = serviceProvider.GetRequiredService<IOptions<PagSeguroSettings>>().Value;
+  var pagSeguroSettings = serviceProvider.GetRequiredService<IOptions<PagSeguroSettings>>().Value;
 
-    client.BaseAddress = new Uri("https://api.sandbox.pagseguro.com/charges");
-    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
+  client.BaseAddress = new Uri("https://api.sandbox.pagseguro.com/charges");
+  client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
 });
 
 
@@ -137,13 +141,13 @@ var emailSimulationMode = builder.Configuration.GetValue<bool>("EmailSettings:Em
 
 if (emailSimulationMode)
 {
-    // Se a flag for TRUE, registre o serviço de simulação
-    builder.Services.AddTransient<IBolaoEmailSender, MockEmailSender>();
+  // Se a flag for TRUE, registre o serviço de simulação
+  builder.Services.AddTransient<IBolaoEmailSender, MockEmailSender>();
 }
 else
 {
-    // Se a flag for FALSE, use o seu serviço SMTP real (Mailtrap ou SendGrid)
-    builder.Services.AddTransient<IBolaoEmailSender, SmtpEmailSender>();
+  // Se a flag for FALSE, use o seu serviço SMTP real (Mailtrap ou SendGrid)
+  builder.Services.AddTransient<IBolaoEmailSender, SmtpEmailSender>();
 }
 
 /*
@@ -171,7 +175,7 @@ builder.Services.AddTransient<IEmailSender, SendGridEmailSender>();
 // Usando a sobrecarga que aceita uma Action para configuração, que é mais robusta.
 builder.Services.AddAutoMapper(cfg =>
 {
-    cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile está em ApostasApp.Core.Application
+  cfg.AddMaps(typeof(MappingProfile).Assembly); // MappingProfile está em ApostasApp.Core.Application
 });
 
 
@@ -179,26 +183,26 @@ builder.Services.AddAutoMapper(cfg =>
 
 if (builder.Environment.IsDevelopment())
 {
-    // Adicione os controllers da sua aplicação E O TestController em uma só linha
-    builder.Services.AddControllers()
-        .AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-            options.JsonSerializerOptions.WriteIndented = true;
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        })
-        .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
+  // Adicione os controllers da sua aplicação E O TestController em uma só linha
+  builder.Services.AddControllers()
+      .AddJsonOptions(options =>
+      {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      })
+      .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
 }
 else
 {
-    // Apenas os controllers de produção
-    builder.Services.AddControllers()
-        .AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-            options.JsonSerializerOptions.WriteIndented = true;
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        });
+  // Apenas os controllers de produção
+  builder.Services.AddControllers()
+      .AddJsonOptions(options =>
+      {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      });
 }
 
 
@@ -209,19 +213,19 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
+  c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
 
-    // Configuração para JWT Bearer Authentication no Swagger UI
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
+  // Configuração para JWT Bearer Authentication no Swagger UI
+  c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  {
+    Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
+    Name = "Authorization",
+    In = ParameterLocation.Header,
+    Type = SecuritySchemeType.ApiKey,
+    Scheme = "Bearer"
+  });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+  c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -246,45 +250,44 @@ builder.Services.AddSwaggerGen(c =>
 // ===================================================================================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin",
-        policy => policy.WithOrigins("http://localhost:4200") // Substitua pelo seu frontend Angular
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials()); // Permitir cookies e credenciais
+  options.AddPolicy("AllowSpecificOrigin",
+      policy => policy.WithOrigins("http://localhost:4200") // Substitua pelo seu frontend Angular
+                           .AllowAnyHeader()
+                           .AllowAnyMethod()
+                           .AllowCredentials()); // Permitir cookies e credenciais
 });
 
 var app = builder.Build();
 
 // ===================================================================================================
+// <<-- INÍCIO DA SEÇÃO CORRIGIDA -->>
 // Pipeline de Requisições HTTP
 // ===================================================================================================
-
 // Seed de dados de identidade (usuários e roles)
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    try
-    {
-        var userManager = services.GetRequiredService<UserManager<Usuario>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await IdentitySeed.SeedRolesAsync(roleManager);
-        await IdentitySeed.SeedAdminUserAsync(userManager, roleManager);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
-    }
+  var services = scope.ServiceProvider;
+  try
+  {
+    var userManager = services.GetRequiredService<UserManager<Usuario>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    await IdentitySeed.SeedRolesAsync(roleManager);
+    await IdentitySeed.SeedAdminUserAsync(userManager, roleManager);
+  }
+  catch (Exception ex)
+  {
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
+  }
 }
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
 
 // AQUI: O UseCors deve vir AGORA, depois de UseRouting
@@ -294,21 +297,26 @@ app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Apenas para garantir que outros arquivos estáticos sejam servidos corretamente
-// Adicione esta linha antes para garantir que o UseStaticFiles encontre o index.html
-app.UseDefaultFiles();
+// Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
+// Se o seu frontend for um SPA, essa configuração é crucial.
+app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+  // Usa arquivos estáticos de dentro do "wwwroot"
+  appBuilder.UseStaticFiles();
+  appBuilder.Run(async context =>
+  {
+    context.Response.ContentType = "text/html";
+    // Serve o index.html como fallback para todas as rotas do Angular
+    await context.Response.SendFileAsync(
+        Path.Combine(app.Environment.WebRootPath, "index.html")
+    );
+  });
+});
+// <<-- FIM DA SEÇÃO CORRIGIDA -->>
 
 // As requisições são mapeadas para os controladores
 app.MapControllers();
-
-// A correção aqui é usar um Endpoint mais robusto para SPA
-app.UseEndpoints(endpoints =>
-{
-  endpoints.MapControllers();
-  // A rota padrão do SPA deve ser a última na lista
-  endpoints.MapFallbackToFile("wwwroot/index.html");
-});
 
 app.Run();
