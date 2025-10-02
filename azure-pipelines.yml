@@ -63,8 +63,8 @@ stages:
         displayName: 'Copiar e Mesclar arquivos do Frontend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
-          Contents: 'web.config' # This should be corrected
-          TargetFolder: '$(appPublishDir)'
+          Contents: '**'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           flattenFolders: false
       
       # PASSO 4: Compactar todo o conteúdo do diretório de publicação.
