@@ -300,21 +300,19 @@ app.UseAuthorization();
 // Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
-// Se o seu frontend for um SPA, essa configuração é crucial.
-app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+// Permite a utilização de rotas para o frontend
+app.UseRouting();
+
+// Mapeia todas as requisições que não começam com "/api" para o frontend
+app.MapWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"), appBuilder =>
 {
-  // Usa arquivos estáticos de dentro do "wwwroot"
-  appBuilder.UseStaticFiles();
-  appBuilder.Run(async context =>
+  // Configura a pasta "wwwroot" para ser o diretório de arquivos estáticos do SPA
+  appBuilder.UseSpaStaticFiles();
+  appBuilder.UseSpa(spa =>
   {
-    context.Response.ContentType = "text/html";
-    // Serve o index.html como fallback para todas as rotas do Angular
-    await context.Response.SendFileAsync(
-        Path.Combine(app.Environment.WebRootPath, "index.html")
-    );
+    spa.Options.SourcePath = "wwwroot";
   });
-});
-// <<-- FIM DA SEÇÃO CORRIGIDA -->>
+});// <<-- FIM DA SEÇÃO CORRIGIDA -->>
 
 // As requisições são mapeadas para os controladores
 app.MapControllers();
