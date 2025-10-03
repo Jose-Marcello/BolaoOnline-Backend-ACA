@@ -27,14 +27,14 @@ namespace ApostasApp.Core.Infrastructure.Identity.Seed
         public static async Task SeedAdminUserAsync(UserManager<Usuario> userManager, RoleManager<IdentityRole> roleManager)
         {
             // Verifica se o usuário admin já existe
-            var adminUser = await userManager.FindByEmailAsync("admin@apostasapp.com");
+            var adminUser = await userManager.FindByEmailAsync("jmgalem@gmail.com");
             if (adminUser == null)
             {
                 // Cria o usuário admin
                 adminUser = new Usuario
                 {
-                  UserName = "josemarcellogardeldealemar@gmail.com", 
-                  Email = "josemarcellogardeldealemar@gmail.com",
+                  UserName = "jmgalem@gmail.com", 
+                  Email = "jmgalem@gmail.com",
                   Apelido = "AdminMaster",
                   CPF = "84062274787", // CPF de exemplo corrigido
                   Celular = "21999734776", // Celular de exemplo
