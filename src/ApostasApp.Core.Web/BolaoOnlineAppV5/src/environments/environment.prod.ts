@@ -1,7 +1,5 @@
-// Localização: src/environments/environment.prod.ts
-
 export const environment = {
   production: true,
-  apiUrl: 'https://bolaoonline-testes3.azurewebsites.net',
-  imagesUrl: 'https://bolaoonline-testes3.azurewebsites.net'  // <-- A URL CORRETA DO BACKEND
+  apiUrl: 'https://bolaoonline-testes4.azurewebsites.net',
+  imagesUrl: 'https://bolaoonline-testes4.azurewebsites.net'  // <-- A URL CORRETA DO BACKEND
 };
