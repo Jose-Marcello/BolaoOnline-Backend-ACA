@@ -99,6 +99,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo-2'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes3'
+                  appName: 'bolaoonline-testes4'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
