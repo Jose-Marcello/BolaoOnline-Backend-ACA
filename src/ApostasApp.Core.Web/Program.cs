@@ -208,6 +208,8 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
+
+/*
 using (var scope = app.Services.CreateScope())
 {
   var services = scope.ServiceProvider;
@@ -224,6 +226,7 @@ using (var scope = app.Services.CreateScope())
     logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
   }
 }
+*/
 
 if (app.Environment.IsDevelopment())
 {
