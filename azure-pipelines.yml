@@ -1,16 +1,14 @@
 trigger:
-  - master
+- master
 
 pool:
   vmImage: 'windows-latest'
 
 variables:
   buildConfiguration: 'production'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
-  backendTempPublishDir: '$(appPublishDir)/temp' 
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
 
@@ -39,35 +37,24 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: Publicar o backend em uma pasta temporária.
       - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend para pasta temporária'
+        displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(backendTempPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
       
-      # PASSO 2: Mover o conteúdo da pasta temporária para o diretório de publicação final.
+      # Correção: Copiar arquivos sem a pasta raiz do frontend
       - task: CopyFiles@2
-        displayName: 'Mover conteúdo publicado para pasta final'
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
-          SourceFolder: '$(backendTempPublishDir)/ApostasApp.Core.Web'
-          Contents: '**'
-          TargetFolder: '$(appPublishDir)'
-          flattenFolders: false
-      
-      # PASSO 3: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
-      - task: CopyFiles@2
-        displayName: 'Copiar e Mesclar arquivos do Frontend'
-        inputs:
-          SourceFolder: '$(frontendDistDir)'
+          SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: false
+          cleanTargetFolder: true
       
-      # PASSO 4: Compactar todo o conteúdo do diretório de publicação.
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
@@ -97,8 +84,8 @@ stages:
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo-2'
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes4'
+                  appName: 'bolaoonline-testes5'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
