@@ -6,7 +6,7 @@ pool:
 
 variables:
   buildConfiguration: 'production'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'  
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
@@ -46,7 +46,6 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
       
-      # Correção: Copiar arquivos sem a pasta raiz do frontend
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
