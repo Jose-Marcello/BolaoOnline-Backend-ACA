@@ -1,19 +1,17 @@
-
 trigger:
 - master
-
+ 
 pool:
   vmImage: 'windows-latest'
-
+ 
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-
+ 
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -25,13 +23,13 @@ stages:
         displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
-
+ 
       - task: Npm@1
         displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+ 
       - task: Npm@1
         displayName: 'npm build do frontend'
         inputs:
@@ -48,13 +46,14 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
       
+      # ---- AQUI ESTÁ A ALTERAÇÃO CRUCIAL ----
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar arquivos do Frontend para pasta de Deploy'
         inputs:
-          SourceFolder: '$(frontendDistDir)'
+          SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
+          TargetFolder: '$(appPublishDir)/wwwroot' # Alterado para a pasta correta
+          cleanTargetFolder: true                  # Mantido como 'true' para sobrescrever apenas os arquivos estáticos do backend
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
@@ -64,13 +63,13 @@ stages:
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
           includeRootFolder: false
-
+ 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
           PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
-
+ 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
@@ -87,8 +86,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes5'
+                  appName: 'bolaoonline-testes4'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  removeAdditionalFilesFromFolders: true 
-
-                  # Fix for sync issue: 2025-10-04
+                  removeAdditionalFilesFromFolders: true
