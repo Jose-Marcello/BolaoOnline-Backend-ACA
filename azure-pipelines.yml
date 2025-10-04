@@ -47,7 +47,6 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
 
-      # Copia todo o conteúdo do backend para a pasta final
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
@@ -56,25 +55,28 @@ stages:
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
 
-      # Copia os arquivos do frontend para o wwwroot na pasta final
       - task: CopyFiles@2
-        displayName: 'Copiar Arquivos do Frontend para a pasta wwwroot'
+        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: true
 
-      # Copia os arquivos estáticos do backend (que foram sobrescritos) de volta para o wwwroot
       - task: CopyFiles@2
-        displayName: 'Copiar Arquivos Estáticos do Backend para wwwroot'
+        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
         inputs:
           SourceFolder: '$(backendProjectDir)/wwwroot'
           Contents: '**'
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      # ---- AQUI ESTÁ A ÚLTIMA CORREÇÃO ----
+      # Adicione esta tarefa para remover a pasta persistente
+      - task: DeleteFiles@1
+        displayName: 'Remover pasta de projeto frontend da pasta de deploy'
+        inputs:
+          Contents: '$(finalPublishDir)/BolaoOnlineAppV5'
+          
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
