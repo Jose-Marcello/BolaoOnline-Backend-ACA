@@ -1,5 +1,5 @@
 trigger:
-  - master
+- master
 
 pool:
   vmImage: 'windows-latest'
@@ -38,35 +38,34 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: Publicar o backend na pasta temporária.
-      # Esta tarefa já cria a pasta "wwwroot" com os arquivos do backend.
+      # PASSO 1: PUBLICAR O BACKEND COM O RUNTIME CORRETO
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
       
-      # PASSO 2: Copiar e mesclar os arquivos do frontend na wwwroot do backend.
-      # A pasta "wwwroot" já existe. Esta tarefa copia o conteúdo do frontend para dentro dela.
+      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA WWWROOT
       - task: CopyFiles@2
-        displayName: 'Copiar e Mesclar arquivos do Frontend na wwwroot do Backend'
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendDistDir)'
           Contents: '**'
           TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: false
-
-      # PASSO 3: RENOMEAR A PASTA "browser" PARA "wwwroot"
-      # Esta tarefa agora encontrará a pasta "browser" e a renomeará.
-      - task: PowerShell@2
-        displayName: 'Renomear pasta browser para wwwroot'
+          flattenFolders: true
+      
+      # PASSO 3: COMPACTAR O ARTEFATO FINAL
+      - task: ArchiveFiles@2
+        displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          targetType: 'inline'
-          script: |
-            Rename-Item -Path "$(appPublishDir)/browser" -NewName "wwwroot"
+          rootFolderOrFile: '$(appPublishDir)'
+          archiveType: 'zip'
+          archiveFile: '$(zipPath)'
+          replaceExistingArchive: true
+          includeRootFolder: false
 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
@@ -85,10 +84,19 @@ stages:
         runOnce:
           deploy:
             steps:
+              # DESATIVAR explicitamente o RUN_FROM_PACKAGE via CLI
+              - task: AzureCLI@2
+                displayName: 'Desativar RUN_FROM_PACKAGE via CLI'
+                inputs:
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
+                  scriptType: 'bash'
+                  scriptLocation: 'inlineScript'
+                  inlineScript: 'az webapp config appsettings set --name bolaoonline-testes4 --resource-group ApostasAppRG --settings WEBSITE_RUN_FROM_PACKAGE=0'
+              
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo-2'
+                  azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
                   appName: 'bolaoonline-testes4'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
