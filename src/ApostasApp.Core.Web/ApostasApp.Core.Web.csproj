@@ -39,4 +39,9 @@
     <ProjectReference Include="..\ApostasApp.Core.Infrastructure\ApostasApp.Core.Infrastructure.csproj" />
   </ItemGroup>
 
+
+  <PropertyGroup>
+    <ExcludeAppInsights>True</ExcludeAppInsights>
+  </PropertyGroup>
+
 </Project>
