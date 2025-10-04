@@ -47,8 +47,6 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
 
-      # ---- AQUI ESTÁ A NOVA ESTRATÉGIA ----
-
       # Copia todo o conteúdo do backend para a pasta final
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
@@ -74,8 +72,9 @@ stages:
           SourceFolder: '$(backendProjectDir)/wwwroot'
           Contents: '**'
           TargetFolder: '$(finalPublishDir)/wwwroot'
-          cleanTargetFolder: false # Isso é crucial: não apagar o que já foi copiado do frontend
+          cleanTargetFolder: false
       
+      # ---- AQUI ESTÁ A ÚLTIMA CORREÇÃO ----
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
