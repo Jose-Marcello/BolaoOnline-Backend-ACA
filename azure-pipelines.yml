@@ -11,8 +11,8 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish' # Nova variável para a pasta final
- 
+  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
+
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -47,10 +47,11 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
 
+      # ---- AQUI ESTÁ A NOVA ALTERAÇÃO CRUCIAL ----
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
-          SourceFolder: '$(appPublishDir)'
+          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web' # Adicione o nome da pasta aqui
           Contents: '**'
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
@@ -66,7 +67,7 @@ stages:
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(finalPublishDir)' # Alterado para usar a pasta final
+          rootFolderOrFile: '$(finalPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
