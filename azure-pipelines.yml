@@ -6,7 +6,7 @@ pool:
 
 variables:
   buildConfiguration: 'production'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'  
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
@@ -86,6 +86,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes5'
+                  appName: 'bolaoonline-testes4'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
