@@ -47,22 +47,34 @@ stages:
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
 
-      # ---- AQUI ESTÁ A NOVA ALTERAÇÃO CRUCIAL ----
+      # ---- AQUI ESTÁ A NOVA ESTRATÉGIA ----
+
+      # Copia todo o conteúdo do backend para a pasta final
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
-          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web' # Adicione o nome da pasta aqui
+          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
           Contents: '**'
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
 
+      # Copia os arquivos do frontend para o wwwroot na pasta final
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        displayName: 'Copiar Arquivos do Frontend para a pasta wwwroot'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: true
+
+      # Copia os arquivos estáticos do backend (que foram sobrescritos) de volta para o wwwroot
+      - task: CopyFiles@2
+        displayName: 'Copiar Arquivos Estáticos do Backend para wwwroot'
+        inputs:
+          SourceFolder: '$(backendProjectDir)/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: false # Isso é crucial: não apagar o que já foi copiado do frontend
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
