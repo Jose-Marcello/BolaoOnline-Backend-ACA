@@ -35,7 +35,7 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build:prod' # Alteração aqui
+          customCommand: 'run build:prod'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -73,12 +73,7 @@ stages:
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      - task: PowerShell@2
-        displayName: 'Remover pasta de projeto frontend'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+      # TAREFA DE REMOÇÃO DA PASTA RETIRADA
           
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
