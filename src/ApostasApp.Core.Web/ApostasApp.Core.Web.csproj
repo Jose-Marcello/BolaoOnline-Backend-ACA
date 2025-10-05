@@ -5,6 +5,8 @@
     <Content Remove="BolaoOnlineAppV5\**" />
   </ItemGroup>
   -->
+
+  <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
   
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
