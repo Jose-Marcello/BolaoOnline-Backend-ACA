@@ -13,6 +13,6 @@
     export const environment = {
   production: false,
   // Altere a URL da API para o seu App Service no Azure
-  apiUrl: 'http://bolaoonline-testes5.azurewebsites.net', 
-  imagesUrl: 'http://bolaoonline-testes5.azurewebsites.net' 
+  apiUrl: 'http://bolaoonline-testes4.azurewebsites.net', 
+  imagesUrl: 'http://bolaoonline-testes4.azurewebsites.net' 
 };
