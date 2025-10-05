@@ -157,6 +157,90 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
+  c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
 
-c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+  {
+    Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
+    Name = "Authorization",
+    In = ParameterLocation.Header,
+    Type = SecuritySchemeType.ApiKey,
+    Scheme = "Bearer"
+  });
+
+  c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+
+
+// Configuração CORS
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("AllowSpecificOrigins",
+      policy => policy.WithOrigins("https://app.palpitesbolao.com.br", "http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials());
+});
+
+var app = builder.Build();
+
+// ===================================================================================================
+// Pipeline de Requisições HTTP - Middleware
+// ===================================================================================================
+
+if (app.Environment.IsDevelopment())
+{
+  app.UseSwagger();
+  app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+// ORDEM CORRETA: O roteamento da API deve vir antes do roteamento de arquivos estáticos.
+app.UseRouting();
+
+app.UseCors("AllowSpecificOrigins");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Mapeia os endpoints da API para os controladores
+app.UseEndpoints(endpoints =>
+{
+  endpoints.MapControllers();
+});
+
+// Serve os arquivos estáticos (como o index.html e os assets do Angular)
+app.UseStaticFiles();
+
+// Configura o fallback para o index.html para todas as outras rotas do frontend que não sejam da API.
+// A rota da API foi resolvida acima, então essa lógica não irá interferir.
+app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+{
+  appBuilder.UseStaticFiles();
+  appBuilder.Run(async context =>
+  {
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(
+        Path.Combine(app.Environment.WebRootPath, "index.html")
+    );
+  });
+});
+
+app.Run();
