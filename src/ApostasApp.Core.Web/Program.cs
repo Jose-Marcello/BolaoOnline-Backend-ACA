@@ -1,12 +1,10 @@
-// Localização: Program.cs (no projeto da API)
-
 // Usings para componentes do ASP.NET Core
 // Usings para seus projetos e namespaces específicos
 using ApostasApp.Core.Application.MappingProfiles;
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Interfaces;
 using ApostasApp.Core.Domain.Models.Configuracoes;
-using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identity
+using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
 using ApostasApp.Core.Infrastructure.Data.Context;
@@ -16,14 +14,14 @@ using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens; // Para SendGridEmailSender
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen; // Necessário para AddSwaggerGen
-using Swashbuckle.AspNetCore.SwaggerUI; // Necessário para UseSwaggerUI
-using System; // Para TimeSpan, Guid, etc.
-using System.Collections.Generic; // Para List
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.SwaggerUI;
+using System;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
-using System.Text; // Para Encoding
+using System.Text;
 using System.Text.Json;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Infrastructure.Services.Email;
@@ -34,6 +32,7 @@ using Microsoft.AspNetCore.SpaServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.Reflection;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,9 +48,9 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
       sqlServerOptionsAction: sqlOptions =>
       {
         sqlOptions.EnableRetryOnFailure(
-                  maxRetryCount: 10,
-                  maxRetryDelay: TimeSpan.FromSeconds(30),
-                  errorNumbersToAdd: null);
+              maxRetryCount: 10,
+              maxRetryDelay: TimeSpan.FromSeconds(30),
+              errorNumbersToAdd: null);
       })
       .LogTo(Console.WriteLine, LogLevel.Information)
       .EnableSensitiveDataLogging()
@@ -158,112 +157,6 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-  c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
+c.SwaggerDoc("v1", new OpenApiInfo { Title = "ApostasApp API", Version = "v1" });
 
-  c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-  {
-    Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
-    Name = "Authorization",
-    In = ParameterLocation.Header,
-    Type = SecuritySchemeType.ApiKey,
-    Scheme = "Bearer"
-  });
-
-  c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
-            },
-            new List<string>()
-        }
-    });
-});
-
-
-// Configuração CORS
-builder.Services.AddCors(options =>
-{
-  options.AddPolicy("AllowSpecificOrigins",
-      policy => policy.WithOrigins("https://app.palpitesbolao.com.br", "http://localhost:4200")
-                           .AllowAnyHeader()
-                           .AllowAnyMethod()
-                           .AllowCredentials());
-});
-
-var app = builder.Build();
-
-// ===================================================================================================
-// Pipeline de Requisições HTTP - Middleware
-// ===================================================================================================
-
-
-/*
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var userManager = services.GetRequiredService<UserManager<Usuario>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await IdentitySeed.SeedRolesAsync(roleManager);
-        await IdentitySeed.SeedAdminUserAsync(userManager, roleManager);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
-    }
-}
-*/
-
-if (app.Environment.IsDevelopment())
-{
-  app.UseSwagger();
-  app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-app.UseRouting();
-
-// <<-- CORREÇÃO FINAL DA ORDEM -->>
-app.UseCors("AllowSpecificOrigins");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-
-// As requisições são mapeadas para os controladores
-app.MapControllers();
-
-
-// Serve arquivos estáticos da wwwroot e de outros diretórios
-app.UseStaticFiles();
-
-// Se o seu frontend for um SPA, essa configuração é crucial.
-app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
-{
-  // Usa arquivos estáticos de dentro do "wwwroot"
-  appBuilder.UseStaticFiles();
-  appBuilder.Run(async context =>
-  {
-    context.Response.ContentType = "text/html";
-    // Serve o index.html como fallback para todas as rotas do Angular
-    await context.Response.SendFileAsync(
-        Path.Combine(app.Environment.WebRootPath, "index.html")
-    );
-  });
-});
-// <<-- FIM DA SEÇÃO CORRIGIDA E CONSOLIDADA -->>
-
-
-app.Run();
+c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
