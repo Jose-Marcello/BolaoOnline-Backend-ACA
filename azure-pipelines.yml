@@ -1,9 +1,9 @@
 trigger:
 - master
-
+ 
 pool:
   vmImage: 'windows-latest'
-
+ 
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
@@ -11,6 +11,7 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
 
 stages:
 - stage: Build
@@ -23,13 +24,13 @@ stages:
         displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
-
+ 
       - task: Npm@1
         displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+ 
       - task: Npm@1
         displayName: 'npm build do frontend'
         inputs:
@@ -45,30 +46,54 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-      
+
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
+        inputs:
+          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)'
+          cleanTargetFolder: true
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: true
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
+        inputs:
+          SourceFolder: '$(backendProjectDir)/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: false
       
+      # TAREFA EM POWERSHELL PARA REMOVER A PASTA PERSISTENTE
+      - task: PowerShell@2
+        displayName: 'Remover pasta de projeto frontend'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+          
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
+          rootFolderOrFile: '$(finalPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
           includeRootFolder: false
-
+ 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
           PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
-
+ 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
