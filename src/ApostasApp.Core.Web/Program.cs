@@ -10,7 +10,6 @@ using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario do Identi
 using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
 using ApostasApp.Core.Infrastructure.Data.Context;
-//using ApostasApp.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -19,7 +18,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens; // Para SendGridEmailSender
 using Microsoft.OpenApi.Models;
-//using SendGrid; // Para ISendGridClient
 using Swashbuckle.AspNetCore.SwaggerGen; // Necessário para AddSwaggerGen
 using Swashbuckle.AspNetCore.SwaggerUI; // Necessário para UseSwaggerUI
 using System; // Para TimeSpan, Guid, etc.
@@ -51,16 +49,15 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
       sqlServerOptionsAction: sqlOptions =>
       {
         sqlOptions.EnableRetryOnFailure(
-              maxRetryCount: 10,
-              maxRetryDelay: TimeSpan.FromSeconds(30),
-              errorNumbersToAdd: null);
+                  maxRetryCount: 10,
+                  maxRetryDelay: TimeSpan.FromSeconds(30),
+                  errorNumbersToAdd: null);
       })
       .LogTo(Console.WriteLine, LogLevel.Information)
       .EnableSensitiveDataLogging()
       .LogTo(Console.WriteLine, LogLevel.Information);
 
 });
-
 
 // Configuração do ASP.NET Core Identity
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
@@ -192,11 +189,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-// Configuração CORS - Agora fora dos blocos de desenvolvimento
+// Configuração CORS
 builder.Services.AddCors(options =>
 {
-  options.AddPolicy("AllowSpecificOrigin",
-      policy => policy.WithOrigins(builder.Configuration["FrontendUrls:BaseUrl"])
+  options.AddPolicy("AllowSpecificOrigins",
+      policy => policy.WithOrigins("https://app.palpitesbolao.com.br", "http://localhost:4200")
                            .AllowAnyHeader()
                            .AllowAnyMethod()
                            .AllowCredentials());
@@ -212,19 +209,19 @@ var app = builder.Build();
 /*
 using (var scope = app.Services.CreateScope())
 {
-  var services = scope.ServiceProvider;
-  try
-  {
-    var userManager = services.GetRequiredService<UserManager<Usuario>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    await IdentitySeed.SeedRolesAsync(roleManager);
-    await IdentitySeed.SeedAdminUserAsync(userManager, roleManager);
-  }
-  catch (Exception ex)
-  {
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
-  }
+    var services = scope.ServiceProvider;
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<Usuario>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        await IdentitySeed.SeedRolesAsync(roleManager);
+        await IdentitySeed.SeedAdminUserAsync(userManager, roleManager);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao popular o banco de dados de identidade.");
+    }
 }
 */
 
@@ -239,7 +236,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 // <<-- CORREÇÃO FINAL DA ORDEM -->>
-app.UseCors("AllowSpecificOrigin");
+app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthentication();
 app.UseAuthorization();
