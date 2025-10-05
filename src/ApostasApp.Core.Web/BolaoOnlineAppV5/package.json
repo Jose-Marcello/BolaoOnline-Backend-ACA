@@ -1,14 +1,15 @@
 {
   "name": "bolao-obnline-app-v5",
   "version": "0.0.0",
+  "ng": "ng",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
-  },
-  "start": "ng serve --proxy-config proxy.conf.json",
+  "ng": "ng",
+  "start": "ng serve",
+  "build": "ng build",
+  "watch": "ng build --watch --configuration development",
+  "test": "ng test",
+  "build:prod": "ng build --configuration production" 
+},
   "private": true,
   "dependencies": {
     "@angular/animations": "^17.3.0",
