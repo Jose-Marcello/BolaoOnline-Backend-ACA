@@ -9,4 +9,6 @@
 
 //  apiUrl: 'http://bolaoonline-testes4.azurewebsites.net', 
 //  imagesUrl: 'http://bolaoonline-testes4.azurewebsites.net' 
-//};
+
+
+};
