@@ -35,7 +35,7 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          customCommand: 'run build:prod' # Alteração aqui
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -51,7 +51,9 @@ stages:
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
           SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
-          Contents: '**'
+          Contents: |
+            **
+            !BolaoOnlineAppV5/**
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
 
@@ -71,7 +73,6 @@ stages:
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      # TAREFA EM POWERSHELL PARA REMOVER A PASTA PERSISTENTE
       - task: PowerShell@2
         displayName: 'Remover pasta de projeto frontend'
         inputs:
