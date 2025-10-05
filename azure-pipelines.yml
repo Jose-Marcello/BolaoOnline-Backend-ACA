@@ -71,12 +71,7 @@ stages:
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      # Adicione esta tarefa para remover a pasta persistente
-      - task: DeleteFiles@1
-        displayName: 'Remover pasta de projeto frontend da pasta de deploy'
-        inputs:
-          Contents: '$(finalPublishDir)/BolaoOnlineAppV5'
-          
+      # Remover a tarefa de deleção e confiar no CopyFiles
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
