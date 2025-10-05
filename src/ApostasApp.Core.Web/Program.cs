@@ -242,6 +242,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
+// As requisições são mapeadas para os controladores
+app.MapControllers();
+
+
 // Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
@@ -261,8 +265,5 @@ app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuil
 });
 // <<-- FIM DA SEÇÃO CORRIGIDA E CONSOLIDADA -->>
 
-
-// As requisições são mapeadas para os controladores
-app.MapControllers();
 
 app.Run();
