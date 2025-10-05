@@ -1,17 +1,17 @@
 trigger:
 - master
-
+ 
 pool:
   vmImage: 'windows-latest'
-
+ 
 variables:
   buildConfiguration: 'production'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/BolaoOnlineAppV5'
-  frontendDistDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/bolao-online-app-v5/browser'
+  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
 
 stages:
 - stage: Build
@@ -24,13 +24,13 @@ stages:
         displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
-
+ 
       - task: Npm@1
         displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+ 
       - task: Npm@1
         displayName: 'npm build do frontend'
         inputs:
@@ -38,7 +38,6 @@ stages:
           customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
-      # PASSO 1: PUBLICAR O BACKEND COM O RUNTIME CORRETO
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
@@ -47,32 +46,54 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-      
-      # PASSO 2: COPIAR OS ARQUIVOS DO FRONTEND PARA DENTRO DA WWWROOT
+
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
-          SourceFolder: '$(frontendDistDir)'
+          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
-          flattenFolders: true
+          TargetFolder: '$(finalPublishDir)'
+          cleanTargetFolder: true
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        inputs:
+          SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: true
+
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
+        inputs:
+          SourceFolder: '$(backendProjectDir)/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: false
       
-      # PASSO 3: COMPACTAR O ARTEFATO FINAL
+      # TAREFA EM POWERSHELL PARA REMOVER A PASTA PERSISTENTE
+      - task: PowerShell@2
+        displayName: 'Remover pasta de projeto frontend'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+          
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
+          rootFolderOrFile: '$(finalPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
           includeRootFolder: false
-
+ 
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
           PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
-
+ 
 - stage: Deploy
   displayName: 'Deploy para Azure'
   dependsOn: Build
@@ -84,20 +105,11 @@ stages:
         runOnce:
           deploy:
             steps:
-              # DESATIVAR explicitamente o RUN_FROM_PACKAGE via CLI
-              - task: AzureCLI@2
-                displayName: 'Desativar RUN_FROM_PACKAGE via CLI'
-                inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo'
-                  scriptType: 'bash'
-                  scriptLocation: 'inlineScript'
-                  inlineScript: 'az webapp config appsettings set --name bolaoonline-testes4 --resource-group ApostasAppRG --settings WEBSITE_RUN_FROM_PACKAGE=0'
-              
               - task: AzureWebApp@1
                 displayName: 'Implantar no Azure App Service'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes5'
+                  appName: 'bolaoonline-testes4'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
