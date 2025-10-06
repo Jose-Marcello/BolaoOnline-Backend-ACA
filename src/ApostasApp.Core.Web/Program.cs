@@ -212,35 +212,37 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ORDEM CORRETA: O roteamento da API deve vir antes do roteamento de arquivos estáticos.
+// ORDEM ANTERIOR QUE FUNCIONAVA
 app.UseRouting();
 
+// <<-- CORREÇÃO FINAL DA ORDEM -->>
 app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Mapeia os endpoints da API para os controladores
-app.UseEndpoints(endpoints =>
-{
-  endpoints.MapControllers();
-});
 
-// Serve os arquivos estáticos (como o index.html e os assets do Angular)
+// Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
-// Configura o fallback para o index.html para todas as outras rotas do frontend que não sejam da API.
-// A rota da API foi resolvida acima, então essa lógica não irá interferir.
+// Se o seu frontend for um SPA, essa configuração é crucial.
 app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
 {
+  // Usa arquivos estáticos de dentro do "wwwroot"
   appBuilder.UseStaticFiles();
   appBuilder.Run(async context =>
   {
     context.Response.ContentType = "text/html";
+    // Serve o index.html como fallback para todas as rotas do Angular
     await context.Response.SendFileAsync(
         Path.Combine(app.Environment.WebRootPath, "index.html")
     );
   });
 });
+// <<-- FIM DA SEÇÃO CORRIGIDA E CONSOLIDADA -->>
+
+
+// As requisições são mapeadas para os controladores
+app.MapControllers();
 
 app.Run();

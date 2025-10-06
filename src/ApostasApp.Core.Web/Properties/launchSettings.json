@@ -8,6 +8,16 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5288"
     },
+    // Adicione este novo perfil HTTPS aqui
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:5289;http://localhost:5288",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "environmentVariables": {

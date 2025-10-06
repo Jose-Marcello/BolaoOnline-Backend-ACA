@@ -1,14 +1,8 @@
-// <<-- CORREÇÃO: ADICIONE O DOMÍNIO DA API -->>
-  
-
-    export const environment = {
-//  production: false,
-  // Altere a URL da API para o seu App Service no Azure
-  apiUrl: 'https://app.palpitesbolao.com.br/api',
+export const environment = {
+  production: false,
+  // Aponte para o endereço local do seu backend.
+  // A porta padrão para o Kestrel é 5000/5001 (HTTP/HTTPS),
+  // mas pode variar dependendo da sua configuração.
+  apiUrl: 'https://localhost:5289/api', // Exemplo de porta
   imagesUrl: '/assets/images/'
-
- // apiUrl: 'http://bolaoonline-testes4.azurewebsites.net', 
-  //imagesUrl: 'http://bolaoonline-testes4.azurewebsites.net' 
-
-
 };
