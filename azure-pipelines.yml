@@ -1,112 +1,115 @@
 trigger:
 - master
-
+ 
 pool:
   vmImage: 'windows-latest'
-
+ 
 variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  
-  # A folder to store the backend's published content
-  backendPublishDir: '$(Build.ArtifactStagingDirectory)/BackendPublish'
-
-  # A folder to store the frontend's built content
-  frontendBuildDir: '$(Build.ArtifactStagingDirectory)/FrontendBuild'
-
-  # A final folder to hold the merged content for archiving
-  finalDeployDir: '$(Build.ArtifactStagingDirectory)/FinalDeploy'
-
+  appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
+  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
 
 stages:
 - stage: Build
-  displayName: 'Build and Package Application'
+  displayName: 'Build e Empacotamento do Aplicativo'
   jobs:
   - job: BuildJob
-    displayName: 'Build Job'
+    displayName: 'Job de Build'
     steps:
       - task: NodeTool@0
-        displayName: 'Install Node.js'
+        displayName: 'Instalar Node.js'
         inputs:
           versionSpec: '18.x'
-
+ 
       - task: Npm@1
-        displayName: 'npm install frontend'
+        displayName: 'npm install do frontend'
         inputs:
           command: 'install'
           workingDir: '$(frontendProjectDir)'
-
+ 
       - task: Npm@1
-        displayName: 'npm build frontend'
+        displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
           customCommand: 'run build:prod'
           workingDir: '$(frontendProjectDir)'
-          # Save the frontend build output to a dedicated folder
-          arguments: '--output-path="$(frontendBuildDir)"'
-
+      
       - task: DotNetCoreCLI@2
-        displayName: 'Publish Backend'
+        displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          # Publish backend content to its dedicated folder
-          arguments: '-c $(buildConfiguration) --output "$(backendPublishDir)" --runtime win-x64 --self-contained true'
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-
-      # --- Merge the frontend and backend files into the final deploy directory ---
       
-      # Step 1: Copy all backend files to the final deploy directory
       - task: CopyFiles@2
-        displayName: 'Copy Backend files to final directory'
+        displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
-          SourceFolder: '$(backendPublishDir)'
-          Contents: '**'
-          TargetFolder: '$(finalDeployDir)'
-          cleanTargetFolder: true
-
-      # Step 2: Copy the frontend build output to the wwwroot folder inside the final directory
-      - task: CopyFiles@2
-        displayName: 'Copy Frontend files to wwwroot'
-        inputs:
-          SourceFolder: '$(frontendBuildDir)'
-          Contents: '**'
-          TargetFolder: '$(finalDeployDir)/wwwroot'
+          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
+          Contents: |
+            **
+            !BolaoOnlineAppV5/**
+          TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
       
-      # --- Archive and publish the final artifact ---
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        inputs:
+          SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: true
+      
+      - task: CopyFiles@2
+        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
+        inputs:
+          SourceFolder: '$(backendProjectDir)/wwwroot'
+          Contents: '**'
+          TargetFolder: '$(finalPublishDir)/wwwroot'
+          cleanTargetFolder: false
+      
+      # REMOVER TAREFAS DE REMOÇÃO DE PASTA
+      # task: PowerShell@2
+      #   displayName: 'Remover pasta de projeto frontend'
+      #   inputs:
+      #     targetType: 'inline'
+      #     script: |
+      #       Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+      # ...
       
       - task: ArchiveFiles@2
-        displayName: 'Archive for Deployment'
+        displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(finalDeployDir)'
+          rootFolderOrFile: '$(finalPublishDir)'
           archiveType: 'zip'
-          archiveFile: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+          archiveFile: '$(zipPath)'
           replaceExistingArchive: true
           includeRootFolder: false
-
+ 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publish Build Artifact'
+        displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          PathtoPublish: '$(zipPath)'
           ArtifactName: 'drop'
-
+ 
 - stage: Deploy
-  displayName: 'Deploy to Azure'
+  displayName: 'Deploy para Azure'
   dependsOn: Build
   jobs:
     - deployment: DeployJob
-      displayName: 'Deployment Job'
+      displayName: 'Job de Deployment'
       environment: 'AmbienteDeTestes'
       strategy:
         runOnce:
           deploy:
             steps:
               - task: AzureWebApp@1
-                displayName: 'Deploy to Azure App Service'
+                displayName: 'Implantar no Azure App Service'
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
