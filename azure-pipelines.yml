@@ -72,11 +72,19 @@ stages:
           cleanTargetFolder: false
       
       - task: PowerShell@2
-        displayName: 'Limpeza de arquivos e pastas temporárias'
+        displayName: 'Remover pasta de projeto frontend'
         inputs:
           targetType: 'inline'
           script: |
             Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+
+      # TAREFA DE REMOÇÃO DA PASTA WWWROOT
+      - task: PowerShell@2
+        displayName: 'Remover pasta wwwroot do artefato'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
