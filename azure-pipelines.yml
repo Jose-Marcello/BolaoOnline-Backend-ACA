@@ -35,8 +35,7 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          # CORREÇÃO: Define a base URL completa para o ambiente de produção, resolvendo o problema de tela em branco
-          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href=https://app.palpitesbolao.com.br/'
+          customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -56,6 +55,7 @@ stages:
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
 
+      # CORREÇÃO: Copia arquivos do frontend diretamente para a pasta raiz do artefato
       - task: CopyFiles@2
         displayName: 'Copiar arquivos do Frontend para a pasta raiz'
         inputs:
@@ -64,6 +64,7 @@ stages:
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: false
 
+      # CORREÇÃO: Copia arquivos estáticos do backend diretamente para a pasta raiz do artefato
       - task: CopyFiles@2
         displayName: 'Copiar arquivos estáticos do backend para a pasta raiz'
         inputs:
@@ -78,7 +79,8 @@ stages:
           targetType: 'inline'
           script: |
             Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-      
+
+      # CORREÇÃO: Garante que a pasta wwwroot (se criada em algum passo) seja removida antes do empacotamento
       - task: PowerShell@2
         displayName: 'Remover pasta wwwroot do artefato'
         inputs:
@@ -117,6 +119,6 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes4'
+                  appName: 'bolaoonline-testes5'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
