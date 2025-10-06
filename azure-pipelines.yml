@@ -93,7 +93,7 @@ stages:
             Get-ChildItem -Path $sourcePath -Force | Move-Item -Destination $targetPath -Force
             
             # Opcional: Remove a pasta wwwroot vazia após a movimentação
-            Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
+            #Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
 
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
