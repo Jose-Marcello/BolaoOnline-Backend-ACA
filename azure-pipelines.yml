@@ -35,7 +35,8 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          # CORREÇÃO: Define a base URL completa para o ambiente de produção, resolvendo o problema de tela em branco
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href=https://app.palpitesbolao.com.br/'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -46,7 +47,7 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-      
+
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
