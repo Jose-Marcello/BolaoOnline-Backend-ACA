@@ -35,7 +35,7 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build:prod'
+          customCommand: 'run build -- --configuration=$(buildConfiguration)'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -46,41 +46,37 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-      
+
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
           SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
-          Contents: |
-            **
-            !BolaoOnlineAppV5/**
+          Contents: '**'
           TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: true
-      
+
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        displayName: 'Copiar arquivos do Frontend para a pasta raiz'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
-          cleanTargetFolder: true
-      
+          TargetFolder: '$(finalPublishDir)'
+          cleanTargetFolder: false
+
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
+        displayName: 'Copiar arquivos estáticos do backend para a pasta raiz'
         inputs:
           SourceFolder: '$(backendProjectDir)/wwwroot'
           Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
+          TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: false
       
-      # REMOVER TAREFAS DE REMOÇÃO DE PASTA
-      # task: PowerShell@2
-      #   displayName: 'Remover pasta de projeto frontend'
-      #   inputs:
-      #     targetType: 'inline'
-      #     script: |
-      #       Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-      # ...
+      - task: PowerShell@2
+        displayName: 'Limpeza de arquivos e pastas temporárias'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
