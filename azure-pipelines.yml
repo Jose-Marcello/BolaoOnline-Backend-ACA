@@ -8,10 +8,10 @@ variables:
   buildConfiguration: 'production'
   frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
   backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
+  # A pasta de publicação final do backend.
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
 
 stages:
 - stage: Build
@@ -37,48 +37,30 @@ stages:
           command: 'custom'
           customCommand: 'run build:prod'
           workingDir: '$(frontendProjectDir)'
-      
+ 
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
+          # Publica o backend diretamente na pasta de publicação final.
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
 
+      # A TAREFA MAIS CRÍTICA: COPIA O CONTEÚDO DO FRONTEND PARA A WWWROOT DO BACKEND.
       - task: CopyFiles@2
-        displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
-        inputs:
-          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
-          Contents: |
-            **
-            !BolaoOnlineAppV5/**
-          TargetFolder: '$(finalPublishDir)'
-          cleanTargetFolder: true
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
-          cleanTargetFolder: true
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
-        inputs:
-          SourceFolder: '$(backendProjectDir)/wwwroot'
-          Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
+          TargetFolder: '$(appPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      # TAREFA DE REMOÇÃO DA PASTA RETIRADA
-          
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(finalPublishDir)'
+          rootFolderOrFile: '$(appPublishDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
@@ -87,7 +69,7 @@ stages:
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(zipPath)'
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(zipName)'
           ArtifactName: 'drop'
  
 - stage: Deploy
