@@ -235,7 +235,7 @@ app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuil
     context.Response.ContentType = "text/html";
     // Serve o index.html como fallback para todas as rotas do Angular
     await context.Response.SendFileAsync(
-        Path.Combine(app.Environment.WebRootPath, "index.html")
+       Path.Combine(Directory.GetCurrentDirectory(), "index.html")
     );
   });
 });
