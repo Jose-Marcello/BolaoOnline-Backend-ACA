@@ -12,7 +12,7 @@ variables:
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
   finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
- 
+
 stages:
 - stage: Build
   displayName: 'Build e Empacotamento do Aplicativo'
@@ -73,36 +73,14 @@ stages:
           TargetFolder: '$(finalPublishDir)/wwwroot'
           cleanTargetFolder: false
       
-      - task: PowerShell@2
-        displayName: 'Remover pasta de projeto frontend'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-
-      # TAREFA CRÍTICA: CORREÇÃO DO WWWROOT ANINHADO
-      - task: PowerShell@2
-        displayName: 'Remover wwwroot aninhado'
-        inputs:
-          targetType: 'inline'
-          script: |
-            $sourceDir = "$(finalPublishDir)/wwwroot"
-            $tempDir = "$(finalPublishDir)/temp"
-            
-            # Garante que a wwwroot interna existe antes de tentar mover
-            if (Test-Path "$sourceDir/wwwroot") {
-                # Move o conteúdo da wwwroot aninhada para uma pasta temporária
-                Move-Item -Path "$sourceDir/wwwroot/*" -Destination $tempDir
-                
-                # Remove a wwwroot aninhada
-                Remove-Item -Path "$sourceDir/wwwroot" -Recurse -Force
-                
-                # Move o conteúdo de volta para a pasta raiz
-                Move-Item -Path "$tempDir/*" -Destination $sourceDir
-                
-                # Remove a pasta temporária
-                Remove-Item -Path $tempDir -Recurse -Force
-            }
+      # REMOVER TAREFAS DE REMOÇÃO DE PASTA
+      # task: PowerShell@2
+      #   displayName: 'Remover pasta de projeto frontend'
+      #   inputs:
+      #     targetType: 'inline'
+      #     script: |
+      #       Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
+      # ...
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
