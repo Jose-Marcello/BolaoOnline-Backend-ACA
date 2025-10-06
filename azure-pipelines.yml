@@ -78,7 +78,23 @@ stages:
           targetType: 'inline'
           script: |
             Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-          
+
+      # TAREFA DE CORREÇÃO
+      - task: PowerShell@2
+        displayName: 'Mover conteúdo da wwwroot para a raiz'
+        inputs:
+          targetType: 'inline'
+          script: |
+            $sourcePath = "$(finalPublishDir)/wwwroot/*"
+            $targetPath = "$(finalPublishDir)"
+            Write-Host "Movendo arquivos de '$sourcePath' para '$targetPath'"
+            
+            # Copia todos os arquivos e pastas da wwwroot para a raiz
+            Get-ChildItem -Path $sourcePath -Force | Move-Item -Destination $targetPath -Force
+            
+            # Opcional: Remove a pasta wwwroot vazia após a movimentação
+            Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
+
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
