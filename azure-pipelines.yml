@@ -12,6 +12,8 @@ variables:
   appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
   zipName: 'bolao-app-$(Build.BuildId).zip'
   zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+  # Novo diretório para o artefato final com a estrutura correta.
+  finalArtifactDir: '$(Build.ArtifactStagingDirectory)/FinalArtifact'
 
 stages:
 - stage: Build
@@ -37,30 +39,39 @@ stages:
           command: 'custom'
           customCommand: 'run build:prod'
           workingDir: '$(frontendProjectDir)'
- 
+          
       - task: DotNetCoreCLI@2
         displayName: 'Publicar Backend'
         inputs:
           command: 'publish'
           publishWebProjects: false
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          # Publica o backend diretamente na pasta de publicação final.
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
+          # Publica o backend em uma pasta temporária com a estrutura correta.
+          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)"'
           zipAfterPublish: false
-
-      # A TAREFA MAIS CRÍTICA: COPIA O CONTEÚDO DO FRONTEND PARA A WWWROOT DO BACKEND.
+      
+      # TAREFA CRÍTICA: Copia o conteúdo do backend para o diretório final
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para wwwroot do Backend'
+        displayName: 'Preparar diretório final do backend'
+        inputs:
+          SourceFolder: '$(appPublishDir)'
+          Contents: '**'
+          TargetFolder: '$(finalArtifactDir)'
+          cleanTargetFolder: true
+
+      # TAREFA CRÍTICA: Copia o conteúdo do frontend para a wwwroot do diretório final
+      - task: CopyFiles@2
+        displayName: 'Copiar Frontend para a wwwroot do diretório final'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(appPublishDir)/wwwroot'
+          TargetFolder: '$(finalArtifactDir)/wwwroot'
           cleanTargetFolder: false
       
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
-          rootFolderOrFile: '$(appPublishDir)'
+          rootFolderOrFile: '$(finalArtifactDir)'
           archiveType: 'zip'
           archiveFile: '$(zipPath)'
           replaceExistingArchive: true
@@ -69,7 +80,7 @@ stages:
       - task: PublishBuildArtifacts@1
         displayName: 'Publicar o Artefato de Build'
         inputs:
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(zipName)'
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
           ArtifactName: 'drop'
  
 - stage: Deploy
