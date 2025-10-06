@@ -46,7 +46,7 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-
+      
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
@@ -77,8 +77,7 @@ stages:
           targetType: 'inline'
           script: |
             Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-
-      # TAREFA DE REMOÇÃO DA PASTA WWWROOT
+      
       - task: PowerShell@2
         displayName: 'Remover pasta wwwroot do artefato'
         inputs:
