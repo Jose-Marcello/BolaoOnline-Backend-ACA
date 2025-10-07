@@ -1,0 +1,25 @@
+stages:
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
+  jobs:
+  - job: Build
+    displayName: 'Construir Imagem'
+    steps:
+    - task: Docker@2
+      displayName: 'Login no ACR'
+      inputs:
+        command: 'login'
+        containerRegistry: 'bolaoonlineregistry.azurecr.io'
+        # Adicione a conexão de serviço do tipo 'Azure Resource Manager' aqui
+        azureSubscription: 'azure-acr-connection-bolaoonline' 
+
+    - task: Docker@2
+      displayName: 'Construir e Publicar'
+      inputs:
+          command: 'buildAndPush'
+          repository: '$(imageName)'
+          dockerfile: 'Dockerfile'
+          containerRegistry: 'bolaoonlineregistry.azurecr.io'
+          tags: |
+            $(Build.BuildId)
+            latest
