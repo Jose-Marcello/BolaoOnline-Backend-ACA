@@ -48,9 +48,9 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
       sqlServerOptionsAction: sqlOptions =>
       {
         sqlOptions.EnableRetryOnFailure(
-              maxRetryCount: 10,
-              maxRetryDelay: TimeSpan.FromSeconds(30),
-              errorNumbersToAdd: null);
+                  maxRetryCount: 10,
+                  maxRetryDelay: TimeSpan.FromSeconds(30),
+                  errorNumbersToAdd: null);
       })
       .LogTo(Console.WriteLine, LogLevel.Information)
       .EnableSensitiveDataLogging()
@@ -135,23 +135,23 @@ builder.Services.AddAutoMapper(cfg =>
 if (builder.Environment.IsDevelopment())
 {
   builder.Services.AddControllers()
-      .AddJsonOptions(options =>
-      {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-        options.JsonSerializerOptions.WriteIndented = true;
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-      })
-      .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
+          .AddJsonOptions(options =>
+          {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+          })
+          .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
 }
 else
 {
   builder.Services.AddControllers()
-      .AddJsonOptions(options =>
-      {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-        options.JsonSerializerOptions.WriteIndented = true;
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-      });
+          .AddJsonOptions(options =>
+          {
+            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            options.JsonSerializerOptions.WriteIndented = true;
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+          });
 }
 
 builder.Services.AddEndpointsApiExplorer();
@@ -169,22 +169,22 @@ builder.Services.AddSwaggerGen(c =>
   });
 
   c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
         {
-            new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    },
+                    Scheme = "oauth2",
+                    Name = "Bearer",
+                    In = ParameterLocation.Header,
                 },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
-            },
-            new List<string>()
-        }
-    });
+                new List<string>()
+            }
+        });
 });
 
 
@@ -212,38 +212,20 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ORDEM ANTERIOR QUE FUNCIONAVA
+// Use arquivos estáticos do diretório wwwroot
+app.UseStaticFiles();
+
 app.UseRouting();
 
-// <<-- CORREÇÃO FINAL DA ORDEM -->>
 app.UseCors("AllowSpecificOrigins");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-// Serve arquivos estáticos da wwwroot e de outros diretórios
-app.UseStaticFiles();
-
-// Se o seu frontend for um SPA, essa configuração é crucial.
-app.MapWhen(context => !context.Request.Path.StartsWithSegments("/api"), appBuilder =>
-{
-  // Usa arquivos estáticos de dentro do "wwwroot"
-  appBuilder.UseStaticFiles();
-  appBuilder.Run(async context =>
-  {
-    context.Response.ContentType = "text/html";
-    // Serve o index.html como fallback para todas as rotas do Angular
-    await context.Response.SendFileAsync(
-       //Path.Combine(app.Environment.WebRootPath, "index.html")
-       Path.Combine(Directory.GetCurrentDirectory(), "index.html")
-    );
-  });
-});
-// <<-- FIM DA SEÇÃO CORRIGIDA E CONSOLIDADA -->>
-
-
-// As requisições são mapeadas para os controladores
+// As requisições para a API são mapeadas para os controladores
 app.MapControllers();
+
+// Se a requisição não for para uma rota de API, serve o index.html
+app.MapFallbackToFile("index.html");
 
 app.Run();
