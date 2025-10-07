@@ -11,7 +11,7 @@ stages:
         command: 'login'
         containerRegistry: 'bolaoonlineregistry.azurecr.io'
         # Adicione a conexão de serviço do tipo 'Azure Resource Manager' aqui
-        azureSubscription: 'azure-acr-connection-bolaoonline' 
+        azureSubscription: 'bolaoonline-docker-new-registry' 
 
     - task: Docker@2
       displayName: 'Construir e Publicar'
