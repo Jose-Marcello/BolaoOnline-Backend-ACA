@@ -17,6 +17,11 @@
         
    <!-- <IsPublishable>false</IsPublishable>-->
   </PropertyGroup>
+
+  
+  <ItemGroup>
+    <Content Include="web.config.old" />
+  </ItemGroup>
   
   
   <ItemGroup>
