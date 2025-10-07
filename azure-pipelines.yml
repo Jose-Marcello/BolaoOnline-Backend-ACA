@@ -35,7 +35,8 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          # CORREÇÃO: Alinha o 'base-href' com o domínio padrão do novo App Service
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href=https://bolaoonline-testes5-axgjbhhecnhdama0.brazilsouth-01.azurewebsites.net/'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -46,7 +47,7 @@ stages:
           projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
           arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
           zipAfterPublish: false
-      
+
       - task: CopyFiles@2
         displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
         inputs:
@@ -116,6 +117,7 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
-                  appName: 'bolaoonline-testes4'
+                  # CORREÇÃO: Altera o nome do App Service para o novo ambiente
+                  appName: 'bolaoonline-testes5'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
