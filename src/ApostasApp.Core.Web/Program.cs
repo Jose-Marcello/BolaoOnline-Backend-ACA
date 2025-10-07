@@ -3,16 +3,25 @@
 using ApostasApp.Core.Application.MappingProfiles;
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Interfaces;
+using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Usuarios;
+using ApostasApp.Core.Infrastructure.Data.Context;
 using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
-using ApostasApp.Core.Infrastructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Services.Email;
+using ApostasApp.Core.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.SpaServices;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -20,19 +29,11 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using ApostasApp.Core.Application.Services.Interfaces.Email;
-using ApostasApp.Core.Infrastructure.Services.Email;
-using ApostasApp.Core.Web.Configurations;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.SpaServices;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Reflection;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -210,6 +211,11 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+  ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseHttpsRedirection();
 
 // Serve arquivos estáticos da wwwroot e de outros diretórios
