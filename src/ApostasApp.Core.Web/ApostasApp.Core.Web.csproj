@@ -20,7 +20,7 @@
 
   
   <ItemGroup>
-    <Content Include="web.config.old" />
+    <None Include="web.config" />
   </ItemGroup>
   
   
