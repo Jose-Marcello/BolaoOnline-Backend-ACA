@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "C:\\DesenBolao\\BolaoOnlineProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|c:\\desenbolao\\bolaoonlineproject\\src\\apostasapp.core.web\\apostasapp.core.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|solutionrelative:src\\apostasapp.core.web\\apostasapp.core.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|Itens de Solu\u00E7\u00E3o{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|Itens de Solu\u00E7\u00E3o{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|solutionrelative:Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
@@ -27,27 +23,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ApostasApp.Core.Web",
-              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
-              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
-              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
-              "RelativeToolTip": "src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-10-08T19:27:19.648Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
               "Title": "Dockerfile",
               "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile",
               "RelativeDocumentMoniker": "Dockerfile",
               "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile",
               "RelativeToolTip": "Dockerfile",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC8AAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-10-08T19:25:59.941Z",
+              "WhenOpened": "2025-10-08T22:18:11.598Z",
               "EditorCaption": ""
             }
           ]
