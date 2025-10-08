@@ -33,6 +33,8 @@ RUN npm install
 # Faz o build do frontend
 # Copia o restante do código para o build e executa
 COPY ["src/ApostasApp.Core.Web/BolaoOnlineAppV5", "/frontend-app/"]
+# CORREÇÃO: O comando de build do Angular já está usando a pasta /app/dist/angular-app/browser
+WORKDIR /frontend-app
 RUN npm run build -- --output-path=/app/dist/angular-app/browser
 
 # Estágio 3: Imagem de Produção Final
@@ -45,8 +47,8 @@ COPY --from=backend-build /app/publish ./
 # Remove a pasta wwwroot padrão gerada pelo .NET
 RUN rm -rf wwwroot
 
-# Copia a pasta de build do Angular para a wwwroot final
-COPY --from=frontend-build /frontend-app/app/dist/angular-app/browser ./wwwroot
+# CORREÇÃO CRÍTICA FINAL: Usamos o caminho exato que o Angular reportou na fase 2
+COPY --from=frontend-build /app/dist/angular-app/browser ./wwwroot
 
 # Expõe a porta e define o ponto de entrada
 EXPOSE 80
