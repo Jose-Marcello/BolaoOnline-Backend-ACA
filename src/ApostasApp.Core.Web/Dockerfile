@@ -2,8 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /src
 
-# Copia e restaura o projeto .NET
+# Copia a Solution e o .csproj
+# O .sln está na RAIZ (a partir do contexto ./)
 COPY ["ApostasApp.Core.sln", "./"]
+# O .csproj está em src/ApostasApp.Core.Web (a partir do contexto ./)
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
 RUN dotnet restore
 
@@ -16,6 +18,7 @@ FROM node:18-alpine AS frontend-build
 WORKDIR /src
 
 # Copia o código do frontend e instala as dependências
+# Caminhos relativos à RAIZ do repositório
 COPY ["src/BolaoOnlineAppV5/package.json", "src/BolaoOnlineAppV5/package-lock.json", "src/BolaoOnlineAppV5/"]
 WORKDIR /src/src/BolaoOnlineAppV5
 RUN npm install
@@ -41,4 +44,4 @@ COPY --from=frontend-build /src/src/BolaoOnlineAppV5/dist/angular-app/browser ./
 EXPOSE 80
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
 
-# Correcao de Sincronizacao
+### **Passo 3: Envio para o Azure DevOps**
