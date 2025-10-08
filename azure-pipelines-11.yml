@@ -1,0 +1,29 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'bolaoonline-app'
+  dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
+  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
+
+stages:
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
+  jobs:
+  - job: Build
+    displayName: 'Construir Imagem'
+    steps:
+    - task: Docker@2
+      displayName: 'Login, Construir e Push'
+      inputs:
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        # CAMINHO CORRETO PARA O DOCKERFILE
+        dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        tags: |
+          $(Build.BuildId)
+          latest
