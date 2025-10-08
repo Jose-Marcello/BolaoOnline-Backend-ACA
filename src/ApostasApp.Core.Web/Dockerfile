@@ -40,3 +40,5 @@ COPY --from=frontend-build /src/src/BolaoOnlineAppV5/dist/angular-app/browser ./
 # Expõe a porta e define o ponto de entrada
 EXPOSE 80
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
+
+# Correcao de Sincronizacao
