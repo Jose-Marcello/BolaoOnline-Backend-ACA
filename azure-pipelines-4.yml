@@ -1,0 +1,37 @@
+# Aciona a pipeline quando há um push para o branch principal
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'bolaoonline-app'
+  # O nome da sua nova conexão de serviço
+  dockerRegistryServiceConnection: 'bolaoonline-docker-new-registry'
+  # O nome do seu Azure Container Registry
+  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
+
+stages:
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
+  jobs:
+  - job: Build
+    displayName: 'Construir Imagem'
+    steps:
+    - task: Docker@2
+      displayName: 'Login no ACR'
+      inputs:
+        command: 'login'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+
+    - task: Docker@2
+      displayName: 'Construir e Publicar'
+      inputs:
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        dockerfile: 'Dockerfile'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        tags: |
+          $(Build.BuildId)
+          latest

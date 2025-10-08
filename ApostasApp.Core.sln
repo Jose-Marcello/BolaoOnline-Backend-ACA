@@ -11,6 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Infrastruct
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApostasApp.Core.Web", "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Itens de Solução", "Itens de Solução", "{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile = Dockerfile
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,5 +44,6 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A16C24B6-D1AE-40E1-A9C4-2DD959309EB4}
+		        SolutionGuid = {BD0258F9-19A8-41E7-A8EA-D8B11B296D5A}
 	EndGlobalSection
 EndGlobal

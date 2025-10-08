@@ -1,0 +1,32 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'bolaoonline-app'
+  # O nome da sua nova conexão de serviço do tipo Azure Resource Manager
+  azureSubscription: 'bolaoonline-docker-new-registry'
+  # O nome completo do seu Azure Container Registry
+  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
+
+stages:
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
+  jobs:
+  - job: Build
+    displayName: 'Construir Imagem'
+    steps:
+    - task: Docker@2
+      displayName: 'Login e Construir'
+      inputs:
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        dockerfile: 'Dockerfile'
+        # Autenticação usando a conexão do Azure
+        containerRegistry: '$(azureContainerRegistry)'
+        azureSubscription: '$(azureSubscription)'
+        tags: |
+          $(Build.BuildId)
+          latest
