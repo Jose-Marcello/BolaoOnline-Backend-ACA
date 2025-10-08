@@ -6,6 +6,7 @@ pool:
 
 variables:
   imageName: 'bolaoonline-app'
+  # Este é o nome da nova Service Connection do tipo 'Docker Registry'
   dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
   azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
 
@@ -16,13 +17,13 @@ stages:
   - job: Build
     displayName: 'Construir Imagem'
     steps:
-     - task: Docker@2
-       displayName: 'Login, Construir e Push'
-       inputs:
+    - task: Docker@2
+      displayName: 'Login, Construir e Push'
+      inputs:
         command: 'buildAndPush'
         repository: '$(imageName)'
-        # CAMINHO CORRIGIDO NOVAMENTE PARA A RAIZ
-        dockerfile: 'Dockerfile'
+        # CAMINHO CORRIGIDO COM BASE NAS IMAGENS QUE VOCÊ ENVIOU
+        dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
         containerRegistry: '$(dockerRegistryServiceConnection)'
         tags: |
           $(Build.BuildId)
