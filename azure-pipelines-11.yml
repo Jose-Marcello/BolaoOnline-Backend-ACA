@@ -6,6 +6,7 @@ pool:
 
 variables:
   imageName: 'bolaoonline-app'
+  # CORREÇÃO: Variável que aponta para a Service Connection do tipo Docker Registry
   dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
   azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
 
@@ -21,7 +22,9 @@ stages:
       inputs:
         command: 'buildAndPush'
         repository: '$(imageName)'
-        # CAMINHO CORRETO PARA O DOCKERFILE
+        # CORREÇÃO: Define a raiz do repositório como contexto de build
+        context: '.'
+        # CORREÇÃO: Caminho do Dockerfile relativo ao contexto (raiz)
         dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
         containerRegistry: '$(dockerRegistryServiceConnection)'
         tags: |
