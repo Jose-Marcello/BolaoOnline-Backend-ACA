@@ -20,6 +20,11 @@
 
   
   <ItemGroup>
+    <None Remove="Dockerfile" />
+  </ItemGroup>
+
+  
+  <ItemGroup>
     <None Include="web.config" />
   </ItemGroup>
   
