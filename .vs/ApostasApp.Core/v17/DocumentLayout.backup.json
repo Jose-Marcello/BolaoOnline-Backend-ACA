@@ -1,10 +1,14 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Desen\\ApostasApp.Core\\",
+  "WorkspaceRootPath": "C:\\DesenBolao\\BolaoOnlineProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{93103F06-71EF-490E-B665-5FD804BAED43}|src\\ApostasApp.Core.Infrastructure\\ApostasApp.Core.Infrastructure.csproj|c:\\desen\\apostasapp.core\\src\\apostasapp.core.infrastructure\\data\\repository\\apostas\\apostarodadarepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{93103F06-71EF-490E-B665-5FD804BAED43}|src\\ApostasApp.Core.Infrastructure\\ApostasApp.Core.Infrastructure.csproj|solutionrelative:src\\apostasapp.core.infrastructure\\data\\repository\\apostas\\apostarodadarepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|c:\\desenbolao\\bolaoonlineproject\\src\\apostasapp.core.web\\apostasapp.core.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{203ECC4D-3CF9-4947-8F68-74986ABBCCD5}|src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj|solutionrelative:src\\apostasapp.core.web\\apostasapp.core.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|Itens de Solu\u00E7\u00E3o{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|Itens de Solu\u00E7\u00E3o{380A7511-A354-6D7A-0CC0-8FA1F1BA7B6C}|solutionrelative:Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,19 +18,36 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ApostaRodadaRepository.cs",
-              "DocumentMoniker": "C:\\Desen\\ApostasApp.Core\\src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "ToolTip": "C:\\Desen\\ApostasApp.Core\\src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "RelativeToolTip": "src\\ApostasApp.Core.Infrastructure\\Data\\Repository\\Apostas\\ApostaRodadaRepository.cs",
-              "ViewState": "AgIAAK8AAAAAAAAAAAAYwL0AAABkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-08T00:29:09.234Z",
+              "Title": "ApostasApp.Core.Web",
+              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
+              "RelativeDocumentMoniker": "src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
+              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
+              "RelativeToolTip": "src\\ApostasApp.Core.Web\\ApostasApp.Core.Web.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-10-08T19:27:19.648Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Dockerfile",
+              "DocumentMoniker": "C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile",
+              "RelativeDocumentMoniker": "Dockerfile",
+              "ToolTip": "C:\\DesenBolao\\BolaoOnlineProject\\Dockerfile",
+              "RelativeToolTip": "Dockerfile",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-08T19:25:59.941Z",
               "EditorCaption": ""
             }
           ]
