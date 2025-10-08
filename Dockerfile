@@ -1,18 +1,19 @@
 # Estágio 1: Build do Backend ASP.NET Core
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
-# CORREÇÃO: Define o WORKDIR como a RAIZ do container para evitar duplicação de caminho
+# Define o WORKDIR como a RAIZ do container.
 WORKDIR /
 
-# Copia a Solution e os .csproj do Backend
-# Caminhos são relativos à RAIZ do repositório (Contexto: .)
+# Copia a Solution e os .csproj que o restore precisa
 COPY ["ApostasApp.Core.sln", "./"]
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
 
-# CORREÇÃO: Agora, fazemos o restore referenciando a Solution na RAIZ
+# CORREÇÃO CRÍTICA: Copia a pasta 'src' inteira para que o 'dotnet restore' encontre todos os projetos dependentes
+COPY src/ src/
+
+# Agora, fazemos o restore referenciando a Solution na RAIZ
 RUN dotnet restore ApostasApp.Core.sln
 
-# Copia todo o código para o Backend e publica
-# Nota: Aqui ele vai copiar os projetos dependentes (Application, Domain, Infrastructure)
+# Copia o restante do código para o Backend e publica
 COPY . .
 RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
@@ -20,18 +21,18 @@ RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Relea
 FROM node:18-alpine AS frontend-build
 WORKDIR /
 
+# Cria uma pasta separada para o build do Angular
+WORKDIR /frontend-app
+
 # Copia os arquivos de dependência do Angular (package.json)
-# Caminhos relativos à RAIZ
 COPY ["src/ApostasApp.Core.Web/BolaoOnlineAppV5/package.json", "src/ApostasApp.Core.Web/BolaoOnlineAppV5/package-lock.json", "./"]
 
 # Instala as dependências
-WORKDIR /BolaoOnlineAppV5
 RUN npm install
 
 # Faz o build do frontend
-# Copia o restante do código para o build
-COPY ["src/ApostasApp.Core.Web/BolaoOnlineAppV5", "/BolaoOnlineAppV5/"]
-WORKDIR /BolaoOnlineAppV5
+# Copia o restante do código para o build e executa
+COPY ["src/ApostasApp.Core.Web/BolaoOnlineAppV5", "/frontend-app/"]
 RUN npm run build -- --output-path=/app/dist/angular-app/browser
 
 # Estágio 3: Imagem de Produção Final
@@ -45,11 +46,8 @@ COPY --from=backend-build /app/publish ./
 RUN rm -rf wwwroot
 
 # Copia a pasta de build do Angular para a wwwroot final
-COPY --from=frontend-build /BolaoOnlineAppV5/app/dist/angular-app/browser ./wwwroot
+COPY --from=frontend-build /frontend-app/app/dist/angular-app/browser ./wwwroot
 
 # Expõe a porta e define o ponto de entrada
 EXPOSE 80
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
-
-### Próximos Passos:
-
