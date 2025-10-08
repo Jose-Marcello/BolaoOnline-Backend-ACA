@@ -35,7 +35,8 @@ stages:
         displayName: 'npm build do frontend'
         inputs:
           command: 'custom'
-          customCommand: 'run build -- --configuration=$(buildConfiguration)'
+          # CORREÇÃO: Alinha o 'base-href' com o domínio padrão do novo App Service
+          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href=https://bolaoonline-testes5-axgjbhhecnhdama0.brazilsouth-01.azurewebsites.net/'
           workingDir: '$(frontendProjectDir)'
       
       - task: DotNetCoreCLI@2
@@ -56,45 +57,35 @@ stages:
           cleanTargetFolder: true
 
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para pasta final wwwroot'
+        displayName: 'Copiar arquivos do Frontend para a pasta raiz'
         inputs:
           SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
           Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
-          cleanTargetFolder: true
+          TargetFolder: '$(finalPublishDir)'
+          cleanTargetFolder: false
 
       - task: CopyFiles@2
-        displayName: 'Copiar arquivos estáticos do backend para wwwroot'
+        displayName: 'Copiar arquivos estáticos do backend para a pasta raiz'
         inputs:
           SourceFolder: '$(backendProjectDir)/wwwroot'
           Contents: '**'
-          TargetFolder: '$(finalPublishDir)/wwwroot'
+          TargetFolder: '$(finalPublishDir)'
           cleanTargetFolder: false
       
-      # TAREFA EM POWERSHELL PARA REMOVER A PASTA PERSISTENTE
       - task: PowerShell@2
         displayName: 'Remover pasta de projeto frontend'
         inputs:
           targetType: 'inline'
           script: |
             Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-
-      # TAREFA DE CORREÇÃO
+      
       - task: PowerShell@2
-        displayName: 'Mover conteúdo da wwwroot para a raiz'
+        displayName: 'Remover pasta wwwroot do artefato'
         inputs:
           targetType: 'inline'
           script: |
-            $sourcePath = "$(finalPublishDir)/wwwroot/*"
-            $targetPath = "$(finalPublishDir)"
-            Write-Host "Movendo arquivos de '$sourcePath' para '$targetPath'"
-            
-            # Copia todos os arquivos e pastas da wwwroot para a raiz
-            Get-ChildItem -Path $sourcePath -Force | Move-Item -Destination $targetPath -Force
-            
-            # Opcional: Remove a pasta wwwroot vazia após a movimentação
-            #Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
-
+            Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
+      
       - task: ArchiveFiles@2
         displayName: 'Compactar o Artefato para Deploy'
         inputs:
@@ -126,6 +117,7 @@ stages:
                 inputs:
                   azureSubscription: 'Azure-BolaoOnline-Novo'
                   appType: 'webApp'
+                  # CORREÇÃO: Altera o nome do App Service para o novo ambiente
                   appName: 'bolaoonline-testes5'
                   package: '$(Pipeline.Workspace)/drop/$(zipName)'
                   removeAdditionalFilesFromFolders: true
