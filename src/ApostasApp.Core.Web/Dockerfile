@@ -1,5 +1,5 @@
 # Estágio 1: Build do Frontend Angular
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env 
 WORKDIR /app
 
 # Copia e restaura o projeto .NET
