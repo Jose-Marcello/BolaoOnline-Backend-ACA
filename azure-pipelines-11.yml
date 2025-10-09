@@ -39,7 +39,6 @@ stages:
         # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
         imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
         
-        # CORREÇÃO DEFINITIVA: Usando sintaxe de lista de strings de valor/chave.
-        # Isto é o que força a Task a ver os parâmetros corretos.
-        appSettings: 
-        - WEBSITE_TIME_ZONE "E. South America Standard Time"
+        # CORREÇÃO DEFINITIVA: Usando sintaxe de string de valor/chave.
+        # Isto é o formato que evita erros de sequence ou indentação.
+        appSettings: '-WEBSITE_TIME_ZONE "E. South America Standard Time"'
