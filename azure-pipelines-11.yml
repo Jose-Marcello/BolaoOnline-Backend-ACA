@@ -10,6 +10,7 @@ trigger:
 variables:
   # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
   azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
+  azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
   ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
   APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
   RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
