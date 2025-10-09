@@ -1,32 +1,48 @@
-trigger:
-- master
+# Pipeline de Deployment Contínuo (CD) para Azure App Service com Docker.
+# Esta pipeline é o segundo passo do processo (CD).
+# Ela puxa a imagem recém-construída do ACR e a implanta no App Service.
 
+trigger:
+  branches:
+    include:
+      - master # Dispara automaticamente após um Merge/Push no master
+
+variables:
+  # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
+  azureSubscription: 'Assinatura do Azure 1' # NOME DA SUA SERVICE CONNECTION
+  ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
+  APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
+  RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
+  
+  # 2. Variável da Imagem: Usaremos a tag 'latest' como padrão de deploy.
+  ACR_IMAGE_NAME: 'bolaoonline-app'
+  ACR_IMAGE_TAG: 'latest'
+  
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  imageName: 'bolaoonline-app'
-  # CORREÇÃO: Variável que aponta para a Service Connection do tipo Docker Registry
-  dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
-  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
-
 stages:
-- stage: BuildAndPush
-  displayName: 'Build e Push da Imagem Docker'
+- stage: DeployToAzure
+  displayName: 'Deploy para o Azure App Service'
   jobs:
-  - job: Build
-    displayName: 'Construir Imagem'
+  - job: Deploy
+    displayName: 'Deployment do Container'
     steps:
-    - task: Docker@2
-      displayName: 'Login, Construir e Push'
+    - task: AzureWebAppContainer@1
+      displayName: 'Implantação do Container no App Service'
       inputs:
-        command: 'buildAndPush'
-        repository: '$(imageName)'
-        # CORREÇÃO: Define a raiz do repositório como contexto de build
-        context: '.'
-        # CORREÇÃO: Caminho do Dockerfile relativo ao contexto (raiz)
-        dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        tags: |
-          $(Build.BuildId)
-          latest
+        azureSubscription: '$(azureSubscription)'
+        appName: '$(APP_SERVICE_NAME)'
+        resourceGroupName: '$(RESOURCE_GROUP_NAME)'
+        
+        # Configuração do Registro de Container (ACR)
+        # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
+        imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
+        
+        # Configurações do App Service (Obrigatórias para Docker)
+        # O Service Connection tratará a credencial do ACR automaticamente.
+        appSettings: |
+          - name: DOCKER_REGISTRY_SERVER_URL
+            value: 'https://$(ACR_NAME).azurecr.io'
+          - name: DOCKER_REGISTRY_SERVER_USERNAME
+            value: '$(ACR_NAME)'
