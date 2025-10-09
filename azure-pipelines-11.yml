@@ -42,4 +42,6 @@ stages:
         
         # CORREÇÃO CRÍTICA: Sintaxe de string simples (key=value) para App Settings.
         # Isso resolve o erro 'Parameter name cannot be empty'.
-        appSettings: '-WEBSITE_TIME_ZONE "E. South America Standard Time"'
+       appSettings: |
+        - name: WEBSITE_TIME_ZONE
+          value: "E. South America Standard Time"
