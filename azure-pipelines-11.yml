@@ -10,7 +10,6 @@ trigger:
 variables:
   # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
   azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
-  azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
   ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
   APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
   RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
@@ -40,8 +39,7 @@ stages:
         # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
         imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
         
-        # CORREÇÃO CRÍTICA: Sintaxe de string simples (key=value) para App Settings.
-        # Isso resolve o erro 'Parameter name cannot be empty'.
-       appSettings: |
-        - name: WEBSITE_TIME_ZONE
-          value: "E. South America Standard Time"
+        # CORREÇÃO DEFINITIVA: Sintaxe de lista explícita para App Settings (resolvendo o erro BadRequest)
+        appSettings: |
+          - name: WEBSITE_TIME_ZONE
+            value: "E. South America Standard Time"
