@@ -39,10 +39,10 @@ stages:
         # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
         imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
         
-        # Configurações do App Service (Obrigatórias para Docker)
-        # O Service Connection tratará a credencial do ACR automaticamente.
-        appSettings: |
-          - name: DOCKER_REGISTRY_SERVER_URL
-            value: 'https://$(ACR_NAME).azurecr.io'
-          - name: DOCKER_REGISTRY_SERVER_USERNAME
-            value: '$(ACR_NAME)'
+        # CORREÇÃO CRÍTICA: Ajustamos a sintaxe do App Settings.
+        # A tarefa AzureWebAppContainer@1 injeta as credenciais DOCKER_REGISTRY_SERVER_* # automaticamente quando o Service Connection é do tipo Azure Resource Manager.
+        # Estamos apenas garantindo que, se houver outras configs, a sintaxe esteja correta.
+        appSettings: '
+          -name WEBSITE_TIME_ZONE
+            value "E. South America Standard Time"
+        '
