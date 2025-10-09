@@ -9,7 +9,7 @@ trigger:
 
 variables:
   # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
-  azureSubscription: 'Assinatura do Azure 1' # NOME DA SUA SERVICE CONNECTION
+  azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
   ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
   APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
   RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
@@ -39,10 +39,6 @@ stages:
         # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
         imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
         
-        # Configurações do App Service (Obrigatórias para Docker)
-        # O Service Connection tratará a credencial do ACR automaticamente.
-        appSettings: |
-          - name: DOCKER_REGISTRY_SERVER_URL
-            value: 'https://$(ACR_NAME).azurecr.io'
-          - name: DOCKER_REGISTRY_SERVER_USERNAME
-            value: '$(ACR_NAME)'
+        # CORREÇÃO CRÍTICA: Sintaxe de string simples (key=value) para App Settings.
+        # Isso resolve o erro 'Parameter name cannot be empty'.
+        appSettings: '-WEBSITE_TIME_ZONE "E. South America Standard Time"'
