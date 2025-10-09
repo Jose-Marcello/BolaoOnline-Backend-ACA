@@ -218,6 +218,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 app.UseHttpsRedirection();
 
+
+app.UseDefaultFiles();
 // Serve arquivos estáticos da wwwroot e de outros diretórios
 app.UseStaticFiles();
 
