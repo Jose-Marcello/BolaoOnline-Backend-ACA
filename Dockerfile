@@ -7,7 +7,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS final
 WORKDIR /app
 
 # 1. Copia o arquivo de solução e os arquivos de projeto .NET
-# Caminhos corrigidos para o ASP.NET Core
+# Isso é crucial para otimizar o cache de build e garantir que o restore funcione
 COPY ["ApostasApp.Core.sln", "./"]
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
 COPY ["src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "src/ApostasApp.Core.Application/"]
@@ -25,7 +25,7 @@ RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Relea
 
 
 #------------------------------------------------------------------
-# Estágio de Produção Final (Apenas Binários - Contém a Correção C#)
+# Estágio de Produção Final (Contém a Correção C# do Program.cs)
 #------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 # Define o WORKDIR para a pasta onde a aplicação será executada
@@ -34,8 +34,8 @@ WORKDIR /app
 # Copia os binários publicados do backend
 COPY --from=final /app/publish ./
 
-# COPIA FINAL DE ARQUIVOS ESTÁTICOS (do seu projeto local)
-# Caminho corrigido: Deve incluir a pasta ApostasApp.Core.Web
+# Copia a pasta wwwroot (que contém o index.html e os assets) para o binário publicado
+# O caminho está corrigido para a pasta correta no seu projeto.
 COPY ["src/ApostasApp.Core.Web/wwwroot", "./wwwroot"]
 
 # Define a porta de escuta padrão do contêiner como 80, que é a porta que o App Service espera para HTTP
@@ -44,4 +44,3 @@ EXPOSE 80
 
 # Comando de inicialização
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
-
