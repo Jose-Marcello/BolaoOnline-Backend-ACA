@@ -1,14 +1,12 @@
 trigger:
-  branches:
-    include:
-      - master # Dispara automaticamente após um Merge/Push no master
+- master
 
 variables:
   # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
-  azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
-  ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
-  APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
-  RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
+  azureSubscription: 'Azure-BolaoOnline-Novo'
+  ACR_NAME: 'bolaoonlineregistry'
+  APP_SERVICE_NAME: 'bolaoonline-testes5'
+  RESOURCE_GROUP_NAME: 'ApostasAppRG'
   
   # 2. Variável da Imagem: Usaremos a tag 'latest' como padrão de deploy.
   ACR_IMAGE_NAME: 'bolaoonline-app'
@@ -32,9 +30,15 @@ stages:
         resourceGroupName: '$(RESOURCE_GROUP_NAME)'
         
         # Configuração do Registro de Container (ACR)
-        # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
         imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
         
-        # CORREÇÃO DEFINITIVA: Passando App Settings como string única (key="value").
-        # Isso força o App Service a reconhecer o nome do parâmetro.
-        appSettings: 'WEBSITE_TIME_ZONE="E. South America Standard Time"'
+        # CORREÇÃO FINAL DA SINTAXE: Usando a sintaxe formal de lista YAML
+        appSettings: |
+          - name: WEBSITE_TIME_ZONE
+            value: "E. South America Standard Time"
+          - name: HTTPS_ONLY
+            value: "true"
+          - name: ASPNETCORE_URLS
+            value: "http://+:80"
+          - name: WEBSITES_PORT
+            value: "80"
