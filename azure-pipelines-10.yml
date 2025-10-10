@@ -1,3 +1,4 @@
+ # PIPELINE DE CI (PRIMEIRA - CRIA A IMAGEM)
 trigger:
 - master
 

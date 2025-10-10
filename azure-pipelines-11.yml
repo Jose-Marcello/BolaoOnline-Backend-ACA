@@ -1,7 +1,8 @@
+ # PIPELINE DE CD (SEGUNDA - IMPLANTA A IMAGEM CRIADA PELA PIPELINE DE CI)
 trigger:
 - master
 
-variables:
+variables: 
   # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
   azureSubscription: 'Azure-BolaoOnline-Novo'
   ACR_NAME: 'bolaoonlineregistry'
