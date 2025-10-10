@@ -15,7 +15,7 @@ variables:
   # 1. Variáveis de Conexão e Nomes de Recursos (Você já tinha estas)
   azureSubscription: 'Azure-BolaoOnline-Novo'
   ACR_NAME: 'bolaoonlineregistry'
-  APP_SERVICE_NAME: 'bolaoonline-testes5'
+  APP_SERVICE_NAME: 'bolaoonline_docker'
   RESOURCE_GROUP_NAME: 'ApostasAppRG'
   
   # 2. Variável da Imagem (Padronizamos aqui)
