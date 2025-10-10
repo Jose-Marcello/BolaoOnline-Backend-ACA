@@ -27,5 +27,5 @@ stages:
         dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
         containerRegistry: '$(dockerRegistryServiceConnection)'
         tags: |
-          $(Build.BuildId)
+          $(Build.BuildId)          
           latest
