@@ -1,123 +1,31 @@
 trigger:
 - master
- 
+
 pool:
-  vmImage: 'windows-latest'
- 
+  vmImage: 'ubuntu-latest'
+
 variables:
-  buildConfiguration: 'production'
-  frontendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/BolaoOnlineAppV5'
-  backendProjectDir: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web'
-  appPublishDir: '$(Build.ArtifactStagingDirectory)/AppPublish'
-  zipName: 'bolao-app-$(Build.BuildId).zip'
-  zipPath: '$(Build.ArtifactStagingDirectory)/$(zipName)'
-  finalPublishDir: '$(Build.ArtifactStagingDirectory)/FinalPublish'
+  imageName: 'bolaoonline-app'
+  dockerRegistryServiceConnection: 'bolao-acr-docker-registry' # Nome da sua Service Connection do tipo Docker Registry
+  azureContainerRegistry: 'bolaoonlineregistry' # Nome do seu ACR
 
 stages:
-- stage: Build
-  displayName: 'Build e Empacotamento do Aplicativo'
+- stage: BuildAndPush
+  displayName: 'Construir e Enviar Imagem Docker'
   jobs:
-  - job: BuildJob
-    displayName: 'Job de Build'
+  - job: Build
+    displayName: 'Build e Push'
     steps:
-      - task: NodeTool@0
-        displayName: 'Instalar Node.js'
-        inputs:
-          versionSpec: '18.x'
- 
-      - task: Npm@1
-        displayName: 'npm install do frontend'
-        inputs:
-          command: 'install'
-          workingDir: '$(frontendProjectDir)'
- 
-      - task: Npm@1
-        displayName: 'npm build do frontend'
-        inputs:
-          command: 'custom'
-          # CORREÇÃO: Alinha o 'base-href' com o domínio padrão do novo App Service
-          customCommand: 'run build -- --configuration=$(buildConfiguration) --base-href=https://bolaoonline-testes5-axgjbhhecnhdama0.brazilsouth-01.azurewebsites.net/'
-          workingDir: '$(frontendProjectDir)'
-      
-      - task: DotNetCoreCLI@2
-        displayName: 'Publicar Backend'
-        inputs:
-          command: 'publish'
-          publishWebProjects: false
-          projects: '$(backendProjectDir)/ApostasApp.Core.Web.csproj'
-          arguments: '-c $(buildConfiguration) --output "$(appPublishDir)" --runtime win-x64 --self-contained true'
-          zipAfterPublish: false
-
-      - task: CopyFiles@2
-        displayName: 'Copiar Conteúdo do Backend para a pasta final de deploy'
-        inputs:
-          SourceFolder: '$(appPublishDir)/ApostasApp.Core.Web'
-          Contents: '**'
-          TargetFolder: '$(finalPublishDir)'
-          cleanTargetFolder: true
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos do Frontend para a pasta raiz'
-        inputs:
-          SourceFolder: '$(frontendProjectDir)/dist/bolao-online-app-v5/browser'
-          Contents: '**'
-          TargetFolder: '$(finalPublishDir)'
-          cleanTargetFolder: false
-
-      - task: CopyFiles@2
-        displayName: 'Copiar arquivos estáticos do backend para a pasta raiz'
-        inputs:
-          SourceFolder: '$(backendProjectDir)/wwwroot'
-          Contents: '**'
-          TargetFolder: '$(finalPublishDir)'
-          cleanTargetFolder: false
-      
-      - task: PowerShell@2
-        displayName: 'Remover pasta de projeto frontend'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Remove-Item -Path "$(finalPublishDir)/BolaoOnlineAppV5" -Recurse -Force
-      
-      - task: PowerShell@2
-        displayName: 'Remover pasta wwwroot do artefato'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Remove-Item -Path "$(finalPublishDir)/wwwroot" -Recurse -Force
-      
-      - task: ArchiveFiles@2
-        displayName: 'Compactar o Artefato para Deploy'
-        inputs:
-          rootFolderOrFile: '$(finalPublishDir)'
-          archiveType: 'zip'
-          archiveFile: '$(zipPath)'
-          replaceExistingArchive: true
-          includeRootFolder: false
- 
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publicar o Artefato de Build'
-        inputs:
-          PathtoPublish: '$(zipPath)'
-          ArtifactName: 'drop'
- 
-- stage: Deploy
-  displayName: 'Deploy para Azure'
-  dependsOn: Build
-  jobs:
-    - deployment: DeployJob
-      displayName: 'Job de Deployment'
-      environment: 'AmbienteDeTestes'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - task: AzureWebApp@1
-                displayName: 'Implantar no Azure App Service'
-                inputs:
-                  azureSubscription: 'Azure-BolaoOnline-Novo'
-                  appType: 'webApp'
-                  # CORREÇÃO: Altera o nome do App Service para o novo ambiente
-                  appName: 'bolaoonline-testes5'
-                  package: '$(Pipeline.Workspace)/drop/$(zipName)'
-                  removeAdditionalFilesFromFolders: true
+    - task: Docker@2
+      displayName: 'Login, Build e Push da Imagem'
+      inputs:
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        # O Dockerfile deve estar na raiz do projeto (como havíamos definido)
+        dockerfile: 'Dockerfile' 
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        # Contexto é a raiz, onde o Git baixa o código (necessário para o Dockerfile multi-stage)
+        buildContext: '.' 
+        tags: |
+          $(Build.BuildId)
+          latest
