@@ -1,45 +1,31 @@
- # PIPELINE DE CD (SEGUNDA - IMPLANTA A IMAGEM CRIADA PELA PIPELINE DE CI)
+# PIPELINE DE CI (PRIMEIRA - CRIA A IMAGEM QUE VAI SER SUBIDA PELA PIPE DE CD)
 trigger:
 - master
 
-variables: 
-  # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
-  azureSubscription: 'Azure-BolaoOnline-Novo'
-  ACR_NAME: 'bolaoonlineregistry'
-  APP_SERVICE_NAME: 'bolaoonline-testes5'
-  RESOURCE_GROUP_NAME: 'ApostasAppRG'
-  
-  # 2. Variável da Imagem: Usaremos a tag 'latest' como padrão de deploy.
-  ACR_IMAGE_NAME: 'bolaoonline-app'
-  ACR_IMAGE_TAG: 'latest'
-  
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+  imageName: 'bolaoonline-app'
+  # Este é o nome da nova Service Connection do tipo 'Docker Registry'
+  dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
+  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
+
 stages:
-- stage: DeployToAzure
-  displayName: 'Deploy para o Azure App Service'
+- stage: BuildAndPush
+  displayName: 'Build e Push da Imagem Docker'
   jobs:
-  - job: Deploy
-    displayName: 'Deployment do Container'
+  - job: Build
+    displayName: 'Construir Imagem'
     steps:
-    - task: AzureWebAppContainer@1
-      displayName: 'Implantação do Container no App Service'
+    - task: Docker@2
+      displayName: 'Login, Construir e Push'
       inputs:
-        azureSubscription: '$(azureSubscription)'
-        appName: '$(APP_SERVICE_NAME)'
-        resourceGroupName: '$(RESOURCE_GROUP_NAME)'
-        
-        # Configuração do Registro de Container (ACR)
-        imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
-        
-        # CORREÇÃO FINAL DA SINTAXE: Usando a sintaxe formal de lista YAML
-        appSettings: |
-          - name: WEBSITE_TIME_ZONE
-            value: "E. South America Standard Time"
-          - name: HTTPS_ONLY
-            value: "true"
-          - name: ASPNETCORE_URLS
-            value: "http://+:80"
-          - name: WEBSITES_PORT
-            value: "80" 
+        command: 'buildAndPush'
+        repository: '$(imageName)'
+        # CAMINHO CORRIGIDO COM BASE NAS IMAGENS QUE VOCÊ ENVIOU
+        dockerfile: 'src/ApostasApp.Core.Web/Dockerfile'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        tags: |
+          $(Build.BuildId)
+          latest
