@@ -47,8 +47,8 @@ stages:
 
         tags: |
           $(Build.BuildId)
-          $(ACR_IMAGE_TAG) # Usa a variável 'latest' definida no início do arquivo
-
+          $(ACR_IMAGE_TAG)           
+          
 #------------------------------------------------------------------
 # Estágio 2: Deploy para o Azure App Service
 #------------------------------------------------------------------
