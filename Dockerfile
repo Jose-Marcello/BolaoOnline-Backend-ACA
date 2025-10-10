@@ -23,13 +23,12 @@ COPY . .
 # Publica a aplicação, gerando os binários para o deploy
 RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-
 #------------------------------------------------------------------
 # Estágio de Produção Final
 #------------------------------------------------------------------
-# Usa a mesma imagem SDK para garantir que o Docker encontre a imagem.
-# Isso resolve o erro de "not found" que estava ocorrendo.
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS runtime
+# Use a imagem de runtime oficial da Microsoft.
+# Ela é mais leve e otimizada para ambientes de produção.
+FROM mcr.microsoft.com/dotnet/runtime:8.0
 
 # Define o diretório de trabalho para a execução da aplicação
 WORKDIR /app
