@@ -1,16 +1,30 @@
-# PIPELINE DE CI (PRIMEIRA - CRIA A IMAGEM QUE VAI SER SUBIDA PELA PIPE DE CD)
+# Pipeline ÚNICA 
+#- 1o ESTÁGIO CI - GERAÇÃO DA IMAGEM 
+#- 2o ESTÁGIO - Deployment Contínuo (CD) para Azure App Service com Docker.
+# Este ESTÁGIO é o segundo passo do processo (CD).
+# Ela puxa a imagem recém-construída do ACR e a implanta no App Service.
+
+
 trigger:
-- master
+- master # O pipeline completo é disparado a cada push no branch master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-latest' 
 
 variables:
-  imageName: 'bolaoonline-app'
-  # Este é o nome da nova Service Connection do tipo 'Docker Registry'
-  dockerRegistryServiceConnection: 'bolaoonline-docker-registry'
-  azureContainerRegistry: 'bolaoonlineregistry.azurecr.io'
+  # 1. Variáveis de Conexão e Nomes de Recursos (Você já tinha estas)
+  azureSubscription: 'Azure-BolaoOnline-Novo'
+  ACR_NAME: 'bolaoonlineregistry'
+  APP_SERVICE_NAME: 'bolaoonline-testes5'
+  RESOURCE_GROUP_NAME: 'ApostasAppRG'
+  
+  # 2. Variável da Imagem (Padronizamos aqui)
+  ACR_IMAGE_NAME: 'bolaoonline-app'
+  ACR_IMAGE_TAG: 'latest' # Usamos a tag 'latest' para o deploy
 
+#------------------------------------------------------------------
+# Estágio 1: Build e Push da Imagem Docker
+#------------------------------------------------------------------
 stages:
 - stage: BuildAndPush
   displayName: 'Build e Push da Imagem Docker'
@@ -22,15 +36,40 @@ stages:
       displayName: 'Login, Construir e Push da Imagem'
       inputs:
         command: 'buildAndPush'
-        repository: '$(imageName)'
+        repository: '$(ACR_IMAGE_NAME)'
+        containerRegistry: 'bolaoonline-docker-registry' # Nome da sua Service Connection
         
-        # 1. FORÇA O CONTEXTO DE BUILD A SER A RAIZ DO REPOSITÓRIO (ONDE O .SLN ESTÁ)
+        # O contexto de build é a raiz do repositório
         buildContext: '$(Build.SourcesDirectory)' 
 
-        # 2. REFERENCIA O DOCKERFILE A PARTIR DA RAIZ
-        dockerfile: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/Dockerfile' 
+        # O caminho do Dockerfile na raiz do repositório
+        dockerfile: '$(Build.SourcesDirectory)/Dockerfile' 
 
-        containerRegistry: '$(dockerRegistryServiceConnection)'
         tags: |
           $(Build.BuildId)
-          latest
+          $(ACR_IMAGE_TAG) # Usa a variável 'latest' definida no início do arquivo
+
+#------------------------------------------------------------------
+# Estágio 2: Deploy para o Azure App Service
+#------------------------------------------------------------------
+- stage: DeployToAzure
+  displayName: 'Deploy para o Azure App Service'
+  dependsOn: BuildAndPush # Este estágio só roda se o BuildAndPush for bem-sucedido
+  jobs:
+  - job: Deploy
+    displayName: 'Deployment do Container'
+    steps:
+    - task: AzureWebAppContainer@1
+      displayName: 'Implantação do Container no App Service'
+      inputs:
+        azureSubscription: '$(azureSubscription)'
+        appName: '$(APP_SERVICE_NAME)'
+        resourceGroupName: '$(RESOURCE_GROUP_NAME)'
+        
+        # Monta o nome completo da imagem
+        imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
+        
+        # A API Key/password é gerenciada pela sua Service Connection
+        # O Docker Registry de onde o App Service vai puxar a imagem
+        # precisa ser configurado no painel do App Service no Azure.
+        # Geralmente é feito em 'Container Settings'

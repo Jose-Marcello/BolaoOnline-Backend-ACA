@@ -7,7 +7,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS final
 WORKDIR /app
 
 # 1. Copia o arquivo de solução e os arquivos de projeto .NET
-# Isso é crucial para otimizar o cache de build e garantir que o restore funcione
+# Os caminhos estão corretos porque o contexto de build é a raiz do repositório
 COPY ["ApostasApp.Core.sln", "./"]
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
 COPY ["src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "src/ApostasApp.Core.Application/"]
@@ -25,7 +25,7 @@ RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Relea
 
 
 #------------------------------------------------------------------
-# Estágio de Produção Final (Contém a Correção C# do Program.cs)
+# Estágio de Produção Final (Contém a Correção da wwwroot)
 #------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 # Define o WORKDIR para a pasta onde a aplicação será executada
@@ -34,9 +34,12 @@ WORKDIR /app
 # Copia os binários publicados do backend
 COPY --from=final /app/publish ./
 
-# Copia a pasta wwwroot (que contém o index.html e os assets) para o binário publicado
-# O caminho está corrigido para a pasta correta no seu projeto.
-COPY ["src/ApostasApp.Core.Web/wwwroot", "./wwwroot"]
+# CORREÇÃO CRUCIAL:
+# A pasta wwwroot precisa estar no mesmo nível que o arquivo .dll publicado.
+# O comando a seguir copia a pasta wwwroot (que contém o index.html e os assets)
+# da sua estrutura de código fonte para o diretório de trabalho do contêiner.
+# O caminho de origem é relativo à raiz do repositório (onde o Dockerfile está).
+COPY ["./src/ApostasApp.Core.Web/wwwroot", "./wwwroot"]
 
 # Define a porta de escuta padrão do contêiner como 80, que é a porta que o App Service espera para HTTP
 ENV ASPNETCORE_URLS=http://+:80
