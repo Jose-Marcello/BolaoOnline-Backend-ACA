@@ -1,31 +1,40 @@
 trigger:
-- master
+  branches:
+    include:
+      - master # Dispara automaticamente após um Merge/Push no master
 
+variables:
+  # 1. Variáveis de Conexão e Nomes de Recursos (Valores preenchidos)
+  azureSubscription: 'Azure-BolaoOnline-Novo' # NOME DA SUA SERVICE CONNECTION (CORRIGIDO)
+  ACR_NAME: 'bolaoonlineregistry' # O nome do seu Azure Container Registry
+  APP_SERVICE_NAME: 'bolaoonline-testes5' # NOME DO SEU APP SERVICE
+  RESOURCE_GROUP_NAME: 'ApostasAppRG' # Grupo de Recursos
+  
+  # 2. Variável da Imagem: Usaremos a tag 'latest' como padrão de deploy.
+  ACR_IMAGE_NAME: 'bolaoonline-app'
+  ACR_IMAGE_TAG: 'latest'
+  
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  imageName: 'bolaoonline-app'
-  dockerRegistryServiceConnection: 'bolaoonline-docker-registry' # Nome da sua Service Connection do tipo Docker Registry
-  azureContainerRegistry: 'bolaoonlineregistry' # Nome do seu ACR
-
 stages:
-- stage: BuildAndPush
-  displayName: 'Construir e Enviar Imagem Docker'
+- stage: DeployToAzure
+  displayName: 'Deploy para o Azure App Service'
   jobs:
-  - job: Build
-    displayName: 'Build e Push'
+  - job: Deploy
+    displayName: 'Deployment do Container'
     steps:
-    - task: Docker@2
-      displayName: 'Login, Build e Push da Imagem'
+    - task: AzureWebAppContainer@1
+      displayName: 'Implantação do Container no App Service'
       inputs:
-        command: 'buildAndPush'
-        repository: '$(imageName)'
-        # O Dockerfile deve estar na raiz do projeto (como havíamos definido)
-        dockerfile: 'Dockerfile' 
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        # Contexto é a raiz, onde o Git baixa o código (necessário para o Dockerfile multi-stage)
-        buildContext: '.' 
-        tags: |
-          $(Build.BuildId)
-          latest
+        azureSubscription: '$(azureSubscription)'
+        appName: '$(APP_SERVICE_NAME)'
+        resourceGroupName: '$(RESOURCE_GROUP_NAME)'
+        
+        # Configuração do Registro de Container (ACR)
+        # Monta o nome completo da imagem: registry.azurecr.io/repository:tag
+        imageName: '$(ACR_NAME).azurecr.io/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)'
+        
+        # CORREÇÃO DEFINITIVA: Passando App Settings como string única (key="value").
+        # Isso força o App Service a reconhecer o nome do parâmetro.
+        appSettings: 'WEBSITE_TIME_ZONE="E. South America Standard Time"'
