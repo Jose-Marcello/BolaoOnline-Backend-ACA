@@ -22,7 +22,7 @@ RUN dotnet publish -c Release -o out "src/ApostasApp.Core.Web/ApostasApp.Core.We
 # Estágio 2: Ambiente de Produção Final
 #------------------------------------------------------------------
 # Use uma imagem otimizada para o Azure, que já vem com SSH
-FROM mcr.microsoft.com/azure-app-service/dotnet:8-aspnetcore
+FROM mcr.microsoft.com/azure-app-service/dotnet:8.0-aspnetcore
 
 WORKDIR /app
 COPY --from=build-env /app/out ./
