@@ -41,4 +41,4 @@ stages:
           - name: ASPNETCORE_URLS
             value: "http://+:80"
           - name: WEBSITES_PORT
-            value: "80"
+            value: "80" 
