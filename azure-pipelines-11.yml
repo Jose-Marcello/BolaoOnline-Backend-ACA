@@ -24,11 +24,11 @@ stages:
         command: 'buildAndPush'
         repository: '$(imageName)'
         
-        # O CONTEXTO DE BUILD DEVE SER A RAIZ DO REPOSITÓRIO (ONDE O .SLN ESTÁ)
+        # 1. FORÇA O CONTEXTO DE BUILD A SER A RAIZ DO REPOSITÓRIO (ONDE O .SLN ESTÁ)
         buildContext: '$(Build.SourcesDirectory)' 
 
-        # O DOCKERFILE É REFERENCIADO A PARTIR DO CONTEXTO DE BUILD (RAIZ)
-        dockerfile: 'src/ApostasApp.Core.Web/Dockerfile' 
+        # 2. REFERENCIA O DOCKERFILE A PARTIR DA RAIZ
+        dockerfile: '$(Build.SourcesDirectory)/src/ApostasApp.Core.Web/Dockerfile' 
 
         containerRegistry: '$(dockerRegistryServiceConnection)'
         tags: |
