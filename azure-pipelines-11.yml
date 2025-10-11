@@ -38,7 +38,8 @@ stages:
         command: 'buildAndPush'
         repository: '$(ACR_IMAGE_NAME)'
         containerRegistry: 'bolaoonline-docker-registry' # Nome da sua Service Connection
-        
+        noCache: true
+
         # O contexto de build é a raiz do repositório
         buildContext: '$(Build.SourcesDirectory)' 
 
