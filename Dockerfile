@@ -43,7 +43,8 @@ COPY --from=backend-build /app/publish .
 
 # Copia os arquivos estáticos do Angular (dist/browser/) para a pasta wwwroot,
 # onde o ASP.NET Core espera os arquivos estáticos do SPA.
-COPY --from=frontend-build /app/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/browser/ ./wwwroot/
+COPY --from=frontend-build /app/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/browser/. ./wwwroot/
 
-# O comando de inicialização
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
+
+
