@@ -39,9 +39,16 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 
+
+
 // ===================================================================================================
 // Configurações de Serviços - Services
 // ===================================================================================================
+
+// === INÍCIO DA ADIÇÃO DE DEBUG: INSIRA AQUI ===
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
+// === FIM DA ADIÇÃO DE DEBUG ===
 
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
@@ -55,7 +62,7 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
       })
       .LogTo(Console.WriteLine, LogLevel.Information)
       .EnableSensitiveDataLogging()
-      .LogTo(Console.WriteLine, LogLevel.Information);
+      .LogTo(Console.WriteLine, LogLevel.Information);     
 
 });
 
