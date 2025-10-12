@@ -9,23 +9,19 @@ RUN npm run build -- --output-path=dist/browser --base-href=/
 # Estágio de build do .NET
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /app
-# Copia todo o conteúdo do seu projeto para o contêiner
-COPY . .
-# Navega para a pasta do projeto de backend
+# Copia apenas a pasta src, que contém todos os projetos
+COPY src ./src
+# Restaura as dependências do projeto de web
 WORKDIR "/app/src/ApostasApp.Core.Web"
 RUN dotnet restore
-RUN dotnet build -c Release -o /app/build
-
-# Estágio de publicação
-FROM backend-build AS publish
-WORKDIR "/app/src/ApostasApp.Core.Web"
+# Compila e publica a aplicação
 RUN dotnet publish -c Release -o /app/publish
 
 # Estágio final (runtime)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 # Copia os arquivos do backend publicados
-COPY --from=publish /app/publish .
+COPY --from=backend-build /app/publish .
 # Copia os arquivos do frontend compilados
 COPY --from=frontend-build /app/dist/browser/ ./wwwroot/
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
