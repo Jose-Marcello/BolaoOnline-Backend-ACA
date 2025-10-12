@@ -3,13 +3,12 @@ FROM node:18 AS frontend-build
 # Define o diretório de trabalho para onde os arquivos de build serão copiados
 WORKDIR /app
 
-# Primeiro, copia o package.json para instalar as dependências
-# O caminho deve ser relativo à raiz do repositório
-COPY src/ApostasApp.Core.Presentation/package.json ./
+# O caminho para o package.json é agora relativo à pasta do projeto de backend
+COPY src/ApostasApp.Core.Web/BolaoOnlineAppV5/package.json ./
 RUN npm install
  
 # Copia o restante dos arquivos do projeto Angular para o WORKDIR
-COPY src/ApostasApp.Core.Presentation/ ./
+COPY src/ApostasApp.Core.Web/BolaoOnlineAppV5/ ./
 RUN npm run build -- --output-path=dist/browser --base-href=/
 
 # Estágio de build do .NET (sem alterações)
