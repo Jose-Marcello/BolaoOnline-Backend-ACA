@@ -223,62 +223,53 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
-// === AQUI ESTAVA O BLOCO DE MIGRAÇÃO/SEED DE BANCO QUE PROVAVELMENTE TRAVA O SERVIDOR ===
-// VAMOS ENVOLVER O STARTUP EM UM TRY/CATCH PARA FORÇAR O LOG DA EXCEÇÃO FATAL.
-try
+// *************************************************************************************************
+// IMPORTANTE: REMOVIDO BLOCO DE MIGRAÇÃO/SEED DE BANCO QUE TRAVA O SERVIDOR.
+// *************************************************************************************************
+
+if (app.Environment.IsDevelopment())
 {
-  // Tente rodar o bloco de inicialização do banco de dados (se existir)
-  // ******************************************************************************
-  // IMPORTANTE: SE VOCÊ SABE ONDE ESTÁ SEU CÓDIGO DE SEED/MIGRATE, COMENTE-O AQUI
-  // ******************************************************************************
-
-  // Se não houver código de migração aqui, ele apenas segue para o UseForwardedHeaders.
-
-  if (app.Environment.IsDevelopment())
-  {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    // Usa a política de localhost para desenvolvimento
-    app.UseCors("AllowLocalhost");
-  }
-  else // Produção
-  {
-    // Usa a política de 'AllowSameHost' para o ambiente Azure App Service
-    app.UseCors("AllowSameHost"); // <<-- ESSA LINHA É CRUCIAL PARA PRODUÇÃO
-  }
-
-  app.UseForwardedHeaders(new ForwardedHeadersOptions
-  {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-  });
-  app.UseHttpsRedirection();
-
-
-  app.UseDefaultFiles();
-  // Serve arquivos estáticos da wwwroot e de outros diretórios
-  app.UseStaticFiles();
-
-  app.UseRouting();
-
-  // app.UseCors("AllowSpecificOrigins"); // <<-- REMOVIDO E MOVIDO PARA CIMA E DENTRO DO IF/ELSE
-
-  app.UseAuthentication();
-  app.UseAuthorization();
-
-  // As requisições são mapeadas para os controladores
-  app.MapControllers();
-
-  // Se o seu frontend for um SPA, essa configuração é crucial.
-  // Ele serve o index.html como fallback para todas as rotas do Angular
-  app.MapFallbackToFile("index.html");
-
-  app.Run();
-
+  app.UseSwagger();
+  app.UseSwaggerUI();
+  // Usa a política de localhost para desenvolvimento
+  app.UseCors("AllowLocalhost");
 }
-catch (Exception ex)
+else // Produção
 {
-  // LOG DE EMERGÊNCIA: Se a aplicação falhar, isso forçará a impressão da exceção completa
-  Console.WriteLine($"FATAL EXCEPTION DURING STARTUP: {ex.Message}");
-  Console.WriteLine($"STACK TRACE: {ex.StackTrace}");
-  // Se a exceção for Entity Framework, ela deve aparecer aqui.
+  // Usa a política de 'AllowSameHost' para o ambiente Azure App Service
+  app.UseCors("AllowSameHost"); // <<-- ESSA LINHA É CRUCIAL PARA PRODUÇÃO
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+  ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+app.UseHttpsRedirection();
+
+
+app.UseDefaultFiles();
+// Serve arquivos estáticos da wwwroot e de outros diretórios
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// app.UseCors("AllowSpecificOrigins"); // <<-- REMOVIDO E MOVIDO PARA CIMA E DENTRO DO IF/ELSE
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// As requisições são mapeadas para os controladores
+app.MapControllers();
+
+// === CORREÇÃO FINAL DE ENTREGA DE ARQUIVOS ESTÁTICOS PARA LINUX/DOCKER ===
+// Força o caminho absoluto para o index.html e a pasta wwwroot, eliminando
+// problemas de caminho relativo no ambiente Linux.
+app.MapFallbackToFile("/index.html", new StaticFileOptions
+{
+  FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")
+    ),
+  RequestPath = "" // Define a raiz da requisição
+});
+
+app.Run();
