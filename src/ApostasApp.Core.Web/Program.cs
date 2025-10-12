@@ -38,31 +38,29 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// === DEBUG: CONFIRMAÇÃO DA CONNECTION STRING (NÃO REMOVER, É ÚTIL) ===
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
+// =================================================
 
 
 // ===================================================================================================
 // Configurações de Serviços - Services
 // ===================================================================================================
 
-// === INÍCIO DA ADIÇÃO DE DEBUG: INSIRA AQUI ===
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
-// === FIM DA ADIÇÃO DE DEBUG ===
-
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
-  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-      sqlServerOptionsAction: sqlOptions =>
-      {
-        sqlOptions.EnableRetryOnFailure(
-                  maxRetryCount: 10,
-                  maxRetryDelay: TimeSpan.FromSeconds(30),
-                  errorNumbersToAdd: null);
-      })
-      .LogTo(Console.WriteLine, LogLevel.Information)
-      .EnableSensitiveDataLogging()
-      .LogTo(Console.WriteLine, LogLevel.Information);     
+  options.UseSqlServer(connectionString, // Usamos a variável local (connectionString)
+       sqlServerOptionsAction: sqlOptions =>
+       {
+         sqlOptions.EnableRetryOnFailure(
+             maxRetryCount: 10,
+             maxRetryDelay: TimeSpan.FromSeconds(30),
+             errorNumbersToAdd: null);
+       })
+    .LogTo(Console.WriteLine, LogLevel.Information)
+    .EnableSensitiveDataLogging()
+    .LogTo(Console.WriteLine, LogLevel.Information);
 
 });
 
@@ -96,7 +94,7 @@ builder.Services.AddAuthentication(options =>
 {
   options.SaveToken = true;
   options.RequireHttpsMetadata = false; // Em produção, deve ser true
-  options.TokenValidationParameters = new TokenValidationParameters()
+  options.TokenValidationParameters = new TokenValidationParameters()
   {
     ValidateIssuer = true,
     ValidateAudience = true,
@@ -143,47 +141,44 @@ builder.Services.AddAutoMapper(cfg =>
 if (builder.Environment.IsDevelopment())
 {
   builder.Services.AddControllers()
-          .AddJsonOptions(options =>
-          {
-            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-            options.JsonSerializerOptions.WriteIndented = true;
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-          })
-          .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
+      .AddJsonOptions(options =>
+      {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      })
+      .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
 
-  // Configuração CORS mais aberta para DEV
-  builder.Services.AddCors(options =>
+  // Configuração CORS mais aberta para DEV
+  builder.Services.AddCors(options =>
   {
     options.AddPolicy("AllowLocalhost",
-        policy => policy.WithOrigins("http://localhost:4200") // Permite o ambiente de dev local
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials());
+      policy => policy.WithOrigins("http://localhost:4200") // Permite o ambiente de dev local
+              .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
   });
 }
 else // Produção (Azure)
 {
   builder.Services.AddControllers()
-          .AddJsonOptions(options =>
-          {
-            options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-            options.JsonSerializerOptions.WriteIndented = true;
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-          });
+      .AddJsonOptions(options =>
+      {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      });
 
-  // Configuração CORS especial para o cenário Docker/App Service
-  builder.Services.AddCors(options =>
+  // Configuração CORS especial para o cenário Docker/App Service
+  builder.Services.AddCors(options =>
   {
     options.AddPolicy("AllowSameHost",
-        policy => policy
-            // Quando o frontend está no wwwroot e o backend na mesma URL, 
-            // geralmente o mais seguro é permitir o AllowAnyOrigin 
-            // ou usar uma política mais complexa com SetIsOriginAllowedToAny(),
-            // mas para simplificar o deploy e já que a API não é pública:
-            .SetIsOriginAllowed(origin => true) // Permite qualquer origem
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials());
+      policy => policy
+  // Permite qualquer origem, o que é necessário para este cenário de host único
+              .SetIsOriginAllowed(origin => true)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
   });
 }
 
@@ -202,22 +197,22 @@ builder.Services.AddSwaggerGen(c =>
   });
 
   c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+      {
+        new OpenApiSecurityScheme
         {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    },
-                    Scheme = "oauth2",
-                    Name = "Bearer",
-                    In = ParameterLocation.Header,
-                },
-                new List<string>()
-            }
-        });
+          Reference = new OpenApiReference
+          {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+          },
+          Scheme = "oauth2",
+          Name = "Bearer",
+          In = ParameterLocation.Header,
+        },
+        new List<string>()
+      }
+    });
 });
 
 
@@ -227,17 +222,22 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
+// === AQUI ESTAVA O BLOCO DE MIGRAÇÃO/SEED DE BANCO QUE PROVAVELMENTE TRAVA O SERVIDOR ===
+// COMENTE qualquer código aqui que chame context.Database.Migrate() ou um Seed.
+// Deixamos a aplicação subir sem o Seed/Migrate para provar que a conexão funciona.
+
+
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
-  // Usa a política de localhost para desenvolvimento
-  app.UseCors("AllowLocalhost");
+  // Usa a política de localhost para desenvolvimento
+  app.UseCors("AllowLocalhost");
 }
 else // Produção
 {
-  // Usa a política de 'AllowSameHost' para o ambiente Azure App Service
-  app.UseCors("AllowSameHost");
+  // Usa a política de 'AllowSameHost' para o ambiente Azure App Service
+  app.UseCors("AllowSameHost"); // <<-- ESSA LINHA É CRUCIAL PARA PRODUÇÃO
 }
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
