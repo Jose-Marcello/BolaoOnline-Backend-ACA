@@ -1,12 +1,18 @@
 # Estágio de build do Angular
 FROM node:18 AS frontend-build
+# Define o diretório de trabalho para onde os arquivos de build serão copiados
 WORKDIR /app
-COPY ./src/ApostasApp.Core.Presentation/package.json ./
-RUN npm install
-COPY ./src/ApostasApp.Core.Presentation/ ./
-RUN npm run build
 
-# Estágio de build do .NET
+# Primeiro, copia o package.json para instalar as dependências
+# O caminho deve ser relativo à raiz do repositório
+COPY src/ApostasApp.Core.Presentation/package.json ./
+RUN npm install
+ 
+# Copia o restante dos arquivos do projeto Angular para o WORKDIR
+COPY src/ApostasApp.Core.Presentation/ ./
+RUN npm run build -- --output-path=dist/browser --base-href=/
+
+# Estágio de build do .NET (sem alterações)
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /app
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
@@ -26,6 +32,6 @@ RUN dotnet publish "ApostasApp.Core.Web.csproj" -c Release -o /app/publish /p:Us
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-# Copia os arquivos do frontend para a pasta wwwroot
-COPY --from=frontend-build /app/dist/apostas-app/browser/ ./wwwroot/
+# Copia os arquivos do frontend para a pasta wwwroot (dist/browser é o padrão do Angular)
+COPY --from=frontend-build /app/dist/browser/ ./wwwroot/
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
