@@ -34,12 +34,11 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === DEBUG: CONFIRMAÇÃO DA CONNECTION STRING (NÃO REMOVER, É ÚTIL) ===
+// === DEBUG: CONFIRMAÇÃO DA CONNECTION STRING (NÃO REMOVER) ===
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // =================================================
@@ -49,39 +48,45 @@ Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // Configurações de Serviços - Services
 // ===================================================================================================
 
+// === BLOQUEIO TEMPORÁRIO 1/3: COMENTADO O DB CONTEXT ===
+/*
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
-  options.UseSqlServer(connectionString, // Usamos a variável local (connectionString)
-       sqlServerOptionsAction: sqlOptions =>
-       {
-         sqlOptions.EnableRetryOnFailure(
-             maxRetryCount: 10,
-             maxRetryDelay: TimeSpan.FromSeconds(30),
-             errorNumbersToAdd: null);
-       })
-    .LogTo(Console.WriteLine, LogLevel.Information)
-    .EnableSensitiveDataLogging()
-    .LogTo(Console.WriteLine, LogLevel.Information);
+  options.UseSqlServer(connectionString, // Usamos a variável local (connectionString)
+      sqlServerOptionsAction: sqlOptions =>
+      {
+        sqlOptions.EnableRetryOnFailure(
+                  maxRetryCount: 10,
+                  maxRetryDelay: TimeSpan.FromSeconds(30),
+                  errorNumbersToAdd: null);
+      })
+      .LogTo(Console.WriteLine, LogLevel.Information)
+      .EnableSensitiveDataLogging()
+      .LogTo(Console.WriteLine, LogLevel.Information);
 
 });
+*/
 
+// === BLOQUEIO TEMPORÁRIO 2/3: COMENTADO O IDENTITY ===
+/*
 // Configuração do ASP.NET Core Identity
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
-  options.SignIn.RequireConfirmedAccount = true;
-  options.Password.RequireDigit = true;
-  options.Password.RequireLowercase = true;
-  options.Password.RequireUppercase = true;
-  options.Password.RequireNonAlphanumeric = true;
-  options.Password.RequiredLength = 6;
-  options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-  options.Lockout.MaxFailedAccessAttempts = 5;
-  options.Lockout.AllowedForNewUsers = true;
-  options.User.RequireUniqueEmail = true;
+  options.SignIn.RequireConfirmedAccount = true;
+  options.Password.RequireDigit = true;
+  options.Password.RequireLowercase = true;
+  options.Password.RequireUppercase = true;
+  options.Password.RequireNonAlphanumeric = true;
+  options.Password.RequiredLength = 6;
+  options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+  options.Lockout.MaxFailedAccessAttempts = 5;
+  options.Lockout.AllowedForNewUsers = true;
+  options.User.RequireUniqueEmail = true;
 
 })
 .AddEntityFrameworkStores<MeuDbContext>()
 .AddDefaultTokenProviders();
+*/
 
 
 // Configuração JWT Bearer Authentication
@@ -120,8 +125,7 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
   client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
 });
 
-builder.Services.ResolveDependencies();
-
+// builder.Services.ResolveDependencies(); // COMENTE esta linha se ela depende de algum serviço de DB que bloqueamos
 
 var emailSimulationMode = builder.Configuration.GetValue<bool>("EmailSettings:EmailSimulationMode");
 
@@ -223,9 +227,14 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
-// *************************************************************************************************
-// IMPORTANTE: REMOVIDO BLOCO DE MIGRAÇÃO/SEED DE BANCO QUE TRAVA O SERVIDOR.
-// *************************************************************************************************
+// === BLOQUEIO TEMPORÁRIO 3/3: COMENTADO O BLOCO DE SEED/MIGRATE CASO ESTEJA ESCONDIDO ===
+// using (var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<MeuDbContext>();
+//     context.Database.Migrate(); // O trecho mais provável de travar
+// }
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -253,7 +262,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// app.UseCors("AllowSpecificOrigins"); // <<-- REMOVIDO E MOVIDO PARA CIMA E DENTRO DO IF/ELSE
+// app.UseCors("AllowSpecificOrigins"); // <<-- COMENTADO
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -261,15 +270,8 @@ app.UseAuthorization();
 // As requisições são mapeadas para os controladores
 app.MapControllers();
 
-// === CORREÇÃO FINAL DE ENTREGA DE ARQUIVOS ESTÁTICOS PARA LINUX/DOCKER ===
-// Força o caminho absoluto para o index.html e a pasta wwwroot, eliminando
-// problemas de caminho relativo no ambiente Linux.
-app.MapFallbackToFile("/index.html", new StaticFileOptions
-{
-  FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")
-    ),
-  RequestPath = "" // Define a raiz da requisição
-});
+// Se o seu frontend for um SPA, essa configuração é crucial.
+// Ele serve o index.html como fallback para todas as rotas do Angular
+app.MapFallbackToFile("/index.html");
 
 app.Run();
