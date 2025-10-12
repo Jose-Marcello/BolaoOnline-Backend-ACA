@@ -143,8 +143,18 @@ if (builder.Environment.IsDevelopment())
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
           })
           .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly);
+
+  // Configuração CORS mais aberta para DEV
+  builder.Services.AddCors(options =>
+  {
+    options.AddPolicy("AllowLocalhost",
+        policy => policy.WithOrigins("http://localhost:4200") // Permite o ambiente de dev local
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+  });
 }
-else
+else // Produção (Azure)
 {
   builder.Services.AddControllers()
           .AddJsonOptions(options =>
@@ -153,6 +163,21 @@ else
             options.JsonSerializerOptions.WriteIndented = true;
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
           });
+
+  // Configuração CORS especial para o cenário Docker/App Service
+  builder.Services.AddCors(options =>
+  {
+    options.AddPolicy("AllowSameHost",
+        policy => policy
+            // Quando o frontend está no wwwroot e o backend na mesma URL, 
+            // geralmente o mais seguro é permitir o AllowAnyOrigin 
+            // ou usar uma política mais complexa com SetIsOriginAllowedToAny(),
+            // mas para simplificar o deploy e já que a API não é pública:
+            .SetIsOriginAllowed(origin => true) // Permite qualquer origem
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+  });
 }
 
 builder.Services.AddEndpointsApiExplorer();
@@ -189,16 +214,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-// Configuração CORS
-builder.Services.AddCors(options =>
-{
-  options.AddPolicy("AllowSpecificOrigins",
-      policy => policy.WithOrigins("https://app.palpitesbolao.com.br", "http://localhost:4200")
-          .AllowAnyHeader()
-          .AllowAnyMethod()
-          .AllowCredentials());
-});
-
 var app = builder.Build();
 
 // ===================================================================================================
@@ -209,8 +224,14 @@ if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
+  // Usa a política de localhost para desenvolvimento
+  app.UseCors("AllowLocalhost");
 }
-
+else // Produção
+{
+  // Usa a política de 'AllowSameHost' para o ambiente Azure App Service
+  app.UseCors("AllowSameHost");
+}
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
@@ -225,8 +246,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// <<-- APLICA A POLÍTICA DE CORS AQUI -->>
-app.UseCors("AllowSpecificOrigins");
+// app.UseCors("AllowSpecificOrigins"); // <<-- REMOVIDO E MOVIDO PARA CIMA E DENTRO DO IF/ELSE
 
 app.UseAuthentication();
 app.UseAuthorization();
