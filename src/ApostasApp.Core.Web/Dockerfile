@@ -13,15 +13,16 @@ RUN dotnet publish "src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj" -c Relea
 
 # Estágio 2: Build do Frontend Angular (em um ambiente Node.js)
 FROM node:18-alpine AS frontend-build
-WORKDIR /src
-
-# Copia o código do frontend e instala as dependências
-COPY ["src/BolaoOnlineAppV5/package.json", "src/BolaoOnlineAppV5/package-lock.json", "src/BolaoOnlineAppV5/"]
+# Define o WORKDIR diretamente para a pasta do projeto Angular
 WORKDIR /src/src/BolaoOnlineAppV5
+
+# Copia e instala as dependências
+COPY ["package.json", "package-lock.json", "./"]
 RUN npm install
 
-# Faz o build do frontend
+# Faz o build do frontend. Os arquivos vão para /src/src/BolaoOnlineAppV5/dist/angular-app/browser
 COPY . .
+# A saída final do Angular será colocada em /app/dist/angular-app/browser
 RUN npm run build -- --output-path=/app/dist/angular-app/browser
 
 # Estágio 3: Imagem de Produção Final
@@ -32,13 +33,13 @@ WORKDIR /app
 COPY --from=backend-build /app/publish ./
 
 # Remove a pasta wwwroot padrão gerada pelo .NET
+# ESSENCIAL para garantir que o contêiner não tenha arquivos antigos ou de templates
 RUN rm -rf wwwroot
 
 # Copia a pasta de build do Angular para a wwwroot final
-COPY --from=frontend-build /src/src/BolaoOnlineAppV5/dist/angular-app/browser ./wwwroot
+# COPIA O CONTEÚDO (usando a sintaxe 'pasta/.' para evitar erros de caminho no Linux)
+COPY --from=frontend-build /app/dist/angular-app/browser/. ./wwwroot
 
 # Expõe a porta e define o ponto de entrada
 EXPOSE 80
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
-
-# Correcao de Sincronizacao
