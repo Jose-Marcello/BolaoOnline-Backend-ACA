@@ -21,7 +21,7 @@ using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.SpaServices;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders; // NOVO USANDO
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -39,34 +39,60 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === DEBUG: CONFIRMAÇÃO DA CONNECTION STRING ===
+// === LEITURA E DEBUG DA CONNECTION STRING ===
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
-// =================================================
+// ===========================================
 
 
 // ===================================================================================================
 // Configurações de Serviços - Services
 // ===================================================================================================
 
-// === BLOCOS DE CÓDIGO CRÍTICOS COMENTADOS TEMPORARIAMENTE PARA DEBUG DE INFRA ===
-// builder.Services.AddDbContext<MeuDbContext>(options => { ... });
-// builder.Services.AddIdentity<Usuario, IdentityRole>(options => { ... })...;
-// builder.Services.ResolveDependencies(); // COMENTADO: Pode ter dependências de DB que falham o startup
+// === REATIVANDO DBContext E IDENTITY ===
+builder.Services.AddDbContext<MeuDbContext>(options =>
+{
+  options.UseSqlServer(connectionString,
+    sqlServerOptionsAction: sqlOptions =>
+    {
+      sqlOptions.EnableRetryOnFailure(
+          maxRetryCount: 10,
+          maxRetryDelay: TimeSpan.FromSeconds(30),
+          errorNumbersToAdd: null);
+    })
+    .LogTo(Console.WriteLine, LogLevel.Information);
+});
+
+// Configuração do ASP.NET Core Identity
+builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
+{
+  options.SignIn.RequireConfirmedAccount = true;
+  options.Password.RequiredLength = 6;
+  options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+  options.Lockout.MaxFailedAccessAttempts = 5;
+  options.Lockout.AllowedForNewUsers = true;
+  options.User.RequireUniqueEmail = true;
+
+})
+.AddEntityFrameworkStores<MeuDbContext>()
+.AddDefaultTokenProviders();
+
+// === RESOLVE DEPENDENCIES REATIVADO ===
+builder.Services.ResolveDependencies();
+// ======================================
 
 
-// Configuração JWT Bearer Authentication (Mantida, pois pode ser essencial para outros serviços)
+// Configuração JWT Bearer Authentication (MANTIDA)
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
   options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
   options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
+}).AddJwtBearer(options =>
 {
   options.SaveToken = true;
-  options.RequireHttpsMetadata = false; // Em produção, deve ser true
-  options.TokenValidationParameters = new TokenValidationParameters()
+  options.RequireHttpsMetadata = false;
+  options.TokenValidationParameters = new TokenValidationParameters()
   {
     ValidateIssuer = true,
     ValidateAudience = true,
@@ -79,26 +105,43 @@ builder.Services.AddAuthentication(options =>
 });
 
 
-// Configurações de Pagamento e E-mail (Mantidas, se não bloquearem o startup)
-builder.Services.Configure<PagSeguroSettings>(builder.Configuration.GetSection("PagSeguroSettings"));
-builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProvider, client) => { /* ... */ });
-// ... outros serviços que não dependem do DB.
+System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
+builder.Services.Configure<PagSeguroSettings>(builder.Configuration.GetSection("PagSeguroSettings"));
+
+builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProvider, client) =>
+{
+  var pagSeguroSettings = serviceProvider.GetRequiredService<IOptions<PagSeguroSettings>>().Value;
+
+  client.BaseAddress = new Uri("https://api.sandbox.pagseguro.com/charges");
+  client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pagSeguroSettings.Token);
+});
+
+// Outras injeções de serviços
+// builder.Services.ResolveDependencies(); 
 
 builder.Services.AddAutoMapper(cfg =>
 {
   cfg.AddMaps(typeof(MappingProfile).Assembly);
 });
 
-// Configuração de Controladores, Swagger e CORS (Sem alteração)
-builder.Services.AddControllers()
-     .AddJsonOptions(options => { /* ... */ })
-     .AddApplicationPart(typeof(ApostasApp.Core.Web.Controllers.TestController).Assembly); // Mantido o AddApplicationPart do TestController para garantir que a API básica carregue
-
+// Configuração de Controladores, Swagger e CORS
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => { /* ... */ });
-builder.Services.AddCors(options => { /* ... */ });
+builder.Services.AddSwaggerGen();
 
+// CORS: Permitir acesso APENAS do Front-end SWA (usando a URL de teste localhost e a futura URL do Azure Static Web Apps)
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("AllowFrontend",
+    policy => policy.WithOrigins(
+      "http://localhost:4200",
+           "https://thankful-pond-04be1170f.2.azurestaticapps.net"
+        )
+      .AllowAnyHeader()
+      .AllowAnyMethod()
+      .AllowCredentials());
+});
 
 var app = builder.Build();
 
@@ -106,24 +149,10 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
-// === VERIFICAÇÃO DE PATH DE ARQUIVOS ESTÁTICOS (CORREÇÃO DE ENTREGA) ===
-if (app.Environment.IsProduction())
-{
-  // NOVO: Força o uso do wwwroot para evitar erros de caminho no Linux
-  app.Environment.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-}
-// ======================================================================
-
-
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
   app.UseSwaggerUI();
-  app.UseCors("AllowLocalhost");
-}
-else // Produção
-{
-  app.UseCors("AllowSameHost");
 }
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -132,21 +161,15 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 app.UseHttpsRedirection();
 
-
-app.UseDefaultFiles();
-// Serve arquivos estáticos da wwwroot e de outros diretórios
-app.UseStaticFiles();
-
+// ROTAS DO FRONTEND REMOVIDAS
 app.UseRouting();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 // As requisições são mapeadas para os controladores
 app.MapControllers();
-
-// Se o seu frontend for um SPA, essa configuração é crucial.
-// Ele serve o index.html como fallback para todas as rotas do Angular
-app.MapFallbackToFile("index.html");
 
 app.Run();

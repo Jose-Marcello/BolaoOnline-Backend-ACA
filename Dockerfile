@@ -1,22 +1,8 @@
-# Este Dockerfile é para um aplicativo .NET Core com frontend Angular (Build Multi-Stage)
-# Garante o tamanho mínimo da imagem final e a correta integração do SPA (Angular) no backend (.NET).
+# Este Dockerfile é para um aplicativo .NET Core (Backend)
+# Ele cria uma imagem do seu backend, ignorando o frontend.
 
 # ======================================================
-# Estágio 1: Build do Frontend (Angular)
-# ======================================================
-FROM node:18 AS frontend-build
-WORKDIR /app
-# Copia o código-fonte inteiro para o estágio do frontend
-COPY . .
-# Navega para o diretório do projeto Angular
-WORKDIR /app/src/ApostasApp.Core.Web/BolaoOnlineAppV5
-# Instala as dependências do Angular
-RUN npm install
-# Executa o build do Angular.
-RUN npm run build -- --output-path=./dist/browser --base-href=/
-
-# ======================================================
-# Estágio 2: Build do Backend (.NET Core)
+# Estágio 1: Build do Backend (.NET Core)
 # ======================================================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /app
@@ -30,7 +16,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o /app/publish --no-self-contained
 
 # ======================================================
-# Estágio 3: Estágio Final (Runtime)
+# Estágio 2: Estágio Final (Runtime)
 # ======================================================
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
@@ -41,10 +27,4 @@ EXPOSE 8080
 # Copia a aplicação .NET publicada do estágio backend-build
 COPY --from=backend-build /app/publish .
 
-# Copia os arquivos estáticos do Angular (dist/browser/) para a pasta wwwroot,
-# onde o ASP.NET Core espera os arquivos estáticos do SPA.
-COPY --from=frontend-build /app/src/ApostasApp.Core.Web/BolaoOnlineAppV5/dist/browser/. ./wwwroot/
-
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
-
-
