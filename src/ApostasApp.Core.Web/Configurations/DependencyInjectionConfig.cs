@@ -82,6 +82,8 @@ namespace ApostasApp.Core.Web.Configurations
       services.AddScoped<IPalpiteService, PalpiteService>();
       services.AddScoped<IRankingRodadaService, RankingRodadaService>();
 
+      services.AddScoped<IBolaoEmailSender, MockEmailSender>();
+
       //services.AddScoped<ApostasApp.Core.Infrastructure.Services.Email.EmailService>();
 
       // Serviços comentados que podem ser ativados

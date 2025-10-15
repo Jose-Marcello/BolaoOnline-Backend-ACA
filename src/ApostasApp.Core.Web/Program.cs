@@ -118,7 +118,7 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
 });
 
 // Outras injeções de serviços
-// builder.Services.ResolveDependencies(); 
+builder.Services.ResolveDependencies(); 
 
 builder.Services.AddAutoMapper(cfg =>
 {
@@ -126,7 +126,13 @@ builder.Services.AddAutoMapper(cfg =>
 });
 
 // Configuração de Controladores, Swagger e CORS
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+  options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+});
+
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -145,6 +151,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 
 // ===================================================================================================
 // Pipeline de Requisições HTTP - Middleware
