@@ -39,6 +39,9 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
+
+
 // === LEITURA E DEBUG DA CONNECTION STRING ===
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
