@@ -40,8 +40,16 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+  // Limpa todas as regras padrão, pois o Kestrel deve aceitar o header X-Forwarded-For do App Service
+  options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+  options.KnownNetworks.Clear();
+  options.KnownProxies.Clear();
+});
 
+
+builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
 
 
 // === LEITURA E DEBUG DA CONNECTION STRING ===
@@ -177,6 +185,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 //app.UseHttpsRedirection();
 
+app.UseForwardedHeaders();
 // ROTAS DO FRONTEND REMOVIDAS
 app.UseRouting();
 
