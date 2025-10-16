@@ -1,30 +1,20 @@
+// HealthController.cs (Ajustado)
 using Microsoft.AspNetCore.Mvc;
 
 namespace ApostasApp.Core.Web.Controllers
-{  
-
-  
-    // A rota base é apenas "/"
-    [Route("")]
-    [ApiController]
-    public class HealthController : ControllerBase
+{
+  // Rota específica para o App Service - NÃO USE [Route("")]
+  [Route("app-status")]
+  [ApiController]
+  public class HealthController : ControllerBase
+  {
+    // Responde a GET /app-status
+    [HttpGet]
+    public IActionResult Get()
     {
-      // Responde a GET /
-      [HttpGet]
-      public IActionResult Get()
-      {
-        // Retorna uma resposta simples e rápida para o Azure saber que o app está ativo.
-        return Ok(new { Status = "Healthy", Service = "BolaoOnline API" });
-      }
-
-      // Responde a GET /health
-      [HttpGet("health")]
-      public IActionResult GetHealth()
-      {
-        // Opcional, mas útil para o Azure Health Check
-        return Ok();
-      }
-
+      return Ok(new { Status = "Healthy", Service = "BolaoOnline API" });
     }
- 
+
+    // Remova o GetHealth para simplificar
+  }
 }
