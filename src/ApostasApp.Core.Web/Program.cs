@@ -39,7 +39,9 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
+
 
 
 // === LEITURA E DEBUG DA CONNECTION STRING ===
@@ -155,6 +157,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// >>> ADICIONE ESTE MIDDLEWARE DE TESTE DE SAÚDE AQUI (NO TOPO) <<<
+app.MapGet("/live-test", () => Results.Ok("LIVE"));
 
 // ===================================================================================================
 // Pipeline de Requisições HTTP - Middleware
