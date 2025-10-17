@@ -363,8 +363,13 @@ namespace ApostasApp.Core.Infrastructure.Identity
             // 1. Gera o token
             var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            // 2. Monta o link de redefinição usando o baseUrl seguro
+            // >>> ADICIONE ESTAS DUAS LINHAS CRÍTICAS PARA DEBUG EM PRODUÇÃO <<<
             var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+            _logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
+            // Use LogError para garantir que passe pelo filtro de Warning/Error
+
+      // 2. Monta o link de redefinição usando o baseUrl seguro
+      //var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
 
             try
             {
