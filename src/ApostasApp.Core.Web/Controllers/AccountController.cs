@@ -8,6 +8,7 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Models.Notificacoes;
 using ApostasApp.Core.Infrastructure.Notificacoes;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
 using Microsoft.IdentityModel.Tokens;
@@ -133,7 +134,8 @@ namespace ApostasApp.Core.Web.Controllers
       // estará em 'response.Data' para o debug.
       return CustomResponse(response);
     }
-
+        
+    
 
     [HttpPost("reset-password")]
         [AllowAnonymous]
@@ -378,6 +380,21 @@ namespace ApostasApp.Core.Web.Controllers
 
             // CORRIGIDO: Usando CustomResponse
             return CustomResponse(apostadorProfile); // Retorna o DTO encapsulado em ApiResponse de sucesso
+        }
+
+
+    // AccountController.cs
+        [HttpGet("GenerateTestHash")] // Rota de teste
+        [AllowAnonymous]
+        public async Task<IActionResult> GenerateTestHash()
+        {
+           // ASSUMINDO QUE _identityService ESTÁ INJETADO NO CONSTRUTOR!
+
+           var hashData = await _usuarioService.GenerateTestHashAsync();
+
+           return Ok(hashData);
+
+
         }
     }
 }

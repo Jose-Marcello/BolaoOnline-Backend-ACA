@@ -8,6 +8,7 @@ using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -491,5 +492,34 @@ namespace ApostasApp.Core.Infrastructure.Identity
             }
             return false;
         }
+
+    // IdentityService.cs
+
+    public async Task<object> GenerateTestHashAsync(string email, string newPassword)
+    {
+      var user = await _userManager.FindByEmailAsync(email);
+
+      if (user == null)
+      {
+        // CORREÇÃO: Apenas retorne o objeto de erro para o Controller
+        return new { message = "Usuário não encontrado no banco de dados.", success = false };
+      }
+
+      // 2. Gere o novo hash da senha 'NovaSenha@2025'
+      // ISTO USA A CHAVE DE CRIPTOGRAFIA DA MÁQUINA LOCAL!
+      var novoHash = _userManager.PasswordHasher.HashPassword(user, newPassword);
+
+      // 3. Retorne o hash para que você possa copiá-lo facilmente do navegador/Postman
+      return new
+      { // CORREÇÃO: Apenas retorne o objeto de sucesso (que será pego pelo Controller)
+        UserId = user.Id,
+        Email = user.Email,
+        NewPassword = newPassword,
+        PasswordHash = novoHash
+      };
     }
+
+
+  }
+
 }

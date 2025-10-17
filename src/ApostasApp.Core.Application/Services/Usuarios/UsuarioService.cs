@@ -18,7 +18,9 @@ using ApostasApp.Core.Domain.Models.Identity; // MUITO IMPORTANTE: ESTE USING DE
 using ApostasApp.Core.Domain.Models.Notificacoes; // Para Notificacao (classe de domínio)
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -835,5 +837,17 @@ namespace ApostasApp.Core.Application.Services.Usuarios
             }
             return user;
         }
+
+
+        public async Task<object> GenerateTestHashAsync()
+        {
+           // Apenas repassa a chamada e o resultado do IdentityService
+           // Sem lógica de negócio, apenas roteamento de dados
+            return await _identityService.GenerateTestHashAsync(
+                   "josemarcellogardeldealemar@gmail.com",
+                   "NovaSenha@2025"
+            );
+        }
+
     }
 }
