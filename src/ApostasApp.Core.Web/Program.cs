@@ -39,20 +39,16 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// === CONFIGURAÇÃO DE HEADERS DE PROXY (CRÍTICO PARA AZURE) ===
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-  // Limpa todas as regras padrão, pois o Kestrel deve aceitar o header X-Forwarded-For do App Service
   options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
   options.KnownNetworks.Clear();
   options.KnownProxies.Clear();
 });
 
 
-//builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
-
-
-// === LEITURA E DEBUG DA CONNECTION STRING ===
+// === LEITURA E LOG DA CONNECTION STRING ===
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // ===========================================
@@ -62,18 +58,18 @@ Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // Configurações de Serviços - Services
 // ===================================================================================================
 
-// === REATIVANDO DBContext E IDENTITY ===
+// === DBContext E IDENTITY ===
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   options.UseSqlServer(connectionString,
-    sqlServerOptionsAction: sqlOptions =>
-    {
-      sqlOptions.EnableRetryOnFailure(
-          maxRetryCount: 10,
-          maxRetryDelay: TimeSpan.FromSeconds(30),
-          errorNumbersToAdd: null);
-    })
-    .LogTo(Console.WriteLine, LogLevel.Information);
+      sqlServerOptionsAction: sqlOptions =>
+      {
+        sqlOptions.EnableRetryOnFailure(
+              maxRetryCount: 10,
+              maxRetryDelay: TimeSpan.FromSeconds(30),
+              errorNumbersToAdd: null);
+      })
+      .LogTo(Console.WriteLine, LogLevel.Information);
 });
 
 // Configuração do ASP.NET Core Identity
@@ -90,12 +86,12 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 .AddEntityFrameworkStores<MeuDbContext>()
 .AddDefaultTokenProviders();
 
-// === RESOLVE DEPENDENCIES REATIVADO ===
+// === RESOLVE DEPENDENCIES ===
 builder.Services.ResolveDependencies();
 // ======================================
 
 
-// Configuração JWT Bearer Authentication (MANTIDA)
+// Configuração JWT Bearer Authentication
 builder.Services.AddAuthentication(options =>
 {
   options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -131,7 +127,7 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
 });
 
 // Outras injeções de serviços
-builder.Services.ResolveDependencies(); 
+builder.Services.ResolveDependencies();
 
 builder.Services.AddAutoMapper(cfg =>
 {
@@ -145,7 +141,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -153,29 +148,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
-    policy => policy.WithOrigins(
-            "http://localhost:4200",
-            "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-            "https://app.palpitesbolao.com.br" // Adicione esta linha
-        )
+      policy => policy.WithOrigins(
+              "http://localhost:4200",
+              "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+              "https://app.palpitesbolao.com.br" // Adicione esta linha
+          )
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials());
 });
 
 var app = builder.Build();
-
-// >>> ADICIONE ESTE LOG DE MIDDLEWARE TEMPORÁRIO NO TOPO <<<
-app.Use(async (context, next) =>
-{
-  // Este log de DEBUG ou TRACE (o nível mais baixo) deve aparecer no Log Stream
-  app.Logger.LogError($"[REQUISICAO] {context.Request.Method} {context.Request.Path}");
-  await next(context);
-});
-
-
-// >>> ADICIONE ESTE MIDDLEWARE DE TESTE DE SAÚDE AQUI (NO TOPO) <<<
-app.MapGet("/live-test", () => Results.Ok("LIVE"));
 
 // ===================================================================================================
 // Pipeline de Requisições HTTP - Middleware
@@ -187,15 +170,13 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-  ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+app.UseForwardedHeaders(); // Apenas a chamada simples, a configuração está em builder.Services.Configure
 
-//app.UseHttpsRedirection();
+// OPÇÃO 1 (Manter a rota de saúde - OPCIONAL)
+app.MapGet("/live-test", () => Results.Ok("LIVE"));
 
-app.UseForwardedHeaders();
-// ROTAS DO FRONTEND REMOVIDAS
+//app.UseHttpsRedirection(); // REMOVIDO/COMENTADO
+
 app.UseRouting();
 
 app.UseCors("AllowFrontend");

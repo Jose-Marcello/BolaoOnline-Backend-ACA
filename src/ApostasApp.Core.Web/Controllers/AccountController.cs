@@ -383,7 +383,7 @@ namespace ApostasApp.Core.Web.Controllers
         }
 
 
-    // AccountController.cs
+         /* método teste
         [HttpGet("GenerateTestHash")] // Rota de teste
         [AllowAnonymous]
         public async Task<IActionResult> GenerateTestHash()
@@ -396,5 +396,7 @@ namespace ApostasApp.Core.Web.Controllers
 
 
         }
+        */
+
     }
 }

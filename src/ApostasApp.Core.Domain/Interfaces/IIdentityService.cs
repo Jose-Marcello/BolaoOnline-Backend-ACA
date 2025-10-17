@@ -43,7 +43,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
     // Assinatura do método ChangePasswordAsync
     Task<bool> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword);
 
-    Task<object> GenerateTestHashAsync(string email, string newPassword);
+    //Task<object> GenerateTestHashAsync(string email, string newPassword);
 
   }
     

@@ -839,6 +839,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         }
 
 
+        /*método usado em testes
         public async Task<object> GenerateTestHashAsync()
         {
            // Apenas repassa a chamada e o resultado do IdentityService
@@ -848,6 +849,8 @@ namespace ApostasApp.Core.Application.Services.Usuarios
                    "NovaSenha@2025"
             );
         }
+
+     */
 
     }
 }

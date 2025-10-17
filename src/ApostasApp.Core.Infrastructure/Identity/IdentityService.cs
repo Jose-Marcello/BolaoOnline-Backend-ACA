@@ -495,6 +495,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
     // IdentityService.cs
 
+    /* método usado para testes
     public async Task<object> GenerateTestHashAsync(string email, string newPassword)
     {
       var user = await _userManager.FindByEmailAsync(email);
@@ -518,7 +519,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
         PasswordHash = novoHash
       };
     }
-
+    */
 
   }
 

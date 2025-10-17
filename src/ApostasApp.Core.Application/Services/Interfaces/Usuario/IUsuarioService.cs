@@ -41,7 +41,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Usuarios
         Task<Usuario> ObterUsuarioPorId(Guid userId);
         Task<Usuario> ObterUsuarioPorUsuarioId(string userId);
         Task<Usuario> ObterUsuarioPorEmail(string email);
-    // O método GerarJwtToken deve ser private ou não estar na interface se for auxiliar interno.
-        Task<object> GenerateTestHashAsync();
+        // O método GerarJwtToken deve ser private ou não estar na interface se for auxiliar interno.
+        //Task<object> GenerateTestHashAsync();
   }
 }
