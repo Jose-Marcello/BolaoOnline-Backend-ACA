@@ -165,6 +165,15 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// >>> ADICIONE ESTE LOG DE MIDDLEWARE TEMPORÁRIO NO TOPO <<<
+app.Use(async (context, next) =>
+{
+  // Este log de DEBUG ou TRACE (o nível mais baixo) deve aparecer no Log Stream
+  app.Logger.LogError($"[REQUISICAO] {context.Request.Method} {context.Request.Path}");
+  await next(context);
+});
+
+
 // >>> ADICIONE ESTE MIDDLEWARE DE TESTE DE SAÚDE AQUI (NO TOPO) <<<
 app.MapGet("/live-test", () => Results.Ok("LIVE"));
 
