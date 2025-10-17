@@ -34,7 +34,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
         //Task<bool> ForgotPasswordAsync(string email, string baseUrl);
         Task<string> ForgotPasswordAsync(string email, string baseUrl); // DEVE retornar string (o link)
 
-    Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
+        Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
 
         // Métodos de Alteração de E-mail
         Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail); // Retorna AuthResult

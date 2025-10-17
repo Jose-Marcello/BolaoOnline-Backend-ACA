@@ -1,4 +1,4 @@
-﻿// ApostasApp.Core.Application.Services.Interfaces.Usuarios/IUsuarioService.cs
+// ApostasApp.Core.Application.Services.Interfaces.Usuarios/IUsuarioService.cs
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Usuarios;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
@@ -16,9 +16,10 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Usuarios
         Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request);
         Task<ApiResponse<RegisterResponse>> RegisterAsync(RegisterRequestDto request);
         //Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string scheme, string host);
-        Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string baseUrl);
+        //Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string baseUrl);
+        Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl); // <<< MUDANÇA
 
-        Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword);
+    Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword);
         Task<ApiResponse<bool>> ConfirmEmail(string userId, string code);
         Task<ApiResponse<bool>> ResendEmailConfirmationAsync(string email, string scheme, string host);
         Task<ApiResponse<bool>> ChangePasswordAsync(string userId, string currentPassword, string newPassword);

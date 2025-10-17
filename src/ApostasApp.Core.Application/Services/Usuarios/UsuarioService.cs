@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
+// Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
 
 // Usings necessários
 using ApostasApp.Core.Application.DTOs.Apostadores;
@@ -202,76 +202,68 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         }
 
 
-        public async Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
+    // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs (Implementação)
+    // NOTE: Assume-se que UsuarioService herda de BaseService.
+
+    public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
+    {
+      // A chamada ao IdentityService (que agora retorna o link/token como string)
+      var resetLink = await _identityService.ForgotPasswordAsync(email, baseUrl);
+
+      // 1. Lógica para o caso de o IdentityService retornar NULL/String vazia (medida de segurança)
+      if (string.IsNullOrEmpty(resetLink))
+      {
+        // Notificação de segurança (não revela se o usuário existe)
+        Notificar("Sucesso", "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas.");
+
+        // Retorna ApiResponse de sucesso, mas com Data nula (string) e as notificações.
+        // O método CustomResponse do BaseService será chamado no Controller.
+        return new ApiResponse<string>(true, "Solicitação processada.", null, ObterNotificacoesParaResposta().ToList());
+      }
+
+      // 2. Lógica para DEBUG CRÍTICO (O Token foi gerado e está no link)
+
+      // Notificamos que o e-mail foi enviado (mesmo que seja mock)
+      Notificar("Sucesso", "Instruções para redefinição de senha enviadas (Link gerado para DEBUG).");
+
+      // Retorna o ApiResponse com o link como Data (string).
+      // A Controller irá pegar esta Data e retorná-la como Status 200 OK no corpo da API.
+      return new ApiResponse<string>(true, "Link de redefinição obtido.", resetLink, ObterNotificacoesParaResposta().ToList());
+    }
+
+    /*
+    public async Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string scheme, string host)
+    {
+        var apiResponse = new ApiResponse<bool>();
+        try
         {
-            var apiResponse = new ApiResponse<bool>();
-
-            // Alerta de segurança: não informamos se o usuário existe ou não
-            Notificar("Sucesso", "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas.");
-            apiResponse.Success = true;
-            apiResponse.Data = true;
-
-            try
+            var result = await _identityService.ForgotPasswordAsync(email, scheme, host);
+            if (result)
             {
-                var result = await _identityService.ForgotPasswordAsync(email, baseUrl);
-
-                if (result)
-                {
-                    apiResponse.Success = true;
-                    apiResponse.Data = true;
-                    Notificar("Sucesso", "Instruções para redefinição de senha enviadas para o seu e-mail.");
-                    // Opcional: Logar o erro internamente para monitoramento, mas não notificar o usuário
-                   // _logger.LogWarning($"Falha na solicitação de redefinição de senha para o e-mail '{email}': " +
-                   //                    $"{result.FirstOrDefault()?.Mensagem}");
-                }
+                apiResponse.Success = true;
+                apiResponse.Data = true;
+                Notificar("Sucesso", "Instruções para redefinição de senha enviadas para o seu e-mail.");
             }
-            catch (Exception ex)
+            else
             {
-                // Se o IdentityService não notificar o erro, nós o fazemos aqui.
                 if (!ObterNotificacoesParaResposta().Any())
                 {
                     Notificar("Erro", "Falha ao solicitar redefinição de senha. Verifique o e-mail ou tente novamente.");
                 }
-                //_logger.LogError(ex, $"EXCEÇÃO NO ESQUECI MINHA SENHA: {ex.Message}");
             }
-
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
         }
-
-        /*
-        public async Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string scheme, string host)
+        catch (Exception ex)
         {
-            var apiResponse = new ApiResponse<bool>();
-            try
-            {
-                var result = await _identityService.ForgotPasswordAsync(email, scheme, host);
-                if (result)
-                {
-                    apiResponse.Success = true;
-                    apiResponse.Data = true;
-                    Notificar("Sucesso", "Instruções para redefinição de senha enviadas para o seu e-mail.");
-                }
-                else
-                {
-                    if (!ObterNotificacoesParaResposta().Any())
-                    {
-                        Notificar("Erro", "Falha ao solicitar redefinição de senha. Verifique o e-mail ou tente novamente.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
-                _logger.LogError(ex, $"EXCEÇÃO NO ESQUECI MINHA SENHA: {ex.Message}");
-            }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
+            Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
+            _logger.LogError(ex, $"EXCEÇÃO NO ESQUECI MINHA SENHA: {ex.Message}");
         }
-        */
+        apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+        return apiResponse;
+    }
+    */
 
 
-        public async Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword)
+    public async Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword)
         {
             var apiResponse = new ApiResponse<bool>();
             try

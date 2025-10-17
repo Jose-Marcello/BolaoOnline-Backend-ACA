@@ -369,7 +369,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
       var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
 
       // >>> LOG CRÍTICO PARA CAPTURAR O TOKEN/LINK DURANTE O DEBUG EM PRODUÇÃO <<<
-      _logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
+      //_logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
 
       try
       {
@@ -380,7 +380,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
         await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
 
         _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de redefinição de senha enviado para {user.Email}.", null));
-        _logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
+        //_logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
 
         // Retorna o link que foi enviado (o token está dentro dele)
         return resetLink;
@@ -389,7 +389,7 @@ namespace ApostasApp.Core.Infrastructure.Identity
       {
         // 4. Se o envio do e-mail falhar, loga o erro, mas retorna o link para o debug.
         _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de redefinição para {user.Email}: {ex.Message}", null));
-        _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}. RETORNANDO LINK PARA DEBUG.");
+        //_logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}. RETORNANDO LINK PARA DEBUG.");
 
         // Retorna o link para que o debug possa ser feito mesmo com a falha de e-mail.
         return resetLink;

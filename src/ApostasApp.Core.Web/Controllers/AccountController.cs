@@ -122,31 +122,16 @@ namespace ApostasApp.Core.Web.Controllers
         return CustomValidationProblem(ModelState);
       }
 
-      // Lê a URL base do frontend a partir da configuração
-      var baseUrl = _configuration.GetValue<string>("FrontendUrls:BaseUrl");
+      var baseUrl = _configuration.GetValue<string>("FrontendUrls:ResetUrls");
 
-      // O SERVIÇO AGORA RETORNA A STRING DO LINK COMPLETO (OU null)
-      var resetLink = await _usuarioService.ForgotPasswordAsync(request.Email, baseUrl);
+      // O SERVIÇO RETORNA O OBJETO COMPLETO DE RESPOSTA (ApiResponse<string>)
+      // Renomeamos a variável para 'response' para clareza
+      var response = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, baseUrl);
 
-      if (string.IsNullOrEmpty(resetLink))
-      {
-        // Esta é a resposta segura (não diz se o email existe) que seu código original pretendia
-        _notificador.Handle(new Notificacao(null, "Sucesso", "Se o endereço de e-mail estiver correto, você receberá um link de redefinição.", null));
-
-        // Retorna uma resposta genérica de sucesso, sem o link no corpo (PARA AMBIENTE DE PRODUÇÃO REAL)
-        return CustomResponse(new { message = "Se o endereço de e-mail estiver correto, você receberá um link de redefinição." });
-      }
-
-      // >>> >>> AQUI É O NOSSO PONTO DE DEBUG CRÍTICO! <<< <<<
-
-      // O App Service está vivo e gerou o link. Retornamos o link para o Postman
-      // em um corpo JSON para que possamos copiá-lo.
-      return Ok(new
-      {
-        message = "Link de redefinição gerado. (DEBUG MODE)",
-        resetLink = resetLink,
-        // Usamos status 200 para indicar que a requisição foi processada com sucesso
-      });
+      // CORREÇÃO: O Controller agora apenas retorna o objeto de resposta.
+      // O Service já contém a lógica de segurança e as notificações, e o link (resetLink) 
+      // estará em 'response.Data' para o debug.
+      return CustomResponse(response);
     }
 
 
