@@ -348,70 +348,73 @@ namespace ApostasApp.Core.Infrastructure.Identity
         }
 
 
-        public async Task<bool> ForgotPasswordAsync(string email, string baseUrl)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
+    // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
 
-            // Evita a enumeração de usuários. Retorna true para dar o mesmo feedback.
-            if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
-            {
-                _logger.LogWarning($"Tentativa de redefinição de senha para e-mail inexistente ou não confirmado: {email}");
-                // Não retorna erro ao cliente, apenas loga.
-                return true;
-            }
+    public async Task<string> ForgotPasswordAsync(string email, string baseUrl) // Assinatura mudada para string
+    {
+      var user = await _userManager.FindByEmailAsync(email);
 
-            // 1. Gera o token
-            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+      // Evita a enumeração de usuários. Retorna null para o cliente, mas loga.
+      if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
+      {
+        _logger.LogWarning($"Tentativa de redefinição de senha para e-mail inexistente ou não confirmado: {email}");
+        return null; // Retorna nulo para indicar que o processo não continuou/usuário não é válido
+      }
 
-            // >>> ADICIONE ESTAS DUAS LINHAS CRÍTICAS PARA DEBUG EM PRODUÇÃO <<<
-            var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            _logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
-            // Use LogError para garantir que passe pelo filtro de Warning/Error
+      // 1. Gera o token
+      var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 
       // 2. Monta o link de redefinição usando o baseUrl seguro
-      //var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+      // O token não precisa ser Uri.EscapeDataString(code) se for Base64 URL-safe, mas vamos manter a codificação para segurança.
+      var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
 
-            try
-            {
-                // 3. Envia o e-mail
-                var subject = "Redefinir sua senha - Bolão Online";
-                var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Para redefinir sua senha, por favor, clique neste link:</p><p><a href='{resetLink}'>Redefinir Senha</a></p><p>Se você não solicitou esta redefinição, por favor, ignore este e-mail.</p>";
+      // >>> LOG CRÍTICO PARA CAPTURAR O TOKEN/LINK DURANTE O DEBUG EM PRODUÇÃO <<<
+      _logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
 
-                await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
+      try
+      {
+        // 3. Tenta Enviar o e-mail (MOCK)
+        var subject = "Redefinir sua senha - Bolão Online";
+        var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Para redefinir sua senha, por favor, clique neste link:</p><p><a href='{resetLink}'>Redefinir Senha</a></p><p>Se você não solicitou esta redefinição, por favor, ignore este e-mail.</p>";
 
-                _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de redefinição de senha enviado para {user.Email}.", null));
-                _logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
+        await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de redefinição para {user.Email}: {ex.Message}", null));
-                _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}.");
-                return false;
-            }
-        }
+        _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de redefinição de senha enviado para {user.Email}.", null));
+        _logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
 
-        /*
-        public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
-       
+        // Retorna o link que foi enviado (o token está dentro dele)
+        return resetLink;
+      }
+      catch (Exception ex)
+      {
+        // 4. Se o envio do e-mail falhar, loga o erro, mas retorna o link para o debug.
+        _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de redefinição para {user.Email}: {ex.Message}", null));
+        _logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}. RETORNANDO LINK PARA DEBUG.");
+
+        // Retorna o link para que o debug possa ser feito mesmo com a falha de e-mail.
+        return resetLink;
+      }
+    }
+    /*
+    public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
+
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
-            {
-                return true; // Evita enumeração de usuários
-            }
-
-            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var resetLink = $"{scheme}://{host}/Account/ResetPassword?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-            // Passa Notificacao para o notificador
-            _notificador.Handle(new Notificacao(null, "Sucesso", $"Link de redefinição de senha gerado para {user.Email}: {resetLink}", null));
-            _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
-            return true;
+            return true; // Evita enumeração de usuários
         }
-        */
 
-        public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
+        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var resetLink = $"{scheme}://{host}/Account/ResetPassword?userId={user.Id}&code={Uri.EscapeDataString(code)}";
+        // Passa Notificacao para o notificador
+        _notificador.Handle(new Notificacao(null, "Sucesso", $"Link de redefinição de senha gerado para {user.Email}: {resetLink}", null));
+        _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
+        return true;
+    }
+    */
+
+    public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
         {
             var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
             if (!result.Succeeded)

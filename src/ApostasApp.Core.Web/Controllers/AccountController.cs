@@ -10,6 +10,7 @@ using ApostasApp.Core.Infrastructure.Notificacoes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding; // Para ModelStateDictionary
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 
 namespace ApostasApp.Core.Web.Controllers
@@ -109,39 +110,47 @@ namespace ApostasApp.Core.Web.Controllers
         }
 
 
-        [HttpPost("forgot-password")]
-        [AllowAnonymous]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
-        {
-            _logger.LogInformation($"Requisição de Esqueci Minha Senha para: {request.Email}");
+    // Localização: ApostasApp.Core.Web.Controllers/AccountController.cs
 
-            if (!ModelState.IsValid)
-            {
-                return CustomValidationProblem(ModelState); // Usa o método da BaseController
-            }
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+    {
+      // O seu código CustomValidationProblem pode ser inserido aqui
+      if (!ModelState.IsValid)
+      {
+        return CustomValidationProblem(ModelState);
+      }
 
-            var baseUrl = _configuration.GetValue<string>("FrontendUrls:BaseUrl");
-            var result = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, baseUrl);
+      // Lê a URL base do frontend a partir da configuração
+      var baseUrl = _configuration.GetValue<string>("FrontendUrls:BaseUrl");
 
-            //var scheme = HttpContext.Request.Scheme;
-            //var host = HttpContext.Request.Host.ToUriComponent();
+      // O SERVIÇO AGORA RETORNA A STRING DO LINK COMPLETO (OU null)
+      var resetLink = await _usuarioService.ForgotPasswordAsync(request.Email, baseUrl);
 
-            //var result = await _usuarioService.EsqueciMinhaSenhaAsync(request.Email, scheme, host);
+      if (string.IsNullOrEmpty(resetLink))
+      {
+        // Esta é a resposta segura (não diz se o email existe) que seu código original pretendia
+        _notificador.Handle(new Notificacao(null, "Sucesso", "Se o endereço de e-mail estiver correto, você receberá um link de redefinição.", null));
 
-            if (result.Success)
-            {
-                _logger.LogInformation($"E-mail de redefinição de senha enviado para {request.Email}.");
-            }
-            else
-            {
-                _logger.LogWarning($"Falha na solicitação de redefinição de senha para {request.Email}.");
-            }
+        // Retorna uma resposta genérica de sucesso, sem o link no corpo (PARA AMBIENTE DE PRODUÇÃO REAL)
+        return CustomResponse(new { message = "Se o endereço de e-mail estiver correto, você receberá um link de redefinição." });
+      }
 
-            // CORRIGIDO: Usando CustomResponse
-            return CustomResponse(result); // Retorna a ApiResponse do serviço de forma consistente
-        }
+      // >>> >>> AQUI É O NOSSO PONTO DE DEBUG CRÍTICO! <<< <<<
 
-        [HttpPost("reset-password")]
+      // O App Service está vivo e gerou o link. Retornamos o link para o Postman
+      // em um corpo JSON para que possamos copiá-lo.
+      return Ok(new
+      {
+        message = "Link de redefinição gerado. (DEBUG MODE)",
+        resetLink = resetLink,
+        // Usamos status 200 para indicar que a requisição foi processada com sucesso
+      });
+    }
+
+
+    [HttpPost("reset-password")]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {

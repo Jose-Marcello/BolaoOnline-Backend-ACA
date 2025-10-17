@@ -49,7 +49,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
+//builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
 
 
 // === LEITURA E DEBUG DA CONNECTION STRING ===

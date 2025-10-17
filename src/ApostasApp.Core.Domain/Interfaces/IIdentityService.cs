@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Domain.Interfaces.Identity\IIdentityService.cs
+// Localização: ApostasApp.Core.Domain.Interfaces.Identity\IIdentityService.cs
 using ApostasApp.Core.Domain.Models.Identity; // Para LoginResult e AuthResult
 using ApostasApp.Core.Domain.Models.Usuarios; // Para Usuario
 using System.Security.Claims; // Para AuthResult (se AuthResult usa Claims, embora não diretamente na interface)
@@ -31,9 +31,10 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
 
         // Métodos de Redefinição de Senha e Confirmação de E-mail
         //Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
-        Task<bool> ForgotPasswordAsync(string email, string baseUrl);
+        //Task<bool> ForgotPasswordAsync(string email, string baseUrl);
+        Task<string> ForgotPasswordAsync(string email, string baseUrl); // DEVE retornar string (o link)
 
-        Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
+    Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
 
         // Métodos de Alteração de E-mail
         Task<AuthResult> GenerateChangeEmailTokenAsync(string userId, string newEmail); // Retorna AuthResult
