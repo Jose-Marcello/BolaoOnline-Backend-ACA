@@ -5,6 +5,7 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
 using ApostasApp.Core.Domain.Models.Notificacoes; // AGORA USAR Notificacao
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
+using ApostasApp.Core.Infrastructure.Notificacoes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -360,6 +361,16 @@ namespace ApostasApp.Core.Infrastructure.Identity
       {
         _logger.LogWarning($"Tentativa de redefinição de senha para e-mail inexistente ou não confirmado: {email}");
         return null; // Retorna nulo para indicar que o processo não continuou/usuário não é válido
+      }
+
+      // << AQUI ESTÁ A LÓGICA CRÍTICA >>
+      if (!await _userManager.IsEmailConfirmedAsync(user))
+      {
+        // Não envia o email de reset!
+        // Retorna a mensagem de segurança, mas também registra uma notificação para o front-end
+        //Notificar("Erro", "Conta não confirmada."); // <<< NOTIFICAÇÃO ESPECÍFICA
+        _notificador.Handle(new Notificacao("Erro", "Conta não confirmada."));
+        return null;  
       }
 
       // 1. Gera o token
