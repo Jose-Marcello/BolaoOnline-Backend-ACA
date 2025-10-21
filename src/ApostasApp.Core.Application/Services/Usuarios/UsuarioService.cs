@@ -207,30 +207,42 @@ namespace ApostasApp.Core.Application.Services.Usuarios
     // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs (Implementação)
     // NOTE: Assume-se que UsuarioService herda de BaseService.
 
+    // UsuarioService.cs
+
     public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
     {
-      // A chamada ao IdentityService (que agora retorna o link/token como string)
+      // Tentamos obter o link do IdentityService (ele retorna null se o usuário não existe OU não está confirmado)
       var resetLink = await _identityService.ForgotPasswordAsync(email, baseUrl);
 
-      // 1. Lógica para o caso de o IdentityService retornar NULL/String vazia (medida de segurança)
-      if (string.IsNullOrEmpty(resetLink))
+      // 1. Lógica para MOCK (Se o resetLink não for null, o IdentityService gerou um token, seja para debug ou para envio real)
+      if (!string.IsNullOrEmpty(resetLink))
       {
-        // Notificação de segurança (não revela se o usuário existe)
-        Notificar("Sucesso", "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas.");
+        // Notificamos que o e-mail foi enviado (para o usuário)
+        Notificar("Sucesso", "Instruções para redefinição de senha enviadas (Link gerado para DEBUG/Envio).");
 
-        // Retorna ApiResponse de sucesso, mas com Data nula (string) e as notificações.
-        // O método CustomResponse do BaseService será chamado no Controller.
-        return new ApiResponse<string>(true, "Solicitação processada.", null, ObterNotificacoesParaResposta().ToList());
+        // Retorna o link para o front-end (MOCK ou Produção)
+        return new ApiResponse<string>(true, "Link de redefinição obtido.", resetLink, ObterNotificacoesParaResposta().ToList());
       }
 
-      // 2. Lógica para DEBUG CRÍTICO (O Token foi gerado e está no link)
+      // 2. Lógica para BLOQUEIO/SEGURANÇA (resetLink é NULL)
+      // O usuário não existe OU a conta não está confirmada (regra de segurança do IdentityService)
 
-      // Notificamos que o e-mail foi enviado (mesmo que seja mock)
-      Notificar("Sucesso", "Instruções para redefinição de senha enviadas (Link gerado para DEBUG).");
+      // Para dar uma UX melhor e mais clara:
+      var user = await _userManager.FindByEmailAsync(email); // Tenta buscar o usuário novamente (se tiver acesso ao _userManager)
 
-      // Retorna o ApiResponse com o link como Data (string).
-      // A Controller irá pegar esta Data e retorná-la como Status 200 OK no corpo da API.
-      return new ApiResponse<string>(true, "Link de redefinição obtido.", resetLink, ObterNotificacoesParaResposta().ToList());
+      if (user != null && !user.EmailConfirmed)
+      {
+        // Se a conta existe, mas não está confirmada: Notificação CLARA
+        Notificar("Erro", $"Sua conta ({email}) ainda não foi confirmada. Por favor, ative-a antes de redefinir a senha.");
+      }
+      else
+      {
+        // Se o usuário não existe (Bloqueio de enumeração): Notificação de segurança genérica
+        Notificar("Sucesso", "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas.");
+      }
+
+      // Retorna a ApiResponse com Data nula (null) e a notificação relevante (de segurança ou de erro).
+      return new ApiResponse<string>(true, "Solicitação processada.", null, ObterNotificacoesParaResposta().ToList());
     }
 
     /*

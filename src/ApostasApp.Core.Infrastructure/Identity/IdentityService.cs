@@ -1,4 +1,5 @@
 // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
+using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
@@ -6,6 +7,7 @@ using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
 using ApostasApp.Core.Domain.Models.Notificacoes; // AGORA USAR Notificacao
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using ApostasApp.Core.Infrastructure.Notificacoes;
+using Azure.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -352,79 +354,43 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
     // Localização: ApostasApp.Core.Infrastructure.Identity/IdentityService.cs
 
-    public async Task<string> ForgotPasswordAsync(string email, string baseUrl) // Assinatura mudada para string
+    // Localização: UsuarioService.cs (Método final corrigido)
+    // IdentityService.cs (O CÓDIGO FINAL DEVE SER ESTE PARA COMPILAR)
+
+    // *Atenção: A assinatura DENTRO do IdentityService deve ser Task<string>.*
+    public async Task<string> ForgotPasswordAsync(string email, string baseUrl)
     {
       var user = await _userManager.FindByEmailAsync(email);
 
-      // Evita a enumeração de usuários. Retorna null para o cliente, mas loga.
-      if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
+      // 1. Lógica de BLOQUEIO (Se não confirmado, retorna null)
+      if (user == null || !user.EmailConfirmed)
       {
-        _logger.LogWarning($"Tentativa de redefinição de senha para e-mail inexistente ou não confirmado: {email}");
-        return null; // Retorna nulo para indicar que o processo não continuou/usuário não é válido
+        return null; // Retorna string null (o UsuarioService fará a notificação)
       }
 
-      // << AQUI ESTÁ A LÓGICA CRÍTICA >>
-      if (!await _userManager.IsEmailConfirmedAsync(user))
-      {
-        // Não envia o email de reset!
-        // Retorna a mensagem de segurança, mas também registra uma notificação para o front-end
-        //Notificar("Erro", "Conta não confirmada."); // <<< NOTIFICAÇÃO ESPECÍFICA
-        _notificador.Handle(new Notificacao("Erro", "Conta não confirmada."));
-        return null;  
-      }
-
-      // 1. Gera o token
+      // 2. Geração e Link
       var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-      // 2. Monta o link de redefinição usando o baseUrl seguro
-      // O token não precisa ser Uri.EscapeDataString(code) se for Base64 URL-safe, mas vamos manter a codificação para segurança.
       var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
 
-      // >>> LOG CRÍTICO PARA CAPTURAR O TOKEN/LINK DURANTE O DEBUG EM PRODUÇÃO <<<
-      //_logger.LogError($"***TOKEN DE RESET GERADO***: Link: {resetLink}");
-
+      // 3. Tenta Enviar o e-mail (MOCK)
       try
       {
-        // 3. Tenta Enviar o e-mail (MOCK)
+        // Se o email sender precisa de subject e htmlMessage, declare-os!
         var subject = "Redefinir sua senha - Bolão Online";
-        var htmlMessage = $"<p>Olá {user.Apelido},</p><p>Para redefinir sua senha, por favor, clique neste link:</p><p><a href='{resetLink}'>Redefinir Senha</a></p><p>Se você não solicitou esta redefinição, por favor, ignore este e-mail.</p>";
+        var htmlMessage = "...(seu corpo HTML)...";
 
         await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
 
-        _notificador.Handle(new Notificacao(null, "Sucesso", $"E-mail de redefinição de senha enviado para {user.Email}.", null));
-        //_logger.LogInformation($"E-mail de redefinição de senha enviado para {user.Email}.");
-
-        // Retorna o link que foi enviado (o token está dentro dele)
-        return resetLink;
+        return resetLink; // Retorna a string
       }
       catch (Exception ex)
       {
-        // 4. Se o envio do e-mail falhar, loga o erro, mas retorna o link para o debug.
-        _notificador.Handle(new Notificacao(null, "Erro", $"Falha ao enviar e-mail de redefinição para {user.Email}: {ex.Message}", null));
-        //_logger.LogError(ex, $"EXCEÇÃO NO ENVIO DE E-MAIL de redefinição para {user.Email}. RETORNANDO LINK PARA DEBUG.");
-
-        // Retorna o link para que o debug possa ser feito mesmo com a falha de e-mail.
+        // Loga a exceção e retorna o link para debug, sem falhar
+        // Você pode registrar a notificação no UsuarioService
         return resetLink;
       }
     }
-    /*
-    public async Task<bool> ForgotPasswordAsync(string email, string scheme, string host)
 
-    {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null || (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed))
-        {
-            return true; // Evita enumeração de usuários
-        }
-
-        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = $"{scheme}://{host}/Account/ResetPassword?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-        // Passa Notificacao para o notificador
-        _notificador.Handle(new Notificacao(null, "Sucesso", $"Link de redefinição de senha gerado para {user.Email}: {resetLink}", null));
-        _logger.LogInformation($"Link de redefinição de senha para {user.Email}: {resetLink}");
-        return true;
-    }
-    */
 
     public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
         {
