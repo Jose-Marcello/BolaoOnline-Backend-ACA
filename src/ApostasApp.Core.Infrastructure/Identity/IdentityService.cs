@@ -7,7 +7,7 @@ using ApostasApp.Core.Domain.Models.Identity; // Para AuthResult, LoginResult
 using ApostasApp.Core.Domain.Models.Notificacoes; // AGORA USAR Notificacao
 using ApostasApp.Core.Domain.Models.Usuarios; // Para a classe Usuario
 using ApostasApp.Core.Infrastructure.Notificacoes;
-using Azure.Core;
+//using Azure.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;

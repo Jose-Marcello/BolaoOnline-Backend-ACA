@@ -2,63 +2,40 @@ using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.IO;
 
-namespace ApostasApp.Core.Infrastructure
+namespace ApostasApp.Core.Infrastructure // <--- Confirme o Namespace Correto
 {
   public class MeuDbContextFactory : IDesignTimeDbContextFactory<MeuDbContext>
   {
     public MeuDbContext CreateDbContext(string[] args)
     {
+      var optionsBuilder = new DbContextOptionsBuilder<MeuDbContext>();
+
+      // 1. Configuração do AppSettings para ler a string de conexão
+      // Nota: Adicione 'src/ApostasApp.Core.Web/' ao SetBasePath se o appsettings estiver lá.
       var configuration = new ConfigurationBuilder()
           .SetBasePath(Directory.GetCurrentDirectory())
-          .AddJsonFile("appsettings.Production.json")
+          .AddJsonFile("appsettings.json", optional: true) // Ler o principal (se existir)
+          .AddJsonFile("appsettings.Development.json", optional: true)
           .Build();
 
-      var builder = new DbContextOptionsBuilder<MeuDbContext>();
+      // Tenta obter a string de conexão (que deve ser formatada para PostgreSQL)
       var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-      builder.UseSqlServer(connectionString);
+      // 2. Se a string de conexão não for encontrada no appsettings.json, use um placeholder para o EF inspecionar o modelo.
+      if (string.IsNullOrEmpty(connectionString))
+      {
+        // ATENÇÃO: Esta é apenas uma string PLACEHOLDER. O EF Core vai carregar a string do projeto de startup em tempo real.
+        // Mas, o builder precisa de uma string inicial. Usamos a estrutura básica do Postgres.
+        connectionString = "Host=localhost;Database=postgres_temp;Username=postgres;Password=123";
+      }
 
-      return new MeuDbContext(builder.Options);
+      // 3. << CORREÇÃO CRÍTICA: USAR NPGSQL (POSTGRESQL) >>
+      optionsBuilder.UseNpgsql(connectionString);
+
+      return new MeuDbContext(optionsBuilder.Options);
     }
   }
 }
-
-
-
-/*
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration; // Necessário para IConfiguration
-using System.IO; // Necessário para Path
-using System; // Necessário para InvalidOperationException
-
-// *** Mantenha o MESMO namespace do seu MeuDbContext ***
-namespace ApostasApp.Core.Infrastructure.Data.Context
-{
-    // Esta classe é usada apenas pelas ferramentas do Entity Framework Core
-    // para criar uma instância do DbContext em tempo de design (para migrações).
-    public class MeuDbContextFactory : IDesignTimeDbContextFactory<MeuDbContext>
-    {
-        public MeuDbContext CreateDbContext(string[] args)
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<MeuDbContext>();
-
-            // Este é um método simplificado e robusto para o IDesignTimeDbContextFactory.
-            // Quando Add-Migration é executado com -StartupProject, as ferramentas do EF Core
-            // **já carregam a configuração do projeto de startup**.
-            // Portanto, a fábrica não precisa (e geralmente não deve) tentar ler o appsettings.json por si mesma.
-            // Ela só precisa fornecer uma maneira de criar o DbContext.
-
-            // A string de conexão abaixo é um placeholder para que o EF Core
-            // consiga instanciar o DbContext em tempo de design para inspecionar o modelo.
-            // ELA NÃO SERÁ USADA EM TEMPO DE EXECUÇÃO PELA SUA APLICAÇÃO.
-            // Use uma string de conexão válida para seu SQL Server.
-            //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ApostasAppDb;Trusted_Connection=True;MultipleActiveResultSets=true");
-            optionsBuilder.UseSqlServer("Server=DESKTOP-1VSTFVA\\SQLEXPRESS;Database=BolaoLocalV2;User Id=sa;Password=Teste@123;MultipleActiveResultSets=true;TrustServerCertificate=True;MultipleActiveResultSets=true");
-            return new MeuDbContext(optionsBuilder.Options);
-        }
-    }
-}
-*/

@@ -13,33 +13,26 @@ using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.Web.Configurations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.SpaServices;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System;
-using System.Collections.Generic;
-using System.IO;
+using System.Text;
+using System.Text.Json.Serialization; // Corrigido para System.Text.Json.Serialization
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
-
+using System.Text.Json; // Mantenha este import para System.Text.Json
+using System.Globalization; // Adicionado para parsing da Connection String do Heroku
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === CONFIGURAÇÃO DE HEADERS DE PROXY (CRÍTICO PARA AZURE) ===
+// === CONFIGURAÇÃO DE HEADERS DE PROXY ===
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
   options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -47,27 +40,40 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
   options.KnownProxies.Clear();
 });
 
-
-// === LEITURA E LOG DA CONNECTION STRING ===
+// === CONFIGURAÇÃO DA CONNECTION STRING PARA POSTGRESQL (SUPORTE HEROKU) ===
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// LÓGICA CRÍTICA: Se estiver no Heroku, a Connection String é injetada como URL e precisa ser convertida.
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+  // Converte a URL do Heroku (postgres://user:pass@host:port/db) para a string de conexão padrão do Npgsql
+  var uri = new Uri(databaseUrl);
+  var userInfo = uri.UserInfo.Split(':');
+
+  connectionString = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.LocalPath.Substring(1)};Pooling=true;SSL Mode=Prefer;TrustServerCertificate=true";
+}
+
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // ===========================================
-
 
 // ===================================================================================================
 // Configurações de Serviços - Services
 // ===================================================================================================
 
-// === DBContext E IDENTITY ===
+// === DBContext E IDENTITY - MIGRADO PARA NPGSQL (POSTGRESQL) ===
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
-  options.UseSqlServer(connectionString,
-      sqlServerOptionsAction: sqlOptions =>
+  options.UseNpgsql(connectionString,
+      npgsqlOptionsAction: sqlOptions =>
       {
         sqlOptions.EnableRetryOnFailure(
-              maxRetryCount: 10,
-              maxRetryDelay: TimeSpan.FromSeconds(30),
-              errorNumbersToAdd: null);
+          maxRetryCount: 10,
+          maxRetryDelay: TimeSpan.FromSeconds(30),
+          errorCodesToAdd: new string[0]
+
+);
       })
       .LogTo(Console.WriteLine, LogLevel.Information);
 });
@@ -137,7 +143,8 @@ builder.Services.AddAutoMapper(cfg =>
 // Configuração de Controladores, Swagger e CORS
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-  options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+  // << CORREÇÃO TIPAGEM >> System.Text.Json.Serialization.ReferenceHandler.Preserve
+  options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
 
 
@@ -149,10 +156,10 @@ builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
       policy => policy.WithOrigins(
-              "http://localhost:4200",
-              "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-              "https://app.palpitesbolao.com.br" // Adicione esta linha
-          )
+          "http://localhost:4200",
+          "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+          "https://app.palpitesbolao.com.br" // Adicione esta linha
+      )
       .AllowAnyHeader()
       .AllowAnyMethod()
       .AllowCredentials());
@@ -170,12 +177,7 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI();
 }
 
-app.UseForwardedHeaders(); // Apenas a chamada simples, a configuração está em builder.Services.Configure
-
-// OPÇÃO 1 (Manter a rota de saúde - OPCIONAL)
-app.MapGet("/live-test", () => Results.Ok("LIVE"));
-
-//app.UseHttpsRedirection(); // REMOVIDO/COMENTADO
+app.UseForwardedHeaders();
 
 app.UseRouting();
 
@@ -187,4 +189,11 @@ app.UseAuthorization();
 // As requisições são mapeadas para os controladores
 app.MapControllers();
 
-app.Run();
+// ===================================================================================================
+// INICIALIZAÇÃO DA APLICAÇÃO (SUPORTE HEROKU/AMBIENTE)
+// ===================================================================================================
+
+// LÓGICA CRÍTICA: Usa a porta injetada pelo Heroku ($PORT) ou o padrão 8080/80
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+var url = $"http://0.0.0.0:{port}";
+app.Run(url);
