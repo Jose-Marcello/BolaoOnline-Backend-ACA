@@ -11,6 +11,9 @@ COPY ["src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "src
 COPY ["src/ApostasApp.Core.Domain/ApostasApp.Core.Domain.csproj", "src/ApostasApp.Core.Domain/"]
 COPY ["src/ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj", "src/ApostasApp.Core.Infrastructure/"]
 
+# ADIÇÃO CRÍTICA: Instala a ferramenta EF Core (necessária para rodar as migrations)
+RUN dotnet tool install --global dotnet-ef --version 8.0.4
+
 # Garante que o restore funcione corretamente referenciando a Solution
 RUN dotnet restore ApostasApp.Core.sln
 
@@ -35,7 +38,6 @@ RUN apt-get update && apt-get install -y libpq-dev \
 COPY --from=build /app/publish ./
 
 # [AJUSTE HEROKU] Define a porta que o Heroku espera (8080)
-# O Heroku injeta a variável PORT. O ASP.NET Core usa isso automaticamente.
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
