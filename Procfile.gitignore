@@ -1,0 +1,2 @@
+release: dotnet ef database update --project src/ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj
+web: dotnet ApostasApp.Core.Web.dll
