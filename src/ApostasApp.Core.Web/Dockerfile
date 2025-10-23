@@ -43,3 +43,15 @@ EXPOSE 8080
 
 # Ponto de entrada
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
+
+# Adicionar o script ao contêiner
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# [AJUSTE HEROKU] Porta
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+# Mudar o ponto de entrada para o script customizado
+ENTRYPOINT ["./entrypoint.sh"]
+
