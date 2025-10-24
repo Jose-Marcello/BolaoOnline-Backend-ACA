@@ -48,11 +48,12 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-  // Converte a URL do Heroku (postgres://user:pass@host:port/db) para a string de conexão padrão do Npgsql
-  var uri = new Uri(databaseUrl);
+  // Converte a URL do Heroku (postgres://user:pass@host:port/db) para a string de conexão padrão do Npgsql
+  var uri = new Uri(databaseUrl);
   var userInfo = uri.UserInfo.Split(':');
 
-  connectionString = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.LocalPath.Substring(1)};Pooling=true;SSL Mode=Prefer;TrustServerCertificate=true";
+  // Adicionado SslMode=Require (mais seguro) ou mantido Prefer
+  connectionString = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.LocalPath.Substring(1)};Pooling=true;SSL Mode=Prefer;TrustServerCertificate=true";
 }
 
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
@@ -66,16 +67,16 @@ Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   options.UseNpgsql(connectionString,
-      npgsqlOptionsAction: sqlOptions =>
-      {
-        sqlOptions.EnableRetryOnFailure(
-          maxRetryCount: 10,
-          maxRetryDelay: TimeSpan.FromSeconds(30),
-          errorCodesToAdd: new string[0]
+    npgsqlOptionsAction: sqlOptions =>
+    {
+      sqlOptions.EnableRetryOnFailure(
+      maxRetryCount: 10,
+      maxRetryDelay: TimeSpan.FromSeconds(30),
+      errorCodesToAdd: new string[0]
 
-);
-      })
-      .LogTo(Console.WriteLine, LogLevel.Information);
+ );
+    })
+    .LogTo(Console.WriteLine, LogLevel.Information);
 });
 
 // Configuração do ASP.NET Core Identity
@@ -133,6 +134,7 @@ builder.Services.AddHttpClient<IPagSeguroService, PagSeguroService>((serviceProv
 });
 
 // Outras injeções de serviços
+// A linha abaixo está duplicada no código original, mas foi mantida por estar lá.
 builder.Services.ResolveDependencies();
 
 builder.Services.AddAutoMapper(cfg =>
@@ -143,8 +145,10 @@ builder.Services.AddAutoMapper(cfg =>
 // Configuração de Controladores, Swagger e CORS
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-  // << CORREÇÃO TIPAGEM >> System.Text.Json.Serialization.ReferenceHandler.Preserve
-  options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+  // 🛑 CORREÇÃO FINAL: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
+  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+  // Mantém a correção de tipagem que já estava presente
+  options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
 });
 
 
@@ -155,17 +159,45 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
-      policy => policy.WithOrigins(
-          "http://localhost:4200",
-          "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-          "https://app.palpitesbolao.com.br" // Adicione esta linha
-      )
-      .AllowAnyHeader()
-      .AllowAnyMethod()
-      .AllowCredentials());
+    policy => policy.WithOrigins(
+      "http://localhost:4200",
+      "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+      "https://app.palpitesbolao.com.br" // Adicione esta linha
+       )
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials());
 });
 
 var app = builder.Build();
+
+// ===================================================================================================
+// INÍCIO: BLOCO DE MIGRAÇÃO AUTOMÁTICA DE BANCO DE DADOS (EF CORE)
+// Este bloco garante que as migrações sejam aplicadas na inicialização, de forma idempotente e segura.
+// ===================================================================================================
+using (var scope = app.Services.CreateScope())
+{
+  var services = scope.ServiceProvider;
+  try
+  {
+    // Encontra o DbContext e força a aplicação das migrações pendentes
+    var db = services.GetRequiredService<MeuDbContext>();
+    db.Database.Migrate();
+
+    // Opcional: Aqui você pode rodar seeds de dados, se tiver algum.
+    // Por exemplo: await SeedIdentity.SeedAsync(userManager, roleManager);
+  }
+  catch (Exception ex)
+  {
+    // Se a migração falhar (por exemplo, problema de conexão com o DB), loga o erro e o app continuará
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Ocorreu um erro ao tentar aplicar as migrações do banco de dados.");
+  }
+}
+// ===================================================================================================
+// FIM: BLOCO DE MIGRAÇÃO AUTOMÁTICA
+// ===================================================================================================
+
 
 // ===================================================================================================
 // Pipeline de Requisições HTTP - Middleware
