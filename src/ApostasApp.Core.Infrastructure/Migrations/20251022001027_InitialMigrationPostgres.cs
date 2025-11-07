@@ -1,12 +1,13 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace ApostasApp.Core.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigrationPostgres : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,10 +16,10 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetRoles",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -29,28 +30,30 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetUsers",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
                     CPF = table.Column<string>(type: "varchar(11)", maxLength: 11, nullable: false),
                     Celular = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
                     Apelido = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
-                    RegistrationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                    FotoPerfil = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    TermsAccepted = table.Column<bool>(type: "boolean", nullable: false),
+                    RegistrationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastLoginDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    RefreshToken = table.Column<string>(type: "text", nullable: false),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "text", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "text", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "text", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -61,14 +64,14 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Campeonatos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Nome = table.Column<string>(type: "varchar(100)", nullable: false),
-                    DataInic = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DataFim = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    NumRodadas = table.Column<int>(type: "int", nullable: false),
-                    Tipo = table.Column<int>(type: "int", nullable: false),
-                    Ativo = table.Column<bool>(type: "bit", nullable: false),
-                    CustoAdesao = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
+                    DataInic = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DataFim = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    NumRodadas = table.Column<int>(type: "integer", nullable: false),
+                    Tipo = table.Column<int>(type: "integer", nullable: false),
+                    Ativo = table.Column<bool>(type: "boolean", nullable: false),
+                    CustoAdesao = table.Column<decimal>(type: "numeric(18,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -79,7 +82,7 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Ufs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Nome = table.Column<string>(type: "varchar(40)", nullable: false),
                     Sigla = table.Column<string>(type: "varchar(2)", nullable: false)
                 },
@@ -92,11 +95,11 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RoleId = table.Column<string>(type: "text", nullable: false),
+                    ClaimType = table.Column<string>(type: "text", nullable: true),
+                    ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -113,10 +116,10 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Apostadores",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UsuarioId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UsuarioId = table.Column<string>(type: "text", nullable: false),
                     NomeCompleto = table.Column<string>(type: "varchar(250)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -133,11 +136,11 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    ClaimType = table.Column<string>(type: "text", nullable: true),
+                    ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -154,10 +157,10 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    LoginProvider = table.Column<string>(type: "text", nullable: false),
+                    ProviderKey = table.Column<string>(type: "text", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "text", nullable: true),
+                    UserId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -174,8 +177,8 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetUserRoles",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    RoleId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -198,10 +201,10 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "AspNetUserTokens",
                 columns: table => new
                 {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    LoginProvider = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Value = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -218,14 +221,14 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Rodadas",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    NumeroRodada = table.Column<int>(type: "int", nullable: false),
-                    DataInic = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DataFim = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    NumJogos = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CustoApostaRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CampeonatoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    NumeroRodada = table.Column<int>(type: "integer", nullable: false),
+                    DataInic = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DataFim = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    NumJogos = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CustoApostaRodada = table.Column<decimal>(type: "numeric(18,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -242,12 +245,12 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Equipes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Nome = table.Column<string>(type: "varchar(100)", nullable: false),
                     Sigla = table.Column<string>(type: "varchar(10)", nullable: false),
                     Escudo = table.Column<string>(type: "varchar(255)", nullable: true),
-                    Tipo = table.Column<int>(type: "int", nullable: false),
-                    UfId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Tipo = table.Column<int>(type: "integer", nullable: false),
+                    UfId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -263,9 +266,9 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Estadios",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Nome = table.Column<string>(type: "varchar(60)", nullable: false),
-                    UfId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    UfId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -281,13 +284,13 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "ApostadoresCampeonatos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostadorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Pontuacao = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    Posicao = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    DataInscricao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CustoAdesaoPago = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CampeonatoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostadorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Pontuacao = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    Posicao = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    DataInscricao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CustoAdesaoPago = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
@@ -310,10 +313,10 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Saldos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostadorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DataUltimaAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostadorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Valor = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    DataUltimaAtualizacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -330,9 +333,9 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "EquipesCampeonatos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EquipeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CampeonatoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EquipeId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -355,17 +358,17 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "ApostasRodada",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostadorCampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostadorCampeonatoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RodadaId = table.Column<Guid>(type: "uuid", nullable: false),
                     IdentificadorAposta = table.Column<string>(type: "varchar(100)", nullable: true),
-                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DataHoraSubmissao = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EhApostaCampeonato = table.Column<bool>(type: "bit", nullable: false),
-                    EhApostaIsolada = table.Column<bool>(type: "bit", nullable: false),
-                    CustoPagoApostaRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    PontuacaoTotalRodada = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Enviada = table.Column<bool>(type: "bit", nullable: false)
+                    DataCriacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DataHoraSubmissao = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EhApostaCampeonato = table.Column<bool>(type: "boolean", nullable: false),
+                    EhApostaIsolada = table.Column<bool>(type: "boolean", nullable: false),
+                    CustoPagoApostaRodada = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
+                    PontuacaoTotalRodada = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Enviada = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -388,12 +391,12 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "RankingRodadas",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostadorCampeonatoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Pontuacao = table.Column<int>(type: "int", nullable: false),
-                    Posicao = table.Column<int>(type: "int", nullable: false),
-                    DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RodadaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostadorCampeonatoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Pontuacao = table.Column<int>(type: "integer", nullable: false),
+                    Posicao = table.Column<int>(type: "integer", nullable: false),
+                    DataAtualizacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -416,16 +419,16 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Jogos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DataJogo = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    HoraJogo = table.Column<TimeSpan>(type: "time", nullable: false),
-                    EstadioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EquipeCasaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EquipeVisitanteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PlacarCasa = table.Column<int>(type: "int", nullable: true),
-                    PlacarVisita = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RodadaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DataJogo = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    HoraJogo = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    EstadioId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EquipeCasaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    EquipeVisitanteId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PlacarCasa = table.Column<int>(type: "integer", nullable: true),
+                    PlacarVisita = table.Column<int>(type: "integer", nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -460,13 +463,15 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "TransacoesFinanceiras",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SaldoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostaRodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Valor = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Tipo = table.Column<int>(type: "int", nullable: false),
-                    DataTransacao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Descricao = table.Column<string>(type: "varchar(250)", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SaldoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostaRodadaId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Valor = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Tipo = table.Column<int>(type: "integer", nullable: false),
+                    DataTransacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Descricao = table.Column<string>(type: "varchar(250)", nullable: false),
+                    ExternalReference = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -488,12 +493,12 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "Palpites",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    JogoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ApostaRodadaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PlacarApostaCasa = table.Column<int>(type: "int", nullable: true),
-                    PlacarApostaVisita = table.Column<int>(type: "int", nullable: true),
-                    Pontos = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    JogoId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ApostaRodadaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PlacarApostaCasa = table.Column<int>(type: "integer", nullable: true),
+                    PlacarApostaVisita = table.Column<int>(type: "integer", nullable: true),
+                    Pontos = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -548,8 +553,7 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "RoleNameIndex",
                 table: "AspNetRoles",
                 column: "NormalizedName",
-                unique: true,
-                filter: "[NormalizedName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -575,8 +579,7 @@ namespace ApostasApp.Core.Infrastructure.Migrations
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
-                unique: true,
-                filter: "[NormalizedUserName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Equipes_UfId",

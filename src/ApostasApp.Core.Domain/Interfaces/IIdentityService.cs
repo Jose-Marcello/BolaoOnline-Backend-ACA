@@ -5,6 +5,8 @@ using System.Security.Claims; // Para AuthResult (se AuthResult usa Claims, embo
 using System.Threading.Tasks;
 using System; // Para DateTime (se usado em LoginResult/AuthResult)
 using System.Collections.Generic; // Para List (se usado em LoginResult/AuthResult)
+using Microsoft.AspNetCore.WebUtilities; // Adicionar esta dependência
+using System.Text;
 
 namespace ApostasApp.Core.Domain.Interfaces.Identity
 {

@@ -1,21 +1,20 @@
-# --- Estágio 1: Build (Compilação) ---
-# Baseia-se na imagem SDK mais recente para compilação
+#------------------------------------------------------------------
+# Estágio 1: Build da Aplicação ASP.NET Core (BUILD) - APENAS COMPILAÇÃO
+#------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia o arquivo de solução
-# (Assumindo que BolaoOnlineProject.sln está na mesma pasta que o Dockerfile)
-COPY ["BolaoOnlineProject.sln", "./"]
-
-# Copia os arquivos .csproj dos projetos necessários (melhora o cache do Docker)
+# Copia e restaura o projeto .NET
+COPY ["ApostasApp.Core.sln", "./"]
 COPY ["src/ApostasApp.Core.Web/ApostasApp.Core.Web.csproj", "src/ApostasApp.Core.Web/"]
 COPY ["src/ApostasApp.Core.Application/ApostasApp.Core.Application.csproj", "src/ApostasApp.Core.Application/"]
-# Adicione outros projetos core/infrastructure aqui...
+COPY ["src/ApostasApp.Core.Domain/ApostasApp.Core.Domain.csproj", "src/ApostasApp.Core.Domain/"]
+COPY ["src/ApostasApp.Core.Infrastructure/ApostasApp.Core.Infrastructure.csproj", "src/ApostasApp.Core.Infrastructure/"]
 
-# Restaura dependências
-RUN dotnet restore "BolaoOnlineProject.sln"
+# Garante o restore
+RUN dotnet restore ApostasApp.Core.sln
 
-# Copia o código-fonte restante
+# Copia o código-fonte e publica
 COPY . .
 
 # Move para o diretório do projeto API
@@ -25,16 +24,31 @@ WORKDIR /src/src/ApostasApp.Core.Web
 RUN dotnet publish "ApostasApp.Core.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 
-# --- Estágio 2: Imagem de Produção Final (Runtime) ---
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+
+#------------------------------------------------------------------
+# Estágio 2: Imagem de Produção Final (RUNTIME) - MIGRATIONS + HEROKU
+#------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Copia os arquivos publicados do estágio 'build'
-COPY --from=build /app/publish .
+# [ADICIONAL CRÍTICO] Instala bibliotecas nativas e dotnet-ef para o MIGRATION SCRIPT
+# Instala libs nativas para PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+    
+# INSTALA A FERRAMENTA EF CORE (AGORA NO RUNTIME, ONDE É NECESSÁRIO PARA O SCRIPT)
+RUN dotnet tool install --global dotnet-ef --version 8.0.4
 
-# ** CRÍTICO PARA ACA: Define a porta de escuta interna como 8080 **
+# Copia os arquivos publicados do backend para a imagem final
+COPY --from=build /app/publish ./
+
+# Copia o script de startup e dá permissão
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# [AJUSTE HEROKU] Define a porta 8080 (Apenas uma vez)
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-# Comando de entrada
-ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]
+# Mudar o ponto de entrada para o script customizado
+ENTRYPOINT ["./entrypoint.sh"]
