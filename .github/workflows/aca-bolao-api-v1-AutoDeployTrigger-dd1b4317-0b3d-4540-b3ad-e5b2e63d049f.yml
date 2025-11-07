@@ -1,49 +1,52 @@
-name: Trigger auto deployment for aca-bolao-api-v1
+name: Trigger auto deployment for aca-bolao-api-v1 # NÃO MUDAR
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
-    branches: 
-      [ master ]
+    branches:
+      - master # Garante que só roda quando o master é atualizado
     paths:
-    - '**'
-    - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-dd1b4317-0b3d-4540-b3ad-e5b2e63d049f.yml'
+      - 'Dockerfile'
+      - 'src/**'
+  workflow_dispatch:
 
-  # Allow manual trigger 
-  workflow_dispatch:      
+env:
+  AZURE_CONTAINER_APPS_RESOURCE_GROUP: rg-banco-itens-dev # MANTENHA O SEU NOME DE RG
+  AZURE_CONTAINER_APPS_NAME: aca-bolao-api-v1 # MANTENHA O SEU NOME DO ACA
+  AZURE_CONTAINER_APPS_ENVIRONMENT: env-bancodeitens # MANTENHA O SEU NOME DO AMBIENTE
+  CONTAINER_REGISTRY_NAME: acrbancoitensdev # MANTENHA SEU NOME DO ACR
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
-
     steps:
-      - name: Checkout to the branch
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Azure Login
-        uses: azure/login@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          client-id: ${{ secrets.ACABOLAOAPIV1_AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.ACABOLAOAPIV1_AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.ACABOLAOAPIV1_AZURE_SUBSCRIPTION_ID }}
+          login-server: ${{ env.CONTAINER_REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.AZURE_CREDENTIALS }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build and push container image to registry
+      - name: Build and deploy Container App
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}
-          _dockerfilePathKey_: _dockerfilePath_
-          _targetLabelKey_: _targetLabel_
-          registryUrl: acrbancoitensdev.azurecr.io
-          registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
-          containerAppName: aca-bolao-api-v1
-          resourceGroup: rg-banco-itens-dev
-          imageToBuild: acrbancoitensdev.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
-
-
+          acrName: ${{ env.CONTAINER_REGISTRY_NAME }}
+          containerAppName: ${{ env.AZURE_CONTAINER_APPS_NAME }}
+          resourceGroup: ${{ env.AZURE_CONTAINER_APPS_RESOURCE_GROUP }}
+          containerAppEnvironment: ${{ env.AZURE_CONTAINER_APPS_ENVIRONMENT }}
+          imageToBuild: ${{ env.CONTAINER_REGISTRY_NAME }}.azurecr.io/${{ env.AZURE_CONTAINER_APPS_NAME }}:${{ github.sha }}
+          dockerfilePath: Dockerfile
+          
+          # ====================================================
+          # CRÍTICO: ADICIONA O PARÂMETRO SEM CACHE
+          # Isso deve resolver o problema de o Npgsql estar 'preso'
+          # ====================================================
+          buildArguments: '--no-cache'
+          
+          targetPort: 8080
+          ingress: external
