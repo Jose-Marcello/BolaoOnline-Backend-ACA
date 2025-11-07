@@ -40,6 +40,7 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // === CONFIGURAÇÃO DE HEADERS DE PROXY (CRÍTICO PARA AZURE) ===
+// ESSENCIAL para que o Container App entenda os headers do SWA
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
   options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -49,6 +50,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 
 // === LEITURA E LOG DA CONNECTION STRING ===
+// O ACA injetará a Connection String como Variável de Ambiente.
+// Esta linha já é perfeita para ler tanto de appsettings quanto do ambiente.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // ===========================================
@@ -58,7 +61,7 @@ Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 // Configurações de Serviços - Services
 // ===================================================================================================
 
-// === DBContext E IDENTITY ===
+// === DBContext E IDENTITY - USANDO SQL SERVER ===
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   options.UseSqlServer(connectionString,
@@ -144,14 +147,16 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS: Permitir acesso APENAS do Front-end SWA (usando a URL de teste localhost e a futura URL do Azure Static Web Apps)
+// CORS: Permitir acesso APENAS do Front-end SWA
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
       policy => policy.WithOrigins(
               "http://localhost:4200",
               "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-              "https://app.palpitesbolao.com.br" // Adicione esta linha
+              "https://app.palpitesbolao.com.br", // Domínio customizado
+                                                  // Adicionamos wildcard para Static Web Apps para ambientes de PR e Staging
+              "https://*.azurestaticapps.net"
           )
       .AllowAnyHeader()
       .AllowAnyMethod()
@@ -164,18 +169,21 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-  app.UseSwagger();
-  app.UseSwaggerUI();
-}
+  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Banco de Itens V1");
+  options.RoutePrefix = string.Empty; // Isso coloca a UI na raiz do domínio (ACA)
+});
+// ...
+app.MapHealthChecks("/health");
 
-app.UseForwardedHeaders(); // Apenas a chamada simples, a configuração está em builder.Services.Configure
+app.UseForwardedHeaders(); // ESSENCIAL para o ACA
+
+//app.UseHttpsRedirection(); // REMOVER/COMENTAR: O SWA/ACA lida com HTTPS
 
 // OPÇÃO 1 (Manter a rota de saúde - OPCIONAL)
 app.MapGet("/live-test", () => Results.Ok("LIVE"));
-
-//app.UseHttpsRedirection(); // REMOVIDO/COMENTADO
 
 app.UseRouting();
 
