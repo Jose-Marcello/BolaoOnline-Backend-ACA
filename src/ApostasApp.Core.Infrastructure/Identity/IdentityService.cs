@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -358,41 +359,44 @@ namespace ApostasApp.Core.Infrastructure.Identity
     // IdentityService.cs (O CÓDIGO FINAL DEVE SER ESTE PARA COMPILAR)
 
     // *Atenção: A assinatura DENTRO do IdentityService deve ser Task<string>.*
-    public async Task<string> ForgotPasswordAsync(string email, string baseUrl)
+    
+
+  public async Task<string> ForgotPasswordAsync(string email, string baseUrl)
+  {
+    var user = await _userManager.FindByEmailAsync(email);
+
+    if (user == null || !user.EmailConfirmed)
     {
-      var user = await _userManager.FindByEmailAsync(email);
-
-      // 1. Lógica de BLOQUEIO (Se não confirmado, retorna null)
-      if (user == null || !user.EmailConfirmed)
-      {
-        return null; // Retorna string null (o UsuarioService fará a notificação)
-      }
-
-      // 2. Geração e Link
-      var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-      var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={Uri.EscapeDataString(code)}";
-
-      // 3. Tenta Enviar o e-mail (MOCK)
-      try
-      {
-        // Se o email sender precisa de subject e htmlMessage, declare-os!
-        var subject = "Redefinir sua senha - Bolão Online";
-        var htmlMessage = "...(seu corpo HTML)...";
-
-        await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
-
-        return resetLink; // Retorna a string
-      }
-      catch (Exception ex)
-      {
-        // Loga a exceção e retorna o link para debug, sem falhar
-        // Você pode registrar a notificação no UsuarioService
-        return resetLink;
-      }
+      return null;
     }
 
+    // 1. Geração do token/code
+    var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-    public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
+    // 2. CODIFICAÇÃO URL-SAFE
+    // Converte o token para bytes e depois para uma string URL-Safe Base64
+    var urlSafeCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+    // 3. Criação do Link usando o token URL-Safe
+    var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={urlSafeCode}";
+
+    // 4. Tentativa de Enviar o e-mail (MOCK ou Real)
+    try
+    {
+      var subject = "Redefinir sua senha - Bolão Online";
+      var htmlMessage = $"Clique <a href='{resetLink}'>aqui</a> para redefinir sua senha.";
+
+      await _emailSender.SendEmailAsync(user.Email, subject, htmlMessage);
+
+      return resetLink; // Retorna a string
+    }
+    catch (Exception ex)
+    {
+      // Se a simulação de email/erro acontecer, você ainda terá o link URL-Safe para testes
+      return resetLink;
+    }
+  }
+  public async Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword)
         {
             var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
             if (!result.Succeeded)

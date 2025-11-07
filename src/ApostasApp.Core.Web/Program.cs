@@ -11,24 +11,27 @@ using ApostasApp.Core.Infrastructure.Identity.Seed;
 using ApostasApp.Core.Infrastructure.Services;
 using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.Web.Configurations;
+using ApostasApp.Core.Web.Controllers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.SpaServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging; // Adicionado para ILogger no bloco de migração
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
-using System.Text.Json.Serialization; // Corrigido para System.Text.Json.Serialization
+//using Npgsql.EntityFrameworkCore.PostgreSQL;
+using System.Globalization; // Adicionado para parsing da Connection String do Heroku
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text;
 using System.Text.Json; // Mantenha este import para System.Text.Json
-using System.Globalization; // Adicionado para parsing da Connection String do Heroku
-using Npgsql.EntityFrameworkCore.PostgreSQL;
+using System.Text.Json.Serialization; // Corrigido para System.Text.Json.Serialization
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,8 +43,60 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
   options.KnownProxies.Clear();
 });
 
-// === CONFIGURAÇÃO DA CONNECTION STRING PARA POSTGRESQL (SUPORTE HEROKU) ===
+// === CONFIGURAÇÃO DO DBCONTEXT (AZURE SQL SERVER) ===
+
+// LER A CONNECTION STRING DIRETAMENTE DA CONFIGURAÇÃO 
+// A chave buscada deve ser "DefaultConnection" (que é mapeada para ConnectionStrings__DefaultConnection no ACA)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+  // Se a string não for encontrada (ex: no ACA sem Segredo), esta exceção ocorre.
+  throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada. Verifique o appsettings.json ou os Segredos do Azure.");
+}
+
+// Injeção do DbContext
+builder.Services.AddDbContext<MeuDbContext>(options =>
+{
+  // MUDANÇA CRÍTICA: Trocando para UseSqlServer
+  options.UseSqlServer(connectionString,
+      sqlServerOptionsAction: sqlOptions =>
+      {
+        // Ativa a retentativa padrão do EF Core (Resiliência de Rede)
+        sqlOptions.EnableRetryOnFailure(
+              maxRetryCount: 10
+          );
+      })
+      .LogTo(Console.WriteLine, LogLevel.Information);
+});
+
+builder.Services.AddDbContext<MeuDbContext>(options =>
+{
+  // === MUDANÇA CRÍTICA: Trocando para UseSqlServer ===
+  options.UseSqlServer(connectionString,
+      sqlServerOptionsAction: sqlOptions =>
+      {
+        // O SqlServer já implementa uma ExecutionStrategy resiliente para o Azure.
+        // Basta habilitar a retentativa padrão.
+
+        sqlOptions.EnableRetryOnFailure(
+              maxRetryCount: 10,
+              maxRetryDelay: TimeSpan.FromSeconds(30),
+              errorNumbersToAdd: null // null usa o conjunto padrão de erros transientes do Azure SQL
+          );
+
+        // Remova a lógica de CockroachDB/Npgsql, pois não é necessária
+        // (MinBatchSize, ExecutionStrategy manual, etc.)
+      })
+      .LogTo(Console.WriteLine, LogLevel.Information);
+
+});
+
+
+// === CONFIGURAÇÃO DA CONNECTION STRING PARA POSTGRESQL (SUPORTE HEROKU) ===
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+/*
+var connectionString = Environment.GetEnvironmentVariable("AZURE-DB-CONN");
 
 // LÓGICA CRÍTICA: Se estiver no Heroku, a Connection String é injetada como URL e precisa ser convertida.
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -67,16 +122,44 @@ Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   options.UseNpgsql(connectionString,
-    npgsqlOptionsAction: sqlOptions =>
-    {
-      sqlOptions.EnableRetryOnFailure(
-      maxRetryCount: 10,
-      maxRetryDelay: TimeSpan.FromSeconds(30),
-      errorCodesToAdd: new string[0]
 
- );
-    })
-    .LogTo(Console.WriteLine, LogLevel.Information);
+        npgsqlOptionsAction: sqlOptions =>
+        {
+          // 1. ESTRATÉGIA DE RETENTATIVA (RetryOnFailure)
+          sqlOptions.EnableRetryOnFailure(
+          maxRetryCount: 10,
+          maxRetryDelay: TimeSpan.FromSeconds(30),
+          errorCodesToAdd: new string[0]
+        );
+
+        // 2. CORREÇÃO CRÍTICA PARA COCKROACHDB/NPGSQL:
+        // O CockroachDB tem problemas com grandes batches e transações.
+        // MinBatchSize(1) força cada comando a ser executado individualmente.
+        sqlOptions.MinBatchSize(1);
+
+        // Necessário incluir o using para o NpgsqlRetryingExecutionStrategy
+        // (Verifique se o using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure; está no topo)
+        sqlOptions.ExecutionStrategy(c => new NpgsqlRetryingExecutionStrategy(c));
+        })
+
+        .LogTo(Console.WriteLine, LogLevel.Information);
+
+});
+
+*/
+
+builder.Services.AddAuthentication()
+  .AddBearerToken(IdentityConstants.BearerScheme, options =>
+  {
+    // Define o tempo de vida do Bearer Token para 3 horas
+    options.BearerTokenExpiration = TimeSpan.FromHours(3);
+  });
+
+
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+  // Define o tempo de vida padrão dos tokens para 3 horas
+  options.TokenLifespan = TimeSpan.FromHours(3);
 });
 
 // Configuração do ASP.NET Core Identity
@@ -92,6 +175,7 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<MeuDbContext>()
 .AddDefaultTokenProviders();
+
 
 // === RESOLVE DEPENDENCIES ===
 builder.Services.ResolveDependencies();
@@ -143,13 +227,15 @@ builder.Services.AddAutoMapper(cfg =>
 });
 
 // Configuração de Controladores, Swagger e CORS
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-  // 🛑 CORREÇÃO FINAL: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
-  options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-  // Mantém a correção de tipagem que já estava presente
-  options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-});
+builder.Services.AddControllers()
+    // 🎯 CORREÇÃO CRÍTICA FINAL: Força a descoberta de Controllers no Assembly que contém a AccountController
+    .AddApplicationPart(typeof(AccountController).Assembly)
+    .AddJsonOptions(options =>
+    {
+      // 🛑 CORREÇÃO FINAL 1: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
+      options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      // options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    });
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -159,14 +245,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
-    policy => policy.WithOrigins(
-      "http://localhost:4200",
-      "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-      "https://app.palpitesbolao.com.br" // Adicione esta linha
-       )
-    .AllowAnyHeader()
-    .AllowAnyMethod()
-    .AllowCredentials());
+   policy => policy.WithOrigins(
+    "http://localhost:4200",
+    "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+    "https://app.palpitesbolao.com.br" // Adicione esta linha
+        )
+   .AllowAnyHeader()
+   .AllowAnyMethod()
+   .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -175,6 +261,7 @@ var app = builder.Build();
 // INÍCIO: BLOCO DE MIGRAÇÃO AUTOMÁTICA DE BANCO DE DADOS (EF CORE)
 // Este bloco garante que as migrações sejam aplicadas na inicialização, de forma idempotente e segura.
 // ===================================================================================================
+/*
 using (var scope = app.Services.CreateScope())
 {
   var services = scope.ServiceProvider;
@@ -197,12 +284,45 @@ using (var scope = app.Services.CreateScope())
 // ===================================================================================================
 // FIM: BLOCO DE MIGRAÇÃO AUTOMÁTICA
 // ===================================================================================================
-
+*/
 
 // ===================================================================================================
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
+
+// 1. Configurações de Roteamento (Deve vir antes de tudo que tem rotas)
+app.UseRouting();
+
+// 2. CORS (Deve vir logo após UseRouting)
+app.UseCors("CorsPolicy"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
+
+// 3. Autenticação e Autorização
+app.UseAuthentication();
+app.UseAuthorization();
+
+// 4. Endpoints Personalizados (Health Checks)
+// Estes devem vir antes de MapControllers, que é o último catch-all.
+app.MapHealthChecks("/health");
+
+// 5. Swagger (Interface)
+// O bloco UseSwagger/UseSwaggerUI DEVE vir aqui no pipeline.
+// Nota: Certifique-se que UseSwagger() está ANTES de UseSwaggerUI().
+
+app.UseSwagger(); // GERA o JSON (Definição da API)
+app.UseSwaggerUI(options =>
+{
+  // Usa o JSON gerado acima
+  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Banco de Itens V1");
+  options.RoutePrefix = "swagger"; // ou string.Empty
+});
+
+// 6. Controllers (O Roteamento Final - Catch All)
+app.MapControllers();
+
+app.Run();
+
+/*
 if (app.Environment.IsDevelopment())
 {
   app.UseSwagger();
@@ -218,14 +338,31 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// As requisições são mapeadas para os controladores
-app.MapControllers();
+// 🛑 CORREÇÃO FINAL 3: Usando UseEndpoints que é mais explícito para o mapeamento de controllers.
+app.UseEndpoints(endpoints =>
+{
+  endpoints.MapControllers();
+});
+
+// app.MapControllers(); // Comente ou remova esta linha se usar UseEndpoints
+
 
 // ===================================================================================================
 // INICIALIZAÇÃO DA APLICAÇÃO (SUPORTE HEROKU/AMBIENTE)
 // ===================================================================================================
 
 // LÓGICA CRÍTICA: Usa a porta injetada pelo Heroku ($PORT) ou o padrão 8080/80
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-var url = $"http://0.0.0.0:{port}";
-app.Run(url);
+// CORREÇÃO:
+#if DEBUG
+// Em ambiente de desenvolvimento (local), usamos as configurações padrão do launchSettings.json (5000/5001)
+// Se a aplicação estiver sendo executada via Visual Studio ou `dotnet run` sem a variável $PORT, 
+// ele usará as portas configuradas no launchSettings.json (5000/5001).
+app.Run();
+#else
+    // LÓGICA CRÍTICA PARA AMBIENTE DE PRODUÇÃO/HEROKU:
+    // Usa a porta injetada pelo Heroku ($PORT) ou o padrão 8080.
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    var url = $"http://0.0.0.0:{port}";
+    app.Run(url);
+#endif
+*/

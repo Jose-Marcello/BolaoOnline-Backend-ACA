@@ -32,6 +32,8 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 
 namespace ApostasApp.Core.Application.Services.Usuarios
 {
@@ -277,44 +279,67 @@ namespace ApostasApp.Core.Application.Services.Usuarios
     */
 
 
-    public async Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword)
-        {
-            var apiResponse = new ApiResponse<bool>();
-            try
-            {
-                var user = await _identityService.GetUserByIdAsync(userId);
-                if (user == null)
-                {
-                    Notificar("Erro", "Usuário não encontrado para redefinição de senha.");
-                    apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-                    return apiResponse;
-                }
 
-                var result = await _identityService.ResetPasswordAsync(user, token, newPassword);
-                if (result)
-                {
-                    apiResponse.Success = true;
-                    apiResponse.Data = true;
-                    Notificar("Sucesso", "Senha redefinida com sucesso!");
-                }
-                else
-                {
-                    if (!ObterNotificacoesParaResposta().Any())
-                    {
-                        Notificar("Erro", "Falha ao redefinir senha. Verifique se o token é válido ou se a senha atende aos requisitos.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
-                _logger.LogError(ex, $"EXCEÇÃO NA REDEFINIÇÃO DE SENHA: {ex.Message}");
-            }
-            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
-            return apiResponse;
+    public async Task<ApiResponse<bool>> RedefinirSenhaAsync(ResetPasswordRequestDto request)
+    {
+      var apiResponse = new ApiResponse<bool>();
+
+      // 🎯 AJUSTE DE LOG: Usando o DTO
+      _logger.LogInformation($"Iniciando RedefinirSenhaAsync para o e-mail: {request.Email}");
+
+      try
+      {
+        // A validação de ModelState (NewPassword vs. ConfirmNewPassword) já ocorreu no Controller.
+
+        // 1. Busca o usuário pelo ID ou E-mail
+        // AGORA ACESSA VIA request.UserId
+        var user = await _identityService.GetUserByIdAsync(request.UserId);
+        if (user == null)
+        {
+          // Tenta buscar por e-mail, caso o userId esteja corrompido, mas o email veio do DTO
+          user = await _identityService.GetUserByEmailAsync(request.Email);
         }
 
-        public async Task<ApiResponse<bool>> ConfirmEmail(string userId, string stringcode)
+        if (user == null)
+        {
+          Notificar("Erro", "Usuário não encontrado para redefinição de senha.");
+          apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+          return apiResponse;
+        }
+
+        // 2. DECODIFICAÇÃO CRÍTICA DO TOKEN (Base64 URL-Safe)
+        // AGORA ACESSA VIA request.Token
+        byte[] decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
+        string originalToken = Encoding.UTF8.GetString(decodedBytes);
+
+        // 3. CHAMA O RESET NO IDENTITY com o token DECODIFICADO
+        // AGORA ACESSA VIA request.NewPassword
+        var result = await _identityService.ResetPasswordAsync(user, originalToken, request.NewPassword);
+
+        if (result)
+        {
+          apiResponse.Success = true;
+          apiResponse.Data = true;
+          Notificar("Sucesso", "Senha redefinida com sucesso!");
+        }
+        else
+        {
+          if (!ObterNotificacoesParaResposta().Any())
+          {
+            Notificar("Erro", "Falha ao redefinir senha. Verifique se o token é válido ou se a senha atende aos requisitos.");
+          }
+        }
+      }
+      catch (Exception ex)
+      {
+        Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
+        _logger.LogError(ex, $"EXCEÇÃO NA REDEFINIÇÃO DE SENHA: {ex.Message}");
+      }
+      apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+      return apiResponse;
+    }
+
+    public async Task<ApiResponse<bool>> ConfirmEmail(string userId, string stringcode)
         {
             var apiResponse = new ApiResponse<bool>();
             try

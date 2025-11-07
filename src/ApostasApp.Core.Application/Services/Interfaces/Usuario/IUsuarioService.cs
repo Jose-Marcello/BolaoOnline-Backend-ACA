@@ -19,7 +19,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Usuarios
         //Task<ApiResponse<bool>> EsqueciMinhaSenhaAsync(string email, string baseUrl);
         Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl); // <<< MUDANÇA
 
-    Task<ApiResponse<bool>> RedefinirSenhaAsync(string userId, string token, string newPassword);
+        Task<ApiResponse<bool>> RedefinirSenhaAsync(ResetPasswordRequestDto request);
         Task<ApiResponse<bool>> ConfirmEmail(string userId, string code);
         Task<ApiResponse<bool>> ResendEmailConfirmationAsync(string email, string scheme, string host);
         Task<ApiResponse<bool>> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
