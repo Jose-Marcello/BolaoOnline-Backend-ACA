@@ -322,6 +322,8 @@ app.MapControllers();
 
 app.Run();
 
+// Último ajuste para forcar o deploy
+
 /*
 if (app.Environment.IsDevelopment())
 {
