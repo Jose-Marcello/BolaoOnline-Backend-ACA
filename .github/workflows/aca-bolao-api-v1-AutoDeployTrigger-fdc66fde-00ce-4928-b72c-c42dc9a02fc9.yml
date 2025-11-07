@@ -1,0 +1,45 @@
+name: Trigger auto deployment for aca-bolao-api-v1
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - '**'
+    - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-fdc66fde-00ce-4928-b72c-c42dc9a02fc9.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: acrbancoitensdev.azurecr.io
+          registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
+          containerAppName: aca-bolao-api-v1
+          resourceGroup: rg-banco-itens-dev
+          imageToBuild: acrbancoitensdev.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
+          
+            
+
+     
+
