@@ -33,7 +33,7 @@ namespace ApostasApp.Core.Infrastructure // <--- Confirme o Namespace Correto
       }
 
       // 3. << CORREÇÃO CRÍTICA: USAR NPGSQL (POSTGRESQL) >>
-      optionsBuilder.UseNpgsql(connectionString);
+      //optionsBuilder.UseNpgsql(connectionString);
 
       return new MeuDbContext(optionsBuilder.Options);
     }
