@@ -155,6 +155,7 @@ builder.Services.AddAuthentication()
     options.BearerTokenExpiration = TimeSpan.FromHours(3);
   });
 
+builder.Services.AddHealthChecks();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
