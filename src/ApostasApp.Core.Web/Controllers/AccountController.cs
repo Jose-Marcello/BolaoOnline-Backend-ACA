@@ -112,7 +112,7 @@ namespace ApostasApp.Core.Web.Controllers
 
     // Localização: ApostasApp.Core.Web.Controllers/AccountController.cs
 
-    [HttpPost("forgotpassword")]
+    [HttpPost("forgot-password")]
     [AllowAnonymous]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
