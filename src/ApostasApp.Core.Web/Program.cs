@@ -48,6 +48,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // A chave buscada deve ser "DefaultConnection" (que é mapeada para ConnectionStrings__DefaultConnection no ACA)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+
+// Use LogError para garantir que apareça nas logs do ACA, mesmo em produção
+builder.Logging.AddConsole();
+var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+logger.LogError($"VERIFICACAO CRITICA: Connection String Lida: {connectionString}"); // ESTA É A LINHA CHAVE
+
 /*
 if (string.IsNullOrEmpty(connectionString))
 {
