@@ -25,7 +25,6 @@ using Microsoft.Extensions.Logging; // Adicionado para ILogger no bloco de migra
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-//using Npgsql.EntityFrameworkCore.PostgreSQL;
 using System.Globalization; // Adicionado para parsing da Connection String do Heroku
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -49,27 +48,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // A chave buscada deve ser "DefaultConnection" (que é mapeada para ConnectionStrings__DefaultConnection no ACA)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+/*
 if (string.IsNullOrEmpty(connectionString))
 {
   // Se a string não for encontrada (ex: no ACA sem Segredo), esta exceção ocorre.
   throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada. Verifique o appsettings.json ou os Segredos do Azure.");
 }
+*/
 
 // Injeção do DbContext
-builder.Services.AddDbContext<MeuDbContext>(options =>
-{
-  // MUDANÇA CRÍTICA: Trocando para UseSqlServer
-  options.UseSqlServer(connectionString,
-      sqlServerOptionsAction: sqlOptions =>
-      {
-        // Ativa a retentativa padrão do EF Core (Resiliência de Rede)
-        sqlOptions.EnableRetryOnFailure(
-              maxRetryCount: 10
-          );
-      })
-      .LogTo(Console.WriteLine, LogLevel.Information);
-});
-
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
   // === MUDANÇA CRÍTICA: Trocando para UseSqlServer ===
@@ -92,61 +79,6 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 
 });
 
-
-// === CONFIGURAÇÃO DA CONNECTION STRING PARA POSTGRESQL (SUPORTE HEROKU) ===
-//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-/*
-var connectionString = Environment.GetEnvironmentVariable("AZURE-DB-CONN");
-
-// LÓGICA CRÍTICA: Se estiver no Heroku, a Connection String é injetada como URL e precisa ser convertida.
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-  // Converte a URL do Heroku (postgres://user:pass@host:port/db) para a string de conexão padrão do Npgsql
-  var uri = new Uri(databaseUrl);
-  var userInfo = uri.UserInfo.Split(':');
-
-  // Adicionado SslMode=Require (mais seguro) ou mantido Prefer
-  connectionString = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.LocalPath.Substring(1)};Pooling=true;SSL Mode=Prefer;TrustServerCertificate=true";
-}
-
-Console.WriteLine($"DEBUG: ConnectionString = {connectionString}");
-// ===========================================
-
-// ===================================================================================================
-// Configurações de Serviços - Services
-// ===================================================================================================
-
-// === DBContext E IDENTITY - MIGRADO PARA NPGSQL (POSTGRESQL) ===
-builder.Services.AddDbContext<MeuDbContext>(options =>
-{
-  options.UseNpgsql(connectionString,
-
-        npgsqlOptionsAction: sqlOptions =>
-        {
-          // 1. ESTRATÉGIA DE RETENTATIVA (RetryOnFailure)
-          sqlOptions.EnableRetryOnFailure(
-          maxRetryCount: 10,
-          maxRetryDelay: TimeSpan.FromSeconds(30),
-          errorCodesToAdd: new string[0]
-        );
-
-        // 2. CORREÇÃO CRÍTICA PARA COCKROACHDB/NPGSQL:
-        // O CockroachDB tem problemas com grandes batches e transações.
-        // MinBatchSize(1) força cada comando a ser executado individualmente.
-        sqlOptions.MinBatchSize(1);
-
-        // Necessário incluir o using para o NpgsqlRetryingExecutionStrategy
-        // (Verifique se o using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure; está no topo)
-        sqlOptions.ExecutionStrategy(c => new NpgsqlRetryingExecutionStrategy(c));
-        })
-
-        .LogTo(Console.WriteLine, LogLevel.Information);
-
-});
-
-*/
 
 builder.Services.AddAuthentication()
   .AddBearerToken(IdentityConstants.BearerScheme, options =>
@@ -296,7 +228,7 @@ using (var scope = app.Services.CreateScope())
 app.UseRouting();
 
 // 2. CORS (Deve vir logo após UseRouting)
-app.UseCors("CorsPolicy"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
+app.UseCors("AllowFrontend"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
 
 // 3. Autenticação e Autorização
 app.UseAuthentication();
@@ -323,55 +255,3 @@ app.MapControllers();
 
 app.Run();
 
-// Último ajuste para forcar o deploy
-
-/*
-if (app.Environment.IsDevelopment())
-{
-  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Banco de Itens V1");
-  options.RoutePrefix = string.Empty; // Isso coloca a UI na raiz do domínio (ACA)
-});
-// ...
-app.MapHealthChecks("/health");
-
-app.UseForwardedHeaders(); // ESSENCIAL para o ACA
-
-app.UseForwardedHeaders();
-
-//app.UseHttpsRedirection(); // REMOVIDO/COMENTADO
-
-app.UseRouting();
-
-app.UseCors("AllowFrontend");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// 🛑 CORREÇÃO FINAL 3: Usando UseEndpoints que é mais explícito para o mapeamento de controllers.
-app.UseEndpoints(endpoints =>
-{
-  endpoints.MapControllers();
-});
-
-// app.MapControllers(); // Comente ou remova esta linha se usar UseEndpoints
-
-
-// ===================================================================================================
-// INICIALIZAÇÃO DA APLICAÇÃO (SUPORTE HEROKU/AMBIENTE)
-// ===================================================================================================
-
-// LÓGICA CRÍTICA: Usa a porta injetada pelo Heroku ($PORT) ou o padrão 8080/80
-// CORREÇÃO:
-#if DEBUG
-// Em ambiente de desenvolvimento (local), usamos as configurações padrão do launchSettings.json (5000/5001)
-// Se a aplicação estiver sendo executada via Visual Studio ou `dotnet run` sem a variável $PORT, 
-// ele usará as portas configuradas no launchSettings.json (5000/5001).
-app.Run();
-#else
-    // LÓGICA CRÍTICA PARA AMBIENTE DE PRODUÇÃO/HEROKU:
-    // Usa a porta injetada pelo Heroku ($PORT) ou o padrão 8080.
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-    var url = $"http://0.0.0.0:{port}";
-    app.Run(url);
-#endif
-*/
