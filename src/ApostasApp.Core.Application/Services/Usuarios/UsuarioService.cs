@@ -73,89 +73,102 @@ namespace ApostasApp.Core.Application.Services.Usuarios
 
         // Localização: ApostasApp.Core.Application.Services.Usuarios/UsuarioService.cs
 
+        // Localização: src/services/UsuarioService.cs (código completo do método LoginAsync)
+
         public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto request)
         {
-            var apiResponse = new ApiResponse<LoginResponseDto> { Notifications = new List<NotificationDto>() };
-            var responseData = new LoginResponseDto { LoginSucesso = false };
+           var apiResponse = new ApiResponse<LoginResponseDto> { Notifications = new List<NotificationDto>() };
+           var responseData = new LoginResponseDto { LoginSucesso = false };
 
-            _logger.LogInformation("Iniciando LoginAsync no UsuarioService.");
+           _logger.LogInformation("Iniciando LoginAsync no UsuarioService.");
 
-            try
-            {
-                // PASSO 1: Busca o usuário pelo e-mail.
-                var user = await _identityService.GetUserByEmailAsync(request.Email);
+           try
+           {
+             // PASSO 1: Busca o usuário pelo e-mail.
+             var user = await _identityService.GetUserByEmailAsync(request.Email);
 
-                // Se o usuário não for encontrado, falha o login com mensagem genérica.
-                if (user == null)
-                {
-                    Notificar("Erro", "Usuário ou senha inválidos.");
-                    apiResponse.Success = false;
-                    apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
-                    apiResponse.Data = responseData;
-                    return apiResponse;
-                }
+             // Se o usuário não for encontrado, falha o login com mensagem genérica.
+             if (user == null)
+             {
+               Notificar("Erro", "Usuário ou senha inválidos.");
+               apiResponse.Success = false;
+               apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
+               apiResponse.Data = responseData;
+               return apiResponse;
+             }
 
-                // PASSO 2: VERIFICAÇÃO CRUCIAL - Checa se o e-mail está confirmado.
-                if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
-                {
-                    Notificar("Erro", "Sua conta ainda não foi confirmada. Por favor, verifique sua caixa de entrada.");
-                    apiResponse.Success = false;
-                    apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
-                    apiResponse.Data = responseData;
-                    return apiResponse;
-                }
+             // 🔑 PASSO 2: VERIFICAÇÃO CRUCIAL - Checa se o e-mail está confirmado. (CORREÇÃO APLICADA)
+             if (_userManager.Options.SignIn.RequireConfirmedAccount && !user.EmailConfirmed)
+             {
+                // CRIAÇÃO EXPLÍCITA DA NOTIFICAÇÃO E001 QUE O ANGULAR ESPERA
+                var notif = new NotificationDto
+                 {
+                   Codigo = "E001", // O código que o Angular Auth Service procura!
+                   Tipo = "Alerta", // Usando 'Alerta' para ser mais descritivo
+                   Mensagem = "Sua conta ainda não foi confirmada. Por favor, verifique sua caixa de entrada.",
+                   NomeCampo = "Email"
+                 };
 
-                // PASSO 3: Tenta fazer o login com a senha.
-                // A sua lógica original que eu removi está certa, vamos usá-la.
-                var loginResult = await _identityService.LoginAsync(request.Email, request.Password, request.IsPersistent);
+                 apiResponse.Notifications.Add(notif);
+                 apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
+                 apiResponse.Success = false;
+                 apiResponse.Data = responseData;
 
-                if (loginResult.Success)
-                {
-                    // Login bem-sucedido.
-                    responseData.LoginSucesso = true;
-                    responseData.Token = loginResult.Token;
-                    responseData.RefreshToken = loginResult.RefreshToken;
-                    responseData.Expiration = loginResult.Expiration;
-                    responseData.Apelido = user.Apelido;
-                    responseData.Email = user.Email;
-                    responseData.UserId = user.Id;
-
-                    user.LastLoginDate = DateTime.Now;
-                    await _userManager.UpdateAsync(user);
-
-                    Notificar("Sucesso", "Login realizado com sucesso.");
-                    apiResponse.Success = true;
-                    apiResponse.Data = responseData;
-                }
-                else
-                {
-                    // O login falhou por outros motivos.
-                    if (loginResult.Notifications != null && loginResult.Notifications.Any())
-                    {
-                        apiResponse.Notifications.AddRange(loginResult.Notifications
-                            .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo }));
-                    }
-                    else
-                    {
-                        Notificar("Erro", "Usuário ou senha inválidos.");
-                    }
-
-                    apiResponse.Success = false;
-                    apiResponse.Data = responseData;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"EXCEÇÃO NO LOGIN (LoginAsync Service): {ex.Message}");
-                Notificar("Erro", "Ocorreu um erro inesperado durante o login. Por favor, tente novamente mais tarde.");
-                apiResponse.Success = false;
-                apiResponse.Data = responseData;
+                 // Retorna imediatamente com o código de erro E001
+                return apiResponse;
             }
 
-            apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
-            return apiResponse;
+           // PASSO 3: Tenta fazer o login com a senha.
+           var loginResult = await _identityService.LoginAsync(request.Email, request.Password, request.IsPersistent);
+
+           if (loginResult.Success)
+           {
+              // Login bem-sucedido.
+              responseData.LoginSucesso = true;
+              responseData.Token = loginResult.Token;
+              responseData.RefreshToken = loginResult.RefreshToken;
+              responseData.Expiration = loginResult.Expiration;
+              responseData.Apelido = user.Apelido;
+              responseData.Email = user.Email;
+              responseData.UserId = user.Id;
+
+              user.LastLoginDate = DateTime.Now;
+              await _userManager.UpdateAsync(user);
+
+              Notificar("Sucesso", "Login realizado com sucesso.");
+               apiResponse.Success = true;
+              apiResponse.Data = responseData;
+            }
+           else
+           {
+              // O login falhou por outros motivos (senha incorreta, etc.).
+             if (loginResult.Notifications != null && loginResult.Notifications.Any())
+             {
+                apiResponse.Notifications.AddRange(loginResult.Notifications
+                .Select(n => new NotificationDto { Codigo = n.Codigo, Tipo = n.Tipo, Mensagem = n.Mensagem, NomeCampo = n.NomeCampo }));
+             }
+            else
+             {
+               Notificar("Erro", "Usuário ou senha inválidos.");
+             }
+
+             apiResponse.Success = false;
+             apiResponse.Data = responseData;
+           }
+        }
+        catch (Exception ex)
+        {
+           _logger.LogError(ex, $"EXCEÇÃO NO LOGIN (LoginAsync Service): {ex.Message}");
+           Notificar("Erro", "Ocorreu um erro inesperado durante o login. Por favor, tente novamente mais tarde.");
+           apiResponse.Success = false;
+           apiResponse.Data = responseData;
         }
 
+           apiResponse.Notifications.AddRange(ObterNotificacoesParaResposta());
+          return apiResponse;
+       }
+
+   
         public async Task<ApiResponse<RegisterResponse>> RegisterAsync(RegisterRequestDto request)
         {
             var apiResponse = new ApiResponse<RegisterResponse>();
