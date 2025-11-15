@@ -29,9 +29,9 @@ jobs:
           appSourcePath: ${{ github.workspace }}
           _dockerfilePathKey_: _dockerfilePath_
           _targetLabelKey_: _targetLabel_
-          registryUrl: acrbancoitensdev.azurecr.io
+          registryUrl: acabolaoitems.azurecr.io           # NOVO ACR NAME AQUI!
           registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
-          containerAppName: env-bolao-prod               # NOVO ACA NAME (CORRIGIDO)
-          resourceGroup: rg-bolao-aca-prod             # NOVO RESOURCE GROUP (CORRIGIDO)
-          imageToBuild: acrbancoitensdev.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
+          containerAppName: env-bolao-prod               
+          resourceGroup: rg-bolao-aca-prod             
+          imageToBuild: acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }} # NOVO ACR NAME AQUI!
