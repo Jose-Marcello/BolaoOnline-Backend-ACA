@@ -2,7 +2,7 @@ name: Deploy to env-bolao-prod
 
 on:
   push:
-    branches: 
+    branches:  
       [ master ]  
     paths:
       - '**'
@@ -35,6 +35,7 @@ jobs:
           containerAppName: env-bolao-prod               
           resourceGroup: rg-bolao-aca-prod             
           imageToBuild: acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }} # NOVO ACR NAME AQUI!
+
 
 
 
