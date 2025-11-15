@@ -12,28 +12,26 @@ on:
     
 jobs:
   build-and-deploy:
+    runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
 
-    steps:
-      - name: Checkout to the branch
-        uses: actions/checkout@v2
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
-
-      - name: Build and push container image to registry
-        uses: azure/container-apps-deploy-action@v2
-        with:
-          appSourcePath: ${{ github.workspace }}
-          _dockerfilePathKey_: _dockerfilePath_
-          _targetLabelKey_: _targetLabel_
-          registryUrl: acrbancoitensdev.azurecr.io
-          registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
-          containerAppName: env-bolao-prod                               # CORRIGIDO
-          resourceGroup: rg-bolao-aca-prod                            # CORRIGIDO
-          imageToBuild: acrbancoitensdev.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
-
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: acrbancoitensdev.azurecr.io
+          registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
+          containerAppName: env-bolao-prod               # NOVO ACA NAME (CORRIGIDO)
+          resourceGroup: rg-bolao-aca-prod             # NOVO RESOURCE GROUP (CORRIGIDO)
+          imageToBuild: acrbancoitensdev.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
