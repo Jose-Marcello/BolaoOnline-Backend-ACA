@@ -3,7 +3,7 @@ name: Deploy to env-bolao-prod
 on:
   push:
     branches:
-      [ master ] 
+      [ master ]  
     paths:
       - '**'
       - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-fdc66fde-00ce-4928-b72c-c42dc9a02fc9.yml'
@@ -35,4 +35,5 @@ jobs:
           containerAppName: env-bolao-prod               
           resourceGroup: rg-bolao-aca-prod             
           imageToBuild: acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }} # NOVO ACR NAME AQUI!
+
 
