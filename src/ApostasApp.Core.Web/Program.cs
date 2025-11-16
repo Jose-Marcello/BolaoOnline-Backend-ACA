@@ -120,9 +120,8 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 // Esta linha é NECESSÁRIA para o Identity funcionar em um ambiente contêinerizado sem volume persistente.
 
 
-
 builder.Services.AddDataProtection();
-   // .PersistKeysToMemory();
+  //.PersistKeysToMemory();
 
 // =========================================================
 
