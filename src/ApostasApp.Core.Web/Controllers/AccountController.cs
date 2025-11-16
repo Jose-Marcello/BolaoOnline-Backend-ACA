@@ -21,7 +21,7 @@ namespace ApostasApp.Core.Web.Controllers
   {
     private readonly IUsuarioService _usuarioService;
     private readonly ILogger<AccountController> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration _configuration; 
     private readonly INotificador _notificador;
 
     // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da injeção no Controller
