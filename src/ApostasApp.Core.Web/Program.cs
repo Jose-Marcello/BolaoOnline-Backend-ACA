@@ -1,6 +1,6 @@
 // Usings para componentes do ASP.NET Core
 // Usings para seus projetos e namespaces específicos
-using ApostasApp.Core.Application.MappingProfiles;
+using ApostasApp.Core.Application.MappingProfiles; 
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Interfaces;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
@@ -31,6 +31,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json; // Mantenha este import para System.Text.Json
 using System.Text.Json.Serialization; // Corrigido para System.Text.Json.Serialization
+using Npgsql.EntityFrameworkCore.PostgreSQL; // Adicionado para o PostgreSQL!
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,10 +44,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
   options.KnownProxies.Clear();
 });
 
-// === CONFIGURAÇÃO DO DBCONTEXT (AZURE SQL SERVER) ===
+// === CONFIGURAÇÃO DO DBCONTEXT (POSTGRESQL LOCAL) ===
 
 // LER A CONNECTION STRING DIRETAMENTE DA CONFIGURAÇÃO 
-// A chave buscada deve ser "DefaultConnection" (que é mapeada para ConnectionStrings__DefaultConnection no ACA)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 
@@ -57,25 +58,23 @@ logger.LogError($"VERIFICACAO CRITICA: Connection String Lida: {connectionString
 /*
 if (string.IsNullOrEmpty(connectionString))
 {
-  // Se a string não for encontrada (ex: no ACA sem Segredo), esta exceção ocorre.
-  throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada. Verifique o appsettings.json ou os Segredos do Azure.");
+    // Se a string não for encontrada (ex: no ACA sem Segredo), esta exceção ocorre.
+    throw new InvalidOperationException("A Connection String 'DefaultConnection' não foi encontrada. Verifique o appsettings.json ou os Segredos do Azure.");
 }
 */
 
 // Injeção do DbContext
 builder.Services.AddDbContext<MeuDbContext>(options =>
 {
-  // === MUDANÇA CRÍTICA: Trocando para UseSqlServer ===
-  options.UseSqlServer(connectionString,
-      sqlServerOptionsAction: sqlOptions =>
+  // === MUDANÇA CRÍTICA: Trocando para UseNpgsql ===
+  options.UseNpgsql(connectionString,
+      npgsqlOptionsAction: sqlOptions =>
       {
-        // O SqlServer já implementa uma ExecutionStrategy resiliente para o Azure.
-        // Basta habilitar a retentativa padrão.
-
+        // Configura a retentativa padrão (Execution Strategy) para o PostgreSQL
         sqlOptions.EnableRetryOnFailure(
               maxRetryCount: 10,
               maxRetryDelay: TimeSpan.FromSeconds(30),
-              errorNumbersToAdd: null // null usa o conjunto padrão de erros transientes do Azure SQL
+              errorCodesToAdd: null // null usa o conjunto padrão de erros transientes do PostgreSQL
           );
 
         // Remova a lógica de CockroachDB/Npgsql, pois não é necessária
@@ -87,18 +86,18 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 
 
 builder.Services.AddAuthentication()
-  .AddBearerToken(IdentityConstants.BearerScheme, options =>
-  {
-    // Define o tempo de vida do Bearer Token para 3 horas
-    options.BearerTokenExpiration = TimeSpan.FromHours(3);
-  });
+    .AddBearerToken(IdentityConstants.BearerScheme, options =>
+    {
+      // Define o tempo de vida do Bearer Token para 3 horas
+      options.BearerTokenExpiration = TimeSpan.FromHours(3);
+    });
 
 builder.Services.AddHealthChecks();
 
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
-  // Define o tempo de vida padrão dos tokens para 3 horas
-  options.TokenLifespan = TimeSpan.FromHours(3);
+  // Define o tempo de vida padrão dos tokens para 3 horas
+  options.TokenLifespan = TimeSpan.FromHours(3);
 });
 
 // Configuração do ASP.NET Core Identity
@@ -114,6 +113,19 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<MeuDbContext>()
 .AddDefaultTokenProviders();
+
+
+// === CORREÇÃO CRÍTICA FINAL: DATA PROTECTION EM MEMÓRIA ===
+// Resolve o erro 'Storing keys in a directory... that may not be persisted' no Azure Container Apps (ACA).
+// Esta linha é NECESSÁRIA para o Identity funcionar em um ambiente contêinerizado sem volume persistente.
+
+
+
+builder.Services.AddDataProtection();
+   // .PersistKeysToMemory();
+
+// =========================================================
+
 
 
 // === RESOLVE DEPENDENCIES ===
@@ -171,9 +183,9 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(AccountController).Assembly)
     .AddJsonOptions(options =>
     {
-      // 🛑 CORREÇÃO FINAL 1: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
-      options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-      // options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+      // 🛑 CORREÇÃO FINAL 1: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
+      options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+      // options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
     });
 
 
@@ -184,14 +196,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend",
-   policy => policy.WithOrigins(
-    "http://localhost:4200",
-    "https://thankful-pond-04be1170f.2.azurestaticapps.net",
-    "https://app.palpitesbolao.com.br" // Adicione esta linha
-        )
-   .AllowAnyHeader()
-   .AllowAnyMethod()
-   .AllowCredentials());
+ policy => policy.WithOrigins(
+   "http://localhost:4200",
+   "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+   "https://app.palpitesbolao.com.br" // Adicione esta linha
+       )
+  .AllowAnyHeader()
+  .AllowAnyMethod()
+  .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -203,22 +215,22 @@ var app = builder.Build();
 /*
 using (var scope = app.Services.CreateScope())
 {
-  var services = scope.ServiceProvider;
-  try
-  {
-    // Encontra o DbContext e força a aplicação das migrações pendentes
-    var db = services.GetRequiredService<MeuDbContext>();
-    db.Database.Migrate();
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Encontra o DbContext e força a aplicação das migrações pendentes
+        var db = services.GetRequiredService<MeuDbContext>();
+        db.Database.Migrate();
 
-    // Opcional: Aqui você pode rodar seeds de dados, se tiver algum.
-    // Por exemplo: await SeedIdentity.SeedAsync(userManager, roleManager);
-  }
-  catch (Exception ex)
-  {
-    // Se a migração falhar (por exemplo, problema de conexão com o DB), loga o erro e o app continuará
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Ocorreu um erro ao tentar aplicar as migrações do banco de dados.");
-  }
+        // Opcional: Aqui você pode rodar seeds de dados, se tiver algum.
+        // Por exemplo: await SeedIdentity.SeedAsync(userManager, roleManager);
+    }
+    catch (Exception ex)
+    {
+        // Se a migração falhar (por exemplo, problema de conexão com o DB), loga o erro e o app continuará
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao tentar aplicar as migrações do banco de dados.");
+    }
 }
 // ===================================================================================================
 // FIM: BLOCO DE MIGRAÇÃO AUTOMÁTICA
@@ -260,4 +272,3 @@ app.UseSwaggerUI(options =>
 app.MapControllers();
 
 app.Run();
-
