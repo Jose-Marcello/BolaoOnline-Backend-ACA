@@ -188,7 +188,7 @@ builder.Services.AddControllers()
     });
 
 
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer(); 
 builder.Services.AddSwaggerGen();
 
 // CORS: Permitir acesso APENAS do Front-end SWA
