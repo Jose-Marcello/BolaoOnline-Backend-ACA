@@ -10,7 +10,6 @@ using ApostasApp.Core.Application.Services.Interfaces.Usuarios;
 using ApostasApp.Core.Application.Utils;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostadores;
-using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Financeiro;
@@ -34,6 +33,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
+using ApostasApp.Core.Application.Services.Interfaces.Identity;
 
 namespace ApostasApp.Core.Application.Services.Usuarios
 {
@@ -224,10 +224,37 @@ namespace ApostasApp.Core.Application.Services.Usuarios
 
     // UsuarioService.cs
 
+
+    public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string scheme, string host)
+    {
+      var baseUrl = $"{scheme}://{host}";
+
+      // O IdentityService agora lida com toda a lógica de token, mock e notificação.
+      // O UsuarioService apenas orquestra a chamada.
+      var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
+
+      // É crucial garantir que as notificações do IdentityService sejam transferidas
+      // para o BaseService, para que o Controller as capture via CustomResponse.
+      if (response.Notifications != null)
+      {
+        foreach (var notifDto in response.Notifications)
+        {
+          // Assume que há uma forma de converter NotificationDto para Notificacao de domínio
+          // Ou o IdentityService já notificou o INotificador corretamente.
+
+          // Se você usa o INotificador do BaseService, use-o aqui:
+          // Notificar(notifDto.Tipo, notifDto.Mensagem, notifDto.NomeCampo); 
+        }
+      }
+
+      // Retornamos o ApiResponse<string> completo.
+      return response;
+    }
+    /*
     public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
     {
       // Tentamos obter o link do IdentityService (ele retorna null se o usuário não existe OU não está confirmado)
-      var resetLink = await _identityService.ForgotPasswordAsync(email, baseUrl);
+      var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
 
       // 1. Lógica para MOCK (Se o resetLink não for null, o IdentityService gerou um token, seja para debug ou para envio real)
       if (!string.IsNullOrEmpty(resetLink))
