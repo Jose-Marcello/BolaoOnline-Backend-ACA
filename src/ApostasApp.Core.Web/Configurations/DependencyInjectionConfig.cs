@@ -21,7 +21,6 @@ using ApostasApp.Core.Domain.Interfaces.Apostadores;
 using ApostasApp.Core.Domain.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Financeiro;
-using ApostasApp.Core.Domain.Interfaces.Identity;
 using ApostasApp.Core.Domain.Interfaces.Jogos;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
@@ -42,6 +41,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using SendGrid;
+using ApostasApp.Core.Application.Services.Interfaces.Identity;
 
 namespace ApostasApp.Core.Web.Configurations
 {

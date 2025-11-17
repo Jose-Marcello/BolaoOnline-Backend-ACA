@@ -7,8 +7,10 @@ using System; // Para DateTime (se usado em LoginResult/AuthResult)
 using System.Collections.Generic; // Para List (se usado em LoginResult/AuthResult)
 using Microsoft.AspNetCore.WebUtilities; // Adicionar esta dependência
 using System.Text;
+using ApostasApp.Core.Application.Models;
 
-namespace ApostasApp.Core.Domain.Interfaces.Identity
+//namespace ApostasApp.Core.Domain.Interfaces.Identity
+namespace ApostasApp.Core.Application.Services.Interfaces.Identity
 {
   public interface IIdentityService
   {
@@ -34,7 +36,10 @@ namespace ApostasApp.Core.Domain.Interfaces.Identity
     // Métodos de Redefinição de Senha e Confirmação de E-mail
     //Task<bool> ForgotPasswordAsync(string email, string scheme, string host);
     //Task<bool> ForgotPasswordAsync(string email, string baseUrl);
-    Task<string> ForgotPasswordAsync(string email, string baseUrl); // DEVE retornar string (o link)
+    //Task<string> ForgotPasswordAsync(string email, string baseUrl); // DEVE retornar string (o link)
+    //Task<string> ForgotPasswordAsync(string email, string baseUrl); // VERSÃO ANTERIOR
+
+    Task<ApiResponse<string>> ForgotPasswordAsync(string email, string baseUrl); // NOVA ASSINATURA
 
     Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
 

@@ -1,6 +1,7 @@
 using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.DTOs.Usuarios; // Para LoginRequestDto, LoginResponseDto, RegisterRequestDto, ResetPasswordRequestDto, etc.
 using ApostasApp.Core.Application.Models;
+using ApostasApp.Core.Application.Services.Interfaces.Identity;
 using ApostasApp.Core.Application.Services.Interfaces.Usuarios; // Para IUsuarioService
 using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Domain.Models.Notificacoes;
@@ -22,6 +23,7 @@ namespace ApostasApp.Core.Web.Controllers
   public class AccountController : BaseController
   {
     private readonly IUsuarioService _usuarioService;
+    private readonly IIdentityService _identityService;
     private readonly ILogger<AccountController> _logger;
     private readonly IConfiguration _configuration;
     private readonly INotificador _notificador;
@@ -29,6 +31,7 @@ namespace ApostasApp.Core.Web.Controllers
 
     // CONSTRUTOR CORRIGIDO: Remove IUnitOfWork da injeção no Controller
     public AccountController(IUsuarioService usuarioService,
+                IIdentityService identityService,
                 ILogger<AccountController> logger,
                 IConfiguration configuration,
                 INotificador notificador,
@@ -36,6 +39,7 @@ namespace ApostasApp.Core.Web.Controllers
                                  : base(notificador) // Passa apenas o notificador para a BaseController
     {
       _usuarioService = usuarioService;
+      _identityService = identityService;
       _logger = logger;
       _configuration = configuration;
       _notificador = notificador;
@@ -59,7 +63,12 @@ namespace ApostasApp.Core.Web.Controllers
 
       // Chama o serviço. O serviço DEVE retornar a ApiResponse<string> contendo o link 
       // no campo 'Data' se o mock/development estiver ativado.
-      var result = await _usuarioService.ForgotPasswordAsync(request.Email, HttpContext.Request.Scheme, HttpContext.Request.Host.ToUriComponent());
+      //var result = await _identityService.ForgotPasswordAsync(request.Email, HttpContext.Request.Scheme, HttpContext.Request.Host.ToUriComponent());
+      var result = await _usuarioService.EsqueciMinhaSenhaAsync(
+         request.Email,
+         HttpContext.Request.Scheme,
+         HttpContext.Request.Host.ToUriComponent()
+      );
 
       if (result.Success)
       {
