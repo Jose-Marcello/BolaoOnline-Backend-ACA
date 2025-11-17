@@ -19,15 +19,15 @@ namespace ApostasApp.Core.Web.Controllers
       _notificador = notificador;
     }
 
-    // Propriedade para verificar se há notificações de erro
-    protected bool OperacaoValida()
+    // Propriedade para verificar se há notificações de erro
+    protected bool OperacaoValida()
     {
-      // Uma operação é considerada válida se NÃO houver notificações do TIPO "Erro"
-      return !_notificador.ObterNotificacoes().Any(n => n.Tipo == "Erro");
+      // Uma operação é considerada válida se NÃO houver notificações do TIPO "Erro"
+      return !_notificador.ObterNotificacoes().Any(n => n.Tipo == "Erro");
     }
 
-    // Método para notificar o sistema de domínio a partir do controller
-    protected void NotificarErro(string mensagem, string? codigo = null, string? nomeCampo = null)
+    // Método para notificar o sistema de domínio a partir do controller
+    protected void NotificarErro(string mensagem, string? codigo = null, string? nomeCampo = null)
     {
       _notificador.Handle(new Notificacao(codigo, "Erro", mensagem, nomeCampo));
     }
@@ -42,9 +42,8 @@ namespace ApostasApp.Core.Web.Controllers
       _notificador.Handle(new Notificacao(codigo, "Alerta", mensagem, nomeCampo));
     }
 
-    // SOBRECARGA 1: Processa um ApiResponse<T> já existente (vindo de um serviço)
-    // Ex: return CustomResponse(serviceResponse);
-    protected ActionResult CustomResponse<T>(ApiResponse<T> serviceResponse)
+    // SOBRECARGA 1: Processa um ApiResponse<T> já existente (vindo de um serviço)
+    protected ActionResult CustomResponse<T>(ApiResponse<T> serviceResponse)
     {
       var allNotifications = new List<NotificationDto>();
 
@@ -54,14 +53,14 @@ namespace ApostasApp.Core.Web.Controllers
       }
 
       var controllerNotifications = _notificador.ObterNotificacoes()
-                                                .Select(n => new NotificationDto
-                                                {
-                                                  Codigo = n.Codigo,
-                                                  Tipo = n.Tipo,
-                                                  Mensagem = n.Mensagem,
-                                                  NomeCampo = n.NomeCampo
-                                                })
-                                                .ToList();
+                           .Select(n => new NotificationDto
+                           {
+                             Codigo = n.Codigo,
+                             Tipo = n.Tipo,
+                             Mensagem = n.Mensagem,
+                             NomeCampo = n.NomeCampo
+                           })
+                           .ToList();
       if (controllerNotifications.Any())
       {
         allNotifications.AddRange(controllerNotifications);
@@ -74,34 +73,38 @@ namespace ApostasApp.Core.Web.Controllers
       if (hasErrors)
       {
         return BadRequest(ApiResponse<T>.CreateError(
-            serviceResponse.Message ?? "Ocorreram erros na sua requisição.",
-            allNotifications
+          serviceResponse.Message ?? "Ocorreram erros na sua requisição.",
+          allNotifications
         ));
       }
       else
       {
-        return Ok(ApiResponse<T>.CreateSuccess(
+        // CORREÇÃO CRÍTICA FINAL: Forçamos o retorno 200 OK com o corpo JSON.
+        var finalResponse = ApiResponse<T>.CreateSuccess(
             serviceResponse.Data,
             serviceResponse.Message ?? "Operação realizada com sucesso.",
             allNotifications
-        ));
+        );
+
+        // Retorna Status 200 explicitamente, contornando a otimização 204.
+        return StatusCode(200, finalResponse);
       }
     }
 
-    // SOBRECARGA 2: Constrói um ApiResponse<T> a partir de um objeto de dados T (para sucesso)
-    // e notificações do notificador (para erros/alertas)
-    // Ex: return CustomResponse(meuObjetoDto);
-    protected ActionResult CustomResponse<T>(T data)
+    // ... (O restante das sobrecargas do CustomResponse permanece como no arquivo fornecido) ...
+
+    // SOBRECARGA 2: Constrói um ApiResponse<T> a partir de um objeto de dados T (para sucesso)
+    protected ActionResult CustomResponse<T>(T data)
     {
       var allNotifications = _notificador.ObterNotificacoes()
-                                         .Select(n => new NotificationDto
-                                         {
-                                           Codigo = n.Codigo,
-                                           Tipo = n.Tipo,
-                                           Mensagem = n.Mensagem,
-                                           NomeCampo = n.NomeCampo
-                                         })
-                                         .ToList();
+                       .Select(n => new NotificationDto
+                       {
+                         Codigo = n.Codigo,
+                         Tipo = n.Tipo,
+                         Mensagem = n.Mensagem,
+                         NomeCampo = n.NomeCampo
+                       })
+                       .ToList();
       _notificador.LimparNotificacoes();
 
       bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
@@ -109,34 +112,32 @@ namespace ApostasApp.Core.Web.Controllers
       if (hasErrors)
       {
         return BadRequest(ApiResponse<T>.CreateError(
-            "Ocorreram erros na sua requisição.",
-            allNotifications
+          "Ocorreram erros na sua requisição.",
+          allNotifications
         ));
       }
       else
       {
         return Ok(ApiResponse<T>.CreateSuccess(
-            data,
-            "Operação realizada com sucesso.",
-            allNotifications
+          data,
+          "Operação realizada com sucesso.",
+          allNotifications
         ));
       }
     }
 
-    // SOBRECARGA 3: Constrói um ApiResponse<T> sem dados específicos (Data = default(T)),
-    // útil para retornos de erro/alerta onde o tipo de dado é relevante mas não há um objeto para retornar.
-    // Ex: return CustomResponse<MeuDtoDeErro>();
-    protected ActionResult CustomResponse<T>()
+    // SOBRECARGA 3: Constrói um ApiResponse<T> sem dados específicos
+    protected ActionResult CustomResponse<T>()
     {
       var allNotifications = _notificador.ObterNotificacoes()
-                                         .Select(n => new NotificationDto
-                                         {
-                                           Codigo = n.Codigo,
-                                           Tipo = n.Tipo,
-                                           Mensagem = n.Mensagem,
-                                           NomeCampo = n.NomeCampo
-                                         })
-                                         .ToList();
+                       .Select(n => new NotificationDto
+                       {
+                         Codigo = n.Codigo,
+                         Tipo = n.Tipo,
+                         Mensagem = n.Mensagem,
+                         NomeCampo = n.NomeCampo
+                       })
+                       .ToList();
       _notificador.LimparNotificacoes();
 
       bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
@@ -144,34 +145,32 @@ namespace ApostasApp.Core.Web.Controllers
       if (hasErrors)
       {
         return BadRequest(ApiResponse<T>.CreateError(
-            "Ocorreram erros na sua requisição.",
-            allNotifications
+          "Ocorreram erros na sua requisição.",
+          allNotifications
         ));
       }
       else
       {
         return Ok(ApiResponse<T>.CreateSuccess(
-            default(T), // Data é o valor padrão para T
-            "Operação realizada com sucesso.",
-            allNotifications
+          default(T), // Data é o valor padrão para T
+                "Operação realizada com sucesso.",
+          allNotifications
         ));
       }
     }
 
-    // SOBRECARGA 4: Constrói um ApiResponse simples (sem tipo genérico para Data),
-    // útil para retornos gerais de sucesso/erro sem um DTO de dados.
-    // Ex: return CustomResponse();
-    protected ActionResult CustomResponse()
+    // SOBRECARGA 4: Constrói um ApiResponse simples (sem tipo genérico para Data),
+    protected ActionResult CustomResponse()
     {
       var allNotifications = _notificador.ObterNotificacoes()
-                                         .Select(n => new NotificationDto
-                                         {
-                                           Codigo = n.Codigo,
-                                           Tipo = n.Tipo,
-                                           Mensagem = n.Mensagem,
-                                           NomeCampo = n.NomeCampo
-                                         })
-                                         .ToList();
+                       .Select(n => new NotificationDto
+                       {
+                         Codigo = n.Codigo,
+                         Tipo = n.Tipo,
+                         Mensagem = n.Mensagem,
+                         NomeCampo = n.NomeCampo
+                       })
+                       .ToList();
       _notificador.LimparNotificacoes();
 
       bool hasErrors = allNotifications.Any(n => n.Tipo == "Erro");
@@ -179,21 +178,21 @@ namespace ApostasApp.Core.Web.Controllers
       if (hasErrors)
       {
         return BadRequest(ApiResponse.CreateError(
-            "Ocorreram erros na sua requisição.",
-            allNotifications
+          "Ocorreram erros na sua requisição.",
+          allNotifications
         ));
       }
       else
       {
         return Ok(ApiResponse.CreateSuccess(
-            "Operação realizada com sucesso.",
-            allNotifications
+          "Operação realizada com sucesso.",
+          allNotifications
         ));
       }
     }
 
-    // Método para lidar com erros do ModelState e notificar
-    protected ActionResult CustomValidationProblem(ModelStateDictionary modelState)
+    // Método para lidar com erros do ModelState e notificar
+    protected ActionResult CustomValidationProblem(ModelStateDictionary modelState)
     {
       var errors = modelState.Values.SelectMany(v => v.Errors);
       foreach (var error in errors)
@@ -201,16 +200,16 @@ namespace ApostasApp.Core.Web.Controllers
         NotificarErro(error.ErrorMessage, null, error.Exception?.Message);
       }
       return CustomResponse(); // Chama CustomResponse() sem dados, que irá coletar as notificações de erro do ModelState
-    }
+    }
 
-    // Método auxiliar para obter o ID do usuário logado
-    protected string ObterUsuarioIdLogado()
+    // Método auxiliar para obter o ID do usuário logado
+    protected string ObterUsuarioIdLogado()
     {
       return User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    // Método auxiliar para verificar se o usuário está autenticado
-    protected bool UsuarioEstaAutenticado()
+    // Método auxiliar para verificar se o usuário está autenticado
+    protected bool UsuarioEstaAutenticado()
     {
       return User.Identity.IsAuthenticated;
     }
