@@ -202,6 +202,8 @@ bool termsAccepted)
 
     public async Task<Usuario> GetUserByEmailAsync(string email)
     {
+
+
       return await _userManager.FindByEmailAsync(email);
     }
 
@@ -376,10 +378,17 @@ bool termsAccepted)
 
       var user = await _userManager.FindByEmailAsync(email);
 
-      // Se o usuário não existir ou não estiver confirmado, retornamos a resposta genérica de sucesso
-      // para não revelar a existência do e-mail (boa prática de segurança).
-      if (user == null || !user.EmailConfirmed)
+      // ADICIONE ESTA LINHA:
+      _logger.LogWarning($"[DEBUG_MOCK] Usuário encontrado? {user != null}. EmailConfirmado (Valor lido): {user?.EmailConfirmed}");
+
+      // O bloco de checagem continua:
+      if (user == null || !user.EmailConfirmed) // || !user.EmailConfirmed.Value)
       {
+
+      // Se o usuário não existir ou não estiver confirmado, retornamos a resposta genérica de sucesso
+      // para não revelar a existência do e-mail (boa prática de segurança).
+      //if (user == null || !user.EmailConfirmed)
+      //{
         return response;
       }
 
