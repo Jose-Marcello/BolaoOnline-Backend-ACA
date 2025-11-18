@@ -399,7 +399,8 @@ bool termsAccepted)
       var urlSafeCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
       // 3. Criação do Link usando o token URL-Safe
-      var resetLink = $"{baseUrl}/auth/reset-password?userId={user.Id}&code={urlSafeCode}";
+      //var resetLink = $"{baseUrl}/auth/reset-password?userId={user.Id}&code={urlSafeCode}";
+      var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={urlSafeCode}";
 
       // 4. Tentativa de Enviar o e-mail (MOCK ou Real)
       try
