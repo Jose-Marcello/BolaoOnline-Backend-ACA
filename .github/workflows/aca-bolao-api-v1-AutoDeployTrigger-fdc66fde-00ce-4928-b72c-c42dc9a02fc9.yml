@@ -35,6 +35,9 @@ jobs:
           containerAppName: env-bolao-prod               
           resourceGroup: rg-bolao-aca-prod             
           imageToBuild: acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }} # NOVO ACR NAME AQUI!
+          # NOVO PARÂMETRO A SER ADICIONADO PARA CORRIGIR O NOME DO CONTÊINER:
+          containerName: bolao-api-backend # <-- Use um nome descritivo aqui!
+
 
 
 
