@@ -17,7 +17,15 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
+    # **********************************************
+    # 1. CORREÇÃO FINAL OIDC: Adiciona permissão de token
+    # Isso resolve o erro 'Failed to fetch federated token'
+    # **********************************************
+    permissions:
+      id-token: write # Permissão necessária para o método de login moderno
+      contents: read # Permissão padrão para checkout
+    
     steps:
       - name: Checkout to the branch
         uses: actions/checkout@v2
@@ -25,13 +33,14 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          # AQUI ESTÁ A CORREÇÃO: Força a Action a usar a senha do Service Principal
+          # **********************************************
+          # 2. CORREÇÃO FINAL DE SINTAXE: Força o método SP
+          # **********************************************
           auth-type: service_principal
-          
           client-id: 9d57c7e4-2b3d-4d87-89e1-cc03b20969f9
           tenant-id: 9e5f2546-7e05-42b7-9c11-aab56c42b631
           subscription-id: 9cdc0b73-fe9b-4ad5-bdbe-88061cf97f60
-          client-secret: G3o8Q~vow_V-PRM0IK6k4D3.BjY.Bd7hcysX5brd
+          client-secret: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }} # Usando o secret da senha para maior segurança
 
       - name: Build and push container image to registry and deploy to ACA
         uses: azure/container-apps-deploy-action@v2
@@ -47,7 +56,3 @@ jobs:
           resourceGroup: rg-bolao-aca-prod
           containerName: bolao-api-backend 
           targetPort: 8080
-
-
-
-
