@@ -40,13 +40,13 @@ namespace ApostasApp.Core.Infrastructure.Identity
     private readonly string _apiBaseUrl; // Propriedade para a URL base da API
 
     public IdentityService(
-  UserManager<Usuario> userManager,
-  SignInManager<Usuario> signInManager,
-  INotificador notificador,
-  IBolaoEmailSender emailSender,
-  IConfiguration configuration,
-  IHttpContextAccessor httpContextAccessor,
-  ILogger<IdentityService> logger)
+           UserManager<Usuario> userManager,
+           SignInManager<Usuario> signInManager,
+           INotificador notificador,
+           IBolaoEmailSender emailSender,
+           IConfiguration configuration,
+           IHttpContextAccessor httpContextAccessor,
+           ILogger<IdentityService> logger)
     {
       _userManager = userManager;
       _signInManager = signInManager;
@@ -363,46 +363,37 @@ bool termsAccepted)
     // *Atenção: A assinatura DENTRO do IdentityService deve ser Task<string>.*
 
 
-    public async Task<ApiResponse<string>> ForgotPasswordAsync(string email, string baseUrl)
+    //public async Task<ApiResponse<string>> ForgotPasswordAsync(string email, string baseUrl)
+    public async Task<ApiResponse<string>> ForgotPasswordAsync(string email)
     {
-      // CORREÇÃO: Lê a flag de mock do IConfiguration
+
       var isMockEnabled = _configuration.GetValue<bool>("EmailSettings:IsMockEnabled");
 
-      var response = new ApiResponse<string>
-      {
-        Success = true,
-        Notifications = new List<NotificationDto> {
-      new NotificationDto { Tipo = "Sucesso", Mensagem = "Se o e-mail estiver cadastrado, as instruções para redefinição de senha foram enviadas." }
-    }
-      };
-
+      var response = new ApiResponse<string> { /* ... */ };
       var user = await _userManager.FindByEmailAsync(email);
 
-      // ADICIONE ESTA LINHA:
-      _logger.LogWarning($"[DEBUG_MOCK] Usuário encontrado? {user != null}. EmailConfirmado (Valor lido): {user?.EmailConfirmed}");
-
-      // O bloco de checagem continua:
-      if (user == null || !user.EmailConfirmed) // || !user.EmailConfirmed.Value)
+      if (user == null || !user.EmailConfirmed)
       {
-
-      // Se o usuário não existir ou não estiver confirmado, retornamos a resposta genérica de sucesso
-      // para não revelar a existência do e-mail (boa prática de segurança).
-      //if (user == null || !user.EmailConfirmed)
-      //{
         return response;
       }
 
-      // 1. Geração do token/code
-      var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+      // 1. Geração do token/code
+      var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-      // 2. CODIFICAÇÃO URL-SAFE
-      var urlSafeCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+      // 2. CODIFICAÇÃO URL-SAFE
+      var urlSafeCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-      // 3. Criação do Link usando o token URL-Safe
-      //var resetLink = $"{baseUrl}/auth/reset-password?userId={user.Id}&code={urlSafeCode}";
-      var resetLink = $"{baseUrl}/reset-password?userId={user.Id}&code={urlSafeCode}";
+      // *************************************************************************
+      // 3. CORREÇÃO PRINCIPAL: Lê a URL do Frontend da configuração
+      // *************************************************************************
+      var frontendBaseUrl = _configuration["FrontendBaseUrl"]; // <-- NOVA CHAVE AQUI
 
-      // 4. Tentativa de Enviar o e-mail (MOCK ou Real)
+      // 4. Criação do Link usando o token URL-Safe E A URL CORRETA
+      var resetLink = $"{frontendBaseUrl}/reset-password?userId={user.Id}&code={urlSafeCode}";
+      // *************************************************************************
+
+
+      // 5. Tentativa de Enviar o e-mail (MOCK ou Real)
       try
       {
         // Envia o e-mail
