@@ -22,7 +22,7 @@ namespace ApostasApp.Core.Web.Controllers
   [Route("api/account")]
   public class AccountController : BaseController
   {
-    private readonly IUsuarioService _usuarioService;
+    private readonly IUsuarioService _usuarioService;   
     private readonly IIdentityService _identityService;
     private readonly ILogger<AccountController> _logger;
     private readonly IConfiguration _configuration;
