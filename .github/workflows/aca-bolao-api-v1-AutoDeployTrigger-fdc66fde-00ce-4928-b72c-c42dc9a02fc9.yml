@@ -41,7 +41,3 @@ jobs:
           resourceGroup: rg-bolao-aca-prod
           containerName: bolao-api-backend 
           targetPort: 8080
-
-Se o seu deploy falhar novamente com o erro `Unrecognized command or argument 'process'`, **não é um problema de YAML, mas sim um problema de credenciais (Service Principal) expiradas ou incorretas no Azure que a ação de build está usando.** Nesse caso, o próximo passo será renovar o `Service Principal` e as *secrets* do GitHub.
-
-Por favor, tente o *push* com o código fornecido e me diga o que o log do GitHub Actions mostra!
