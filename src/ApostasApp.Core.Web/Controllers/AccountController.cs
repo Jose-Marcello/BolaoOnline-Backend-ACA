@@ -46,7 +46,7 @@ namespace ApostasApp.Core.Web.Controllers
       _environment = environment;
     }
 
-    // **********************************************
+    // ********************************************** 
     // 🎯 MÉTODO DE ESQUECEU A SENHA (FALTANDO)
     // **********************************************
     [AllowAnonymous]
