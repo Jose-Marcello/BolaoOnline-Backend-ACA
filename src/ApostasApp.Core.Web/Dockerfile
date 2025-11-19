@@ -27,7 +27,7 @@ WORKDIR /src/src/ApostasApp.Core.Web
 RUN dotnet publish -c Release -o /app/publish --no-self-contained
 
 # --- Estágio 2: Imagem de Produção Final (Runtime) ---
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final 
 WORKDIR /app
 
 # Copia os arquivos publicados do estágio 'build'
