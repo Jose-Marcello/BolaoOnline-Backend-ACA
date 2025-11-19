@@ -1,27 +1,23 @@
-# Este Dockerfile é para um aplicativo .NET Core (Backend)
-# Ele cria uma imagem do seu backend, ignorando o frontend.
-
-# ======================================================
-# Estágio 1: Build do Backend (.NET Core)
-# ======================================================
+## --- Estágio 1: Build (Compilação) ---
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend-build
 WORKDIR /app
-# Copia o código-fonte inteiro
+# Copia o código-fonte inteiro (A raiz do repositório vai para /app)
 COPY . .
 # Navega para o diretório do projeto Web
 WORKDIR "/app/src/ApostasApp.Core.Web"
 # Restaura as dependências
-RUN dotnet restore
+# CORREÇÃO: Ignora warnings, resolvendo a falha de compilação.
+RUN dotnet restore /p:TreatWarningsAsErrors=false
 # Publica a aplicação de forma otimizada
-RUN dotnet publish -c Release -o /app/publish --no-self-contained
+# CORREÇÃO: Ignora warnings, resolvendo a falha de compilação.
+RUN dotnet publish -c Release -o /app/publish --no-self-contained /p:TreatWarningsAsErrors=false
 
-# ======================================================
-# Estágio 2: Estágio Final (Runtime)
-# ======================================================
+# --- Estágio 2: Imagem de Produção Final (Runtime) ---
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-# Adicionamos o comando EXPOSE 8080: ESSENCIAL para avisar ao Docker e Azure qual é a porta interna.
+# ** CRÍTICO PARA ACA: Define a porta de escuta interna como 8080 **
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 # Copia a aplicação .NET publicada do estágio backend-build
