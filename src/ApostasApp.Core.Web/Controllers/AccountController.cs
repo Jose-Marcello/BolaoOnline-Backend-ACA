@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging; // Incluído para ILogger
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 
-namespace ApostasApp.Core.Web.Controllers
+namespace ApostasApp.Core.Web.Controllers 
 {
   [ApiController]
   // Rota fixa e minúscula para ACCOUNT. Elimina o [controller] que pode causar o erro.
