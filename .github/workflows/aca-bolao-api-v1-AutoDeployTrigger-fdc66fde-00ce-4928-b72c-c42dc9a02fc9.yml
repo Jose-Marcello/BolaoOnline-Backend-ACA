@@ -27,11 +27,9 @@ jobs:
         uses: azure/login@v2
         with:
           # *******************************************************
-          # MODO ESTÁVEL: Usa o JSON do Secret (creds) e força o ID da assinatura.
-          # O bloco 'creds' deve ser usado para login com Service Principal/senha.
+          # MODO ESTÁVEL FINAL: Usa o JSON do Secret (creds) SEM O PARAMETRO 'subscription-id'
           # *******************************************************
           creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
-          subscription-id: 9cdc0b73-fe9b-4ad5-bdbe-88061cf97f60 # ID da Assinatura para evitar o erro 'No subscriptions found'
 
       - name: Build and push container image to registry and deploy to ACA
         uses: azure/container-apps-deploy-action@v2
