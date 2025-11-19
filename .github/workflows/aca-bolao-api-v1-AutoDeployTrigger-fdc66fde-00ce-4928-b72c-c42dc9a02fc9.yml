@@ -43,5 +43,6 @@ jobs:
 
           containerAppName: env-bolao-prod 
           resourceGroup: rg-bolao-aca-prod
-          containerName: bolao-api-backend 
+       
           targetPort: 8080
+
