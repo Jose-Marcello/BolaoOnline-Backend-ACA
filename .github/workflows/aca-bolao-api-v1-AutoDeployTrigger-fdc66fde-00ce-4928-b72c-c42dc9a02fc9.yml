@@ -25,10 +25,12 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
-          # LINHA A INSERIR PARA FORÇAR A ASSINATURA:
+          # Desmembrando o JSON do secret ACABOLAOAPIV1_AZURE_CREDENTIALS
+          # Valores usados para login explícito:
+          client-id: 9d57c7e4-2b3d-4d87-89e1-cc03b20969f9
+          tenant-id: 9e5f2546-7e05-42b7-9c11-aab56c42b631
           subscription-id: 9cdc0b73-fe9b-4ad5-bdbe-88061cf97f60
-          # ----------------------------------------------------
+          service-principal-password: G3o8Q~vow_V-PRM0IK6k4D3.BjY.Bd7hcysX5brd
 
       - name: Build and push container image to registry and deploy to ACA
         uses: azure/container-apps-deploy-action@v2
@@ -44,4 +46,5 @@ jobs:
           resourceGroup: rg-bolao-aca-prod
           containerName: bolao-api-backend 
           targetPort: 8080
+
 
