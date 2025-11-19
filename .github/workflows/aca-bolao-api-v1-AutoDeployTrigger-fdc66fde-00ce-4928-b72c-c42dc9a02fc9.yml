@@ -5,6 +5,7 @@ on:
     branches:  
       [ master ]    
     paths:
+      # Paths para acionar o deploy apenas quando o código C# for alterado
       - 'src/ApostasApp.Core.Web/**' 
       - 'src/ApostasApp.Core.Application/**'
       - 'src/ApostasApp.Core.Domain/**'
@@ -19,12 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     
     # **********************************************
-    # 1. CORREÇÃO FINAL OIDC: Adiciona permissão de token
+    # 1. CORREÇÃO DE PERMISSÃO GLOBAL (Nível do Job)
     # Isso resolve o erro 'Failed to fetch federated token'
     # **********************************************
     permissions:
-      id-token: write # Permissão necessária para o método de login moderno
-      contents: read # Permissão padrão para checkout
+      id-token: write # Permissão necessária para o Azure Login funcionar corretamente
+      contents: read 
     
     steps:
       - name: Checkout to the branch
@@ -34,13 +35,16 @@ jobs:
         uses: azure/login@v2
         with:
           # **********************************************
-          # 2. CORREÇÃO FINAL DE SINTAXE: Força o método SP
+          # 2. CORREÇÃO DE SINTAXE E FORÇANDO O MÉTODO SP (Senha)
+          # A Action tentava forçar OIDC, ignorando sua senha
           # **********************************************
-          auth-type: service_principal
+          auth-type: service_principal # Garante que o método SP seja usado
+          enable-oicd: false           # Bloqueia a tentativa de OIDC/token
+          
           client-id: 9d57c7e4-2b3d-4d87-89e1-cc03b20969f9
           tenant-id: 9e5f2546-7e05-42b7-9c11-aab56c42b631
           subscription-id: 9cdc0b73-fe9b-4ad5-bdbe-88061cf97f60
-          client-secret: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }} # Usando o secret da senha para maior segurança
+          client-secret: G3o8Q~vow_V-PRM0IK6k4D3.BjY.Bd7hcysX5brd # Sua nova senha literal
 
       - name: Build and push container image to registry and deploy to ACA
         uses: azure/container-apps-deploy-action@v2
