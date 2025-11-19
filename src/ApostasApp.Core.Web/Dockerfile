@@ -25,7 +25,9 @@ COPY . .
 # Publica a aplicação de forma otimizada
 WORKDIR /src/src/ApostasApp.Core.Web
 #RUN dotnet publish -c Release -o /app/publish --no-self-contained
+# CORREÇÃO DEFINITIVA DO DOCKERFILE PARA IGNORAR WARNINGS
 RUN dotnet publish -c Release -o /app/publish --no-self-contained /p:TreatWarningsAsErrors=false
+
 
 # --- Estágio 2: Imagem de Produção Final (Runtime) ---
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final 
