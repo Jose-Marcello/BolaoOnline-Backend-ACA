@@ -2,24 +2,24 @@ name: Deploy to env-bolao-qa (ACA Backend)
 
 on:
   push:
-    branches:  
-      [ master ]    
+    branches:
+      - master
     paths:
-      - 'src/ApostasApp.Core.Web/**' 
+      - 'src/ApostasApp.Core.Web/**'
       - 'Dockerfile'
       - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-fdc66fde-00ce-4928-b72c-c42dc9a02fc9.yml'
 
   workflow_dispatch:
-    
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO AZURE (Usando Secret de QA)
+      # 1. LOGIN NO AZURE
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -33,33 +33,30 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 3. BUILD E PUSH MANUAL (Com correção de warnings no Dockerfile)
-      - name: Build and Push Docker Image
-        run: |
-          IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
-          
-          # Garante que a flag de ignorar warnings no publish funcione
-          docker build . --file Dockerfile --tag $IMAGE_NAME
-            
-          docker push $IMAGE_NAME
-
-      # ETAPA TEMPORÁRIA CRÍTICA DE DEBUG
+      # 3. ETAPA CRÍTICA DE DEBUG: VERIFICA A SUBSCRIÇÃO
       - name: Debug - Show Azure Account
         uses: azure/cli@v1
         with:
           inlineScript: |
             echo "Mostrando as informações de conta e subscrição:"
             az account show --output json
-            
-      # 4. DEPLOY MANUAL (Para o novo ambiente de QA)
+
+      # 4. BUILD E PUSH MANUAL
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
+
+          # Garante que a flag de ignorar warnings no publish funcione
+          docker build . --file Dockerfile --tag $IMAGE_NAME
+
+          docker push $IMAGE_NAME
+
+      # 5. DEPLOY MANUAL NO CONTAINER APPS (QA)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
-            
-            # COMANDO FINAL CORRIGIDO: Removendo o argumento --port 8080
-            # O Azure Container App infere a porta 8080 do Dockerfile           
+
+            # Comando com o Resource Group corrigido
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
-
-
