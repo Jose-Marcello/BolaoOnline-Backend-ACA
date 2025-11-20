@@ -58,5 +58,5 @@ jobs:
             az containerapp update \
               --name env-bolao-qa \
               --resource-group rg-bolao-qa \
-              --image $IMAGE_NAME \
-              --target-port 8080
+              --image $IMAGE_NAME \              
+              --port 8080
