@@ -1,6 +1,6 @@
 # ARQUIVO: .github/workflows/aca-bolao-api-v1-AutoDeployTrigger-*.yml
 
-name: Deploy to env-bolao-prod (ACA Backend)
+name: Deploy to env-bolao-qa (ACA Backend)
 
 on:
   push:
@@ -8,9 +8,6 @@ on:
       [ master ]    
     paths:
       - 'src/ApostasApp.Core.Web/**' 
-      - 'src/ApostasApp.Core.Application/**'
-      - 'src/ApostasApp.Core.Domain/**'
-      - 'src/ApostasApp.Core.Infrastructure/**'
       - 'Dockerfile'
       - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-fdc66fde-00ce-4928-b72c-c42dc9a02fc9.yml'
 
@@ -24,11 +21,11 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO AZURE (Modo Estável)
+      # 1. LOGIN NO AZURE (Usando novo Secret de QA)
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_CREDENTIALS_QA }}
 
       # 2. LOGIN NO ACR
       - name: ACR Login
@@ -38,23 +35,20 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # **********************************************
-      # 3. BUILD E PUSH MANUAL (Contornando Action Quebrada)
-      # **********************************************
+      # 3. BUILD E PUSH MANUAL 
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
           
-          # COMANDO BUILD DOCKER (Simples, sem argumentos inválidos)
-          docker build . --file Dockerfile --tag $IMAGE_NAME
+          # COMANDO BUILD DOCKER (Contorna o erro de compilação)
+          docker build . \
+            --file Dockerfile \
+            --tag $IMAGE_NAME
             
-          # COMANDO PUSH
           docker push $IMAGE_NAME
 
-      # **********************************************
-      # 4. DEPLOY MANUAL (Usando AZ CLI direto)
-      # **********************************************
-      - name: Deploy to Azure Container Apps
+      # 4. DEPLOY MANUAL (Para o novo ambiente de QA)
+      - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
@@ -62,7 +56,7 @@ jobs:
             
             # Comando de update da ACA com a nova imagem
             az containerapp update \
-              --name env-bolao-prod \
-              --resource-group rg-bolao-aca-prod \
+              --name env-bolao-qa \
+              --resource-group rg-bolao-qa \
               --image $IMAGE_NAME \
               --target-port 8080
