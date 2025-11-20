@@ -1,4 +1,4 @@
-﻿// ApostasApp.Core.Application.Models/ApiResponse.cs
+// ApostasApp.Core.Application.Models/ApiResponse.cs
 // Esta classe define o formato das respostas da sua API, incluindo métodos estáticos para criação.
 
 // Usar NotificationDto para a comunicação da API

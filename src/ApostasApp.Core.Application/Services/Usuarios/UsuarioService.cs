@@ -231,7 +231,8 @@ namespace ApostasApp.Core.Application.Services.Usuarios
 
       // O IdentityService agora lida com toda a lógica de token, mock e notificação.
       // O UsuarioService apenas orquestra a chamada.
-      var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
+      //var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
+      var response = await _identityService.ForgotPasswordAsync(email);
 
       // É crucial garantir que as notificações do IdentityService sejam transferidas
       // para o BaseService, para que o Controller as capture via CustomResponse.
