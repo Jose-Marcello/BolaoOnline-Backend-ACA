@@ -49,9 +49,10 @@ jobs:
           inlineScript: |
             # Ação única e crucial: Forçar a subscrição após o login na etapa 1.
             # O erro de "Cloud" é uma falha de contexto que esta linha deve resolver.
-            az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
+            az account set --subscription "9cdc0b73-fe9b-4ad5-bdbe-88061cf97f60"
             
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
 
             # Atualiza o Container App (ACA)
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
+
