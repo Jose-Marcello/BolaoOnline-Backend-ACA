@@ -51,6 +51,6 @@ jobs:
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
             
             # COMANDO FINAL CORRIGIDO: Removendo o argumento --port 8080
-            # O Azure Container App infere a porta 8080 do Dockerfile
-            az containerapp update --name env-bolao-qa --resource-group rg-bolao-qa --image $IMAGE_NAME
+            # O Azure Container App infere a porta 8080 do Dockerfile           
+            az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
 
