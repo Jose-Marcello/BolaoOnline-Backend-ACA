@@ -1,47 +1,66 @@
-# O SEU NOVO YAML (Atenção à mudança nas etapas de login/deploy)
+name: Deploy to env-bolao-qa (ACA Backend)
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/ApostasApp.Core.Web/**'
+      - 'Dockerfile'
+      - '.github/workflows/aca-bolao-api-v1-AutoDeployTrigger-fdc66fde-00ce-4928-b72c-c42dc9a02fc9.yml'
+
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # REMOVA A ETAPA 'AZURE LOGIN' (NÃO VAMOS MAIS USAR A ACTION PADRÃO)
-
-      # 1. LOGIN NO ACR (Continua igual)
+      # 1. LOGIN NO ACR (Continua usando a action para autenticação no Docker Registry)
       - name: ACR Login
         uses: azure/docker-login@v1
         with:
-          # ... (Seus segredos)
-          
-      # 2. BUILD E PUSH MANUAL (Continua igual)
-      - name: Build and Push Docker Image
-        # ... (Seu run command)
+          login-server: acabolaoitems.azurecr.io
+          username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
+          password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 3. DEPLOY MANUAL NO CONTAINER APPS (AGORA COM LOGIN EMBUTIDO)
+      # 2. BUILD E PUSH MANUAL (Usa o Dockerfile corrigido)
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
+          
+          # Garante que o build use o Dockerfile corrigido para passar pelos Warnings
+          docker build . --file Dockerfile --tag $IMAGE_NAME
+            
+          docker push $IMAGE_NAME
+
+      # 3. DEPLOY MANUAL NO CONTAINER APPS (COM LOGIN MANUAL FORÇADO)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
-            # --- 1. LOGIN MANUAL FORÇADO ---
-            # CORREÇÃO CRÍTICA: Faz o login manual com o JSON da Service Principal e Cloud
-            # Assume que a credencial é um JSON no formato de Service Principal (appId, password, tenant)
+            # --- 1. INSTALAÇÃO DO JQ (Garante que a ferramenta para ler o JSON esteja disponível) ---
+            apt-get update && apt-get install -y jq
+            
+            # --- 2. LOGIN MANUAL FORÇADO (Contorna o erro de Cloud Context) ---
             SPN_JSON='${{ secrets.AZURE_CREDENTIALS_QA }}'
             
-            # Use jq para extrair credenciais do JSON. (Se o ambiente Docker tiver jq instalado)
-            # Como a ação 'azure/cli@v1' está em um contêiner Docker, o 'jq' deve funcionar.
+            # Extrai os IDs de dentro do JSON da Secret
             APP_ID=$(echo $SPN_JSON | jq -r .clientId)
             PASSWORD=$(echo $SPN_JSON | jq -r .clientSecret)
             TENANT_ID=$(echo $SPN_JSON | jq -r .tenantId)
 
-            # COMANDO DE LOGIN AZ LOGIN EXPLÍCITO NO CLOUD CORRETO
+            # Executa o login manual, forçando o tipo de credencial e o Cloud AzureCloud
             az login --service-principal -u $APP_ID -p $PASSWORD --tenant $TENANT_ID --cloud AzureCloud
             
-            # --- 2. COMANDOS DE DEPLOY ---
+            # --- 3. COMANDOS DE DEPLOY ---
+            # Define a Subscrição correta (que estava falhando)
             az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
             
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
 
+            # Atualiza o Container App com a nova imagem
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
