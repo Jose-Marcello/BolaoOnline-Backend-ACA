@@ -1,5 +1,3 @@
-# ARQUIVO: .github/workflows/aca-bolao-api-v1-AutoDeployTrigger-*.yml
-
 name: Deploy to env-bolao-qa (ACA Backend)
 
 on:
@@ -21,7 +19,7 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO AZURE (Usando novo Secret de QA)
+      # 1. LOGIN NO AZURE (Usando Secret de QA)
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -35,15 +33,13 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 3. BUILD E PUSH MANUAL 
+      # 3. BUILD E PUSH MANUAL (Com correção de warnings no Dockerfile)
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
           
-          # COMANDO BUILD DOCKER (Contorna o erro de compilação)
-          docker build . \
-            --file Dockerfile \
-            --tag $IMAGE_NAME
+          # Garante que a flag de ignorar warnings no publish funcione
+          docker build . --file Dockerfile --tag $IMAGE_NAME
             
           docker push $IMAGE_NAME
 
@@ -54,9 +50,5 @@ jobs:
           inlineScript: |
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
             
-            # Comando de update da ACA com a nova imagem
-            az containerapp update \
-              --name env-bolao-qa \
-              --resource-group rg-bolao-qa \
-              --image $IMAGE_NAME \              
-              --port 8080
+            # COMANDO FINAL CORRIGIDO: Tudo em uma linha contínua (sem '\' ou quebras de linha)
+            az containerapp update --name env-bolao-qa --resource-group rg-bolao-qa --image $IMAGE_NAME --port 8080
