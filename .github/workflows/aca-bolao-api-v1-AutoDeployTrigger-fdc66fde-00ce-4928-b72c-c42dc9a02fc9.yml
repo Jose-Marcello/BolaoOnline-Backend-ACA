@@ -23,26 +23,53 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
+      # **********************************************
+      # 1. LOGIN NO AZURE (USANDO CREDENTIALS JSON)
+      # **********************************************
       - name: Azure Login
         uses: azure/login@v2
         with:
-          # *******************************************************
-          # MODO ESTÁVEL FINAL: Usa o JSON do Secret (creds) SEM O PARAMETRO 'subscription-id'
-          # *******************************************************
           creds: ${{ secrets.ACABOLAOAPIV1_AZURE_CREDENTIALS }}
 
-      - name: Build and push container image to registry and deploy to ACA
-        uses: azure/container-apps-deploy-action@v2
+      # **********************************************
+      # 2. LOGIN NO ACR
+      # **********************************************
+      - name: ACR Login
+        uses: azure/docker-login@v1
         with:
-          appSourcePath: ${{ github.workspace }} 
-          dockerfilePath: 'Dockerfile' 
-          registryUrl: acabolaoitems.azurecr.io
-          registryUsername: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
-          imageToBuild: acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}
+          login-server: acabolaoitems.azurecr.io
+          username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
+          password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-          containerAppName: env-bolao-prod 
-          resourceGroup: rg-bolao-aca-prod
-       
-          targetPort: 8080
+      # **********************************************
+      # 3. BUILD E PUSH MANUAL (Contornando Action Quebrada)
+      # **********************************************
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
+          
+          # COMANDO BUILD DOCKER (Com o argumento de ignorar warnings)
+          docker build . \
+            --file Dockerfile \
+            --tag $IMAGE_NAME \
+            --build-arg TreatWarningsAsErrors=false 
+            
+          # COMANDO PUSH
+          docker push $IMAGE_NAME
 
+      # **********************************************
+      # 4. DEPLOY MANUAL (Usando AZ CLI direto)
+      # **********************************************
+      - name: Deploy to Azure Container Apps
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            # Imagem a ser usada no update
+            IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
+            
+            # Comando de update da ACA com a nova imagem
+            az containerapp update \
+              --name env-bolao-prod \
+              --resource-group rg-bolao-aca-prod \
+              --image $IMAGE_NAME \
+              --target-port 8080 # Porta do seu Dockerfile
