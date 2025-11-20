@@ -43,6 +43,14 @@ jobs:
             
           docker push $IMAGE_NAME
 
+      # ETAPA TEMPORÁRIA CRÍTICA DE DEBUG
+      - name: Debug - Show Azure Account
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            echo "Mostrando as informações de conta e subscrição:"
+            az account show --output json
+            
       # 4. DEPLOY MANUAL (Para o novo ambiente de QA)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
@@ -53,4 +61,5 @@ jobs:
             # COMANDO FINAL CORRIGIDO: Removendo o argumento --port 8080
             # O Azure Container App infere a porta 8080 do Dockerfile           
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
+
 
