@@ -50,5 +50,7 @@ jobs:
           inlineScript: |
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
             
-            # COMANDO FINAL CORRIGIDO: Tudo em uma linha contínua (sem '\' ou quebras de linha)
-            az containerapp update --name env-bolao-qa --resource-group rg-bolao-qa --image $IMAGE_NAME --port 8080
+            # COMANDO FINAL CORRIGIDO: Removendo o argumento --port 8080
+            # O Azure Container App infere a porta 8080 do Dockerfile
+            az containerapp update --name env-bolao-qa --resource-group rg-bolao-qa --image $IMAGE_NAME
+
