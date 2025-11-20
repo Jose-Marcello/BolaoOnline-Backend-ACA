@@ -56,7 +56,11 @@ jobs:
         uses: azure/cli@v1
         with:
           inlineScript: |
+            # FORÇA O AZURE CLI A USAR A SUBSCRIPTION ID CORRETA
+            az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
+            
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
 
-            # Comando com o Resource Group corrigido
+            # Comando de update (RG e nome do ACA já estão corretos)
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
+
