@@ -19,7 +19,15 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO ACR (Continua usando a action para autenticação no Docker Registry)
+      # 1. LOGIN NO AZURE (Versão Padrão, mas confiável, sem comandos manuais)
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS_QA }}
+          # Especificar o ambiente aqui é o ponto de controle mais limpo
+          environment: 'AzureCloud' 
+
+      # 2. LOGIN NO ACR
       - name: ACR Login
         uses: azure/docker-login@v1
         with:
@@ -27,40 +35,23 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 2. BUILD E PUSH MANUAL (Usa o Dockerfile corrigido)
+      # 3. BUILD E PUSH MANUAL (O Dockerfile corrigido resolve os warnings aqui)
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
-          
-          # Garante que o build use o Dockerfile corrigido para passar pelos Warnings
           docker build . --file Dockerfile --tag $IMAGE_NAME
-            
           docker push $IMAGE_NAME
 
-      # 3. DEPLOY MANUAL NO CONTAINER APPS (COM LOGIN MANUAL FORÇADO)
+      # 4. DEPLOY MANUAL NO CONTAINER APPS (Corrigido para usar a subscrição)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
-            # --- 1. INSTALAÇÃO DO JQ (Garante que a ferramenta para ler o JSON esteja disponível) ---
-            apt-get update && apt-get install -y jq
-            
-            # --- 2. LOGIN MANUAL FORÇADO (Contorna o erro de Cloud Context) ---
-            SPN_JSON='${{ secrets.AZURE_CREDENTIALS_QA }}'
-            
-            # Extrai os IDs de dentro do JSON da Secret
-            APP_ID=$(echo $SPN_JSON | jq -r .clientId)
-            PASSWORD=$(echo $SPN_JSON | jq -r .clientSecret)
-            TENANT_ID=$(echo $SPN_JSON | jq -r .tenantId)
-
-            # Executa o login manual, forçando o tipo de credencial e o Cloud AzureCloud
-            az login --service-principal -u $APP_ID -p $PASSWORD --tenant $TENANT_ID --cloud AzureCloud
-            
-            # --- 3. COMANDOS DE DEPLOY ---
-            # Define a Subscrição correta (que estava falhando)
+            # Corrigido: Não precisa do 'az account set' se a credencial de login for correta.
+            # No entanto, se o az/login falhou em setar o contexto, vamos forçar apenas a subscrição:
             az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
             
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
 
-            # Atualiza o Container App com a nova imagem
+            # Atualiza o Container App (ACA)
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
