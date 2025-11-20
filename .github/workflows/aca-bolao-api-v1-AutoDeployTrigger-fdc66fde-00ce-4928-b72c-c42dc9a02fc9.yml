@@ -19,11 +19,13 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO AZURE
+      # 1. LOGIN NO AZURE (AGORA FORÇANDO O AMBIENTE CLOUD)
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_QA }}
+          # CORREÇÃO CRÍTICA: FORÇA O AMBIENTE PÚBLICO GLOBAL
+          environment: 'AzureCloud' 
 
       # 2. LOGIN NO ACR
       - name: ACR Login
@@ -33,34 +35,24 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 3. ETAPA CRÍTICA DE DEBUG: VERIFICA A SUBSCRIÇÃO
-      - name: Debug - Show Azure Account
-        uses: azure/cli@v1
-        with:
-          inlineScript: |
-            echo "Mostrando as informações de conta e subscrição:"
-            az account show --output json
-
-      # 4. BUILD E PUSH MANUAL
+      # 3. BUILD E PUSH MANUAL
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
-
-          # Garante que a flag de ignorar warnings no publish funcione
+          
+          # COMANDO BUILD DOCKER (Bypass na Action quebrada)
           docker build . --file Dockerfile --tag $IMAGE_NAME
-
+            
           docker push $IMAGE_NAME
 
-      # 5. DEPLOY MANUAL NO CONTAINER APPS (QA)
+      # 4. DEPLOY MANUAL NO CONTAINER APPS (QA)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
-            # FORÇA O AZURE CLI A USAR A SUBSCRIPTION ID CORRETA
+            # CORREÇÃO CRÍTICA: FORÇA A SUBSCRIPTION ID CORRETA
             az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
             
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
 
-            # Comando de update (RG e nome do ACA já estão corretos)
             az containerapp update --name env-bolao-qa --resource-group rg-bolao-aca-prod --image $IMAGE_NAME
-
