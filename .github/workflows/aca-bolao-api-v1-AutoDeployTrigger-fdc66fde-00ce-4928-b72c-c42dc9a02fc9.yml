@@ -19,14 +19,14 @@ jobs:
       - name: Checkout to the branch
         uses: actions/checkout@v2
 
-      # 1. LOGIN NO AZURE (Versão Padrão, mas confiável, sem comandos manuais)
+      # 1. LOGIN NO AZURE (Versão Padrão e Robusta: DEVE FUNCIONAR)
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS_QA }}
-          # Especificar o ambiente aqui é o ponto de controle mais limpo
-          environment: 'AzureCloud' 
-
+          # Garantir que a credencial seja setada no contexto do ambiente.
+          # O problema era que o AZ CLI estava limpando o contexto após a ação.
+          
       # 2. LOGIN NO ACR
       - name: ACR Login
         uses: azure/docker-login@v1
@@ -35,20 +35,20 @@ jobs:
           username: ${{ secrets.ACABOLAOAPIV1_REGISTRY_USERNAME }}
           password: ${{ secrets.ACABOLAOAPIV1_REGISTRY_PASSWORD }}
 
-      # 3. BUILD E PUSH MANUAL (O Dockerfile corrigido resolve os warnings aqui)
+      # 3. BUILD E PUSH MANUAL
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
           docker build . --file Dockerfile --tag $IMAGE_NAME
           docker push $IMAGE_NAME
 
-      # 4. DEPLOY MANUAL NO CONTAINER APPS (Corrigido para usar a subscrição)
+      # 4. DEPLOY MANUAL NO CONTAINER APPS (FORÇANDO A SUBSCRIPTION ID)
       - name: Deploy to Azure Container Apps (QA)
         uses: azure/cli@v1
         with:
           inlineScript: |
-            # Corrigido: Não precisa do 'az account set' se a credencial de login for correta.
-            # No entanto, se o az/login falhou em setar o contexto, vamos forçar apenas a subscrição:
+            # Ação única e crucial: Forçar a subscrição após o login na etapa 1.
+            # O erro de "Cloud" é uma falha de contexto que esta linha deve resolver.
             az account set --subscription "9fdc0b73-fefb-4ad5-bdbe-88061dc97f60"
             
             IMAGE_NAME="acabolaoitems.azurecr.io/aca-bolao-api-v1:${{ github.sha }}"
