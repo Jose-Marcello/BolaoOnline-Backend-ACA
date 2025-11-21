@@ -53,28 +53,41 @@ namespace ApostasApp.Core.Web.Controllers
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
-      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}");
+      // === NOVO LOG CRÍTICO E VERIFICAÇÃO NULA ===
+      if (request == null)
+      {
+        _logger.LogError("Esqueceu Senha: O objeto de Requisição [FromBody] é nulo. A desserialização JSON falhou.");
+        // Retorna 400 com uma mensagem CLARA (mas você vê 'error: null' no console, então o corpo não está chegando)
+        return BadRequest(new { Message = "Dados de requisição inválidos ou ausentes." });
+      }
+      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email ?? "Email NULO/VAZIO"}");
+      // ===========================================
 
+      // Nota: O ModelState.IsValid deve estar passando agora que removemos os atributos [Required] e [EmailAddress].
+
+      /*
       if (!ModelState.IsValid)
       {
-        _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
-        return CustomValidationProblem(ModelState);
+          _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
+          return CustomValidationProblem(ModelState);
       }
+      */
 
-      // Chama o serviço. O serviço DEVE retornar a ApiResponse<string> contendo o link 
+      // Deixamos a lógica para rodar sem a checagem ModelState.IsValid, se for o caso.
+
+      // Chama o serviço. O serviço DEVE retornar a ApiResponse<string> contendo o link 
       // no campo 'Data' se o mock/development estiver ativado.
-      //var result = await _identityService.ForgotPasswordAsync(request.Email, HttpContext.Request.Scheme, HttpContext.Request.Host.ToUriComponent());
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-         request.Email,
-         HttpContext.Request.Scheme,
-         HttpContext.Request.Host.ToUriComponent()
-      );
+      request.Email,
+      HttpContext.Request.Scheme,
+      HttpContext.Request.Host.ToUriComponent()
+    );
 
       if (result.Success)
       {
         _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.Email}.");
 
-        // PONTO CRÍTICO: Se estiver em Development, o serviço deve ter injetado o link 
+        // PONTO CRÍTICO: Se estiver em Development, o serviço deve ter injetado o link 
         // no campo 'Data'. Aqui, só retornamos o CustomResponse(200 OK)
       }
       else
