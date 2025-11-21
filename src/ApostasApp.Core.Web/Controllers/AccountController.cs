@@ -46,79 +46,45 @@ namespace ApostasApp.Core.Web.Controllers
       _environment = environment;
     }
 
+    // AccountController.cs - APENAS O MÉTODO ForgotPassword
+    // ********************************************** 
+    // 🎯 MÉTODO DE ESQUECEU A SENHA (FINAL E LIMPO)
+    // **********************************************
     [AllowAnonymous]
     [HttpPost("forgot-password")]
-    // CORREÇÃO CRÍTICA: Bypass no DTO. Esperamos a string 'email' do JSON ({"email": "..."})
-    public async Task<IActionResult> ForgotPassword([FromBody] string email)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
-      // Logamos a string recebida diretamente.
-      _logger.LogInformation($"Requisição de Esqueceu Senha para: {email ?? "Email NULO/VAZIO"}");
-
-      // Se o Angular não enviou nada ou o binding falhou, retornamos 400.
-      if (string.IsNullOrEmpty(email))
+      // === Validação FINAL: Volta a usar o ModelState.IsValid ===
+      if (!ModelState.IsValid)
       {
-        _logger.LogError("Esqueceu Senha: O valor do Email é nulo ou vazio após o binding. Falha na comunicação JSON.");
-        return BadRequest(new { Message = "O campo de email está ausente ou vazio." });
+        _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
+        return CustomValidationProblem(ModelState);
       }
 
-      // NOTA: Se você precisar da validação de formato de e-mail (EmailAddress),
-      // ela deve ser adicionada manualmente aqui (ex: se o email não contiver '@' e '.').
+      // Logamos o e-mail (para debug)
+      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}");
 
-      // Chama o serviço (usando a string 'email' diretamente).
+
+      // Chama o serviço.
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-          email, // Usando a string
-          HttpContext.Request.Scheme,
-          HttpContext.Request.Host.ToUriComponent()
-      );
+      request.Email,
+      HttpContext.Request.Scheme,
+      HttpContext.Request.Host.ToUriComponent()
+    );
 
       if (result.Success)
       {
-        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {email}.");
+        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.Email}.");
       }
       else
       {
-        // Se a falha for na lógica do serviço (ex: usuário não existe), o log é importante.
-        _logger.LogWarning($"Falha no envio de redefinição de senha para {email}. Motivo: {result.Message}");
+        _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}. Motivo: {result.Message}");
       }
 
-      // Retorna a resposta personalizada (CustomResponse).
+      // CORRIGIDO: Usando CustomResponse (Isso garante o 200 OK com o corpo JSON)
       return CustomResponse(result);
     }
-
-    [AllowAnonymous]
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
-    {
-      _logger.LogInformation($"Tentativa de login para o e-mail: {request.Email}");
-
-      if (!ModelState.IsValid)
-      {
-        _logger.LogWarning("Login: ModelState é inválido.");
-        foreach (var state in ModelState)
-        {
-          foreach (var error in state.Value.Errors)
-          {
-            _logger.LogWarning($"Erro no ModelState: {state.Key} - {error.ErrorMessage}");
-          }
-        }
-        return CustomValidationProblem(ModelState); // Usa o método da BaseController
-      }
-
-      var response = await _usuarioService.LoginAsync(request);
-
-      _logger.LogInformation($"Login: Resposta do UsuarioService - Sucesso: {response.Success}");
-      if (response.Notifications != null)
-      {
-        foreach (var notification in response.Notifications)
-        {
-          _logger.LogInformation($"Notificação de Login: Codigo={notification.Codigo}, Tipo={notification.Tipo}, Mensagem={notification.Mensagem}, NomeCampo={notification.NomeCampo}");
-        }
-      }
-
-      // CORRIGIDO: Usando CustomResponse
-      return CustomResponse(response); // Retorna a ApiResponse do serviço de forma consistente
-    }
-
+    // **********************************************
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
