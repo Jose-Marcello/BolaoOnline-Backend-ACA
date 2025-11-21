@@ -10,6 +10,6 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
     // CORREÇÃO CRÍTICA: Força o nome da propriedade JSON para 'email' (camelCase)
     // Isso resolve a falha de desserialização no ambiente de produção/ACA.
     [JsonPropertyName("email")]
-    public string Email { get; set; }
+    public string email { get; set; }
   }
 }

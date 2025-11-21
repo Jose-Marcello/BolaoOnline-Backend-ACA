@@ -62,23 +62,23 @@ namespace ApostasApp.Core.Web.Controllers
       }
 
       // Logamos o e-mail (para debug)
-      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}");
+      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.email}");
 
 
       // Chama o serviço.
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-      request.Email,
+      request.email,
       HttpContext.Request.Scheme,
       HttpContext.Request.Host.ToUriComponent()
     );
 
       if (result.Success)
       {
-        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.Email}.");
+        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.email}.");
       }
       else
       {
-        _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}. Motivo: {result.Message}");
+        _logger.LogWarning($"Falha no envio de redefinição de senha para {request.email}. Motivo: {result.Message}");
       }
 
       // CORRIGIDO: Usando CustomResponse (Isso garante o 200 OK com o corpo JSON)
