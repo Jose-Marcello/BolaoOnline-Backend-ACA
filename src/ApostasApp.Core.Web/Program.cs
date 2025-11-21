@@ -197,7 +197,7 @@ builder.Services.AddCors(options =>
   options.AddPolicy("AllowFrontend",
  policy => policy.WithOrigins(
    "http://localhost:4200",
-   "https://thankful-pond-04be1170f.2.azurestaticapps.net",
+   "https://lemon-plant-05b6fdb1e.3.azurestaticapps.net",
    "https://app.palpitesbolao.com.br" // Adicione esta linha
        )
   .AllowAnyHeader()
