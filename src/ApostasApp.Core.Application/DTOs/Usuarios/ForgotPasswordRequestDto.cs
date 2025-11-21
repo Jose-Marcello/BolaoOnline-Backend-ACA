@@ -6,7 +6,7 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
   public class ForgotPasswordRequestDto
   {
     [Required(ErrorMessage = "O Email é obrigatório.")]
-    [EmailAddress(ErrorMessage = "O Email está em formato inválido.")]
+    [EmailAddress(ErrorMessage = "O Email está em formato inválido.")] 
     // CORREÇÃO CRÍTICA: Força o nome da propriedade JSON para 'email' (camelCase)
     // Isso resolve a falha de desserialização no ambiente de produção/ACA.
     [JsonPropertyName("email")]
