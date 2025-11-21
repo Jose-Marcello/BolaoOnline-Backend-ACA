@@ -181,7 +181,7 @@ builder.Services.AddControllers()
     // 🎯 CORREÇÃO CRÍTICA FINAL: Força a descoberta de Controllers no Assembly que contém a AccountController
     .AddApplicationPart(typeof(AccountController).Assembly)
     .AddJsonOptions(options =>
-    {
+    { 
       // 🛑 CORREÇÃO FINAL 1: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
       options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
       // options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
