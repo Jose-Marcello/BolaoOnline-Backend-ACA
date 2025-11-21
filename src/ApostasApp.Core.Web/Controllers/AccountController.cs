@@ -46,61 +46,46 @@ namespace ApostasApp.Core.Web.Controllers
       _environment = environment;
     }
 
-    // ********************************************** 
-    // 🎯 MÉTODO DE ESQUECEU A SENHA (FALTANDO)
-    // **********************************************
     [AllowAnonymous]
     [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+    // CORREÇÃO CRÍTICA: Bypass no DTO. Esperamos a string 'email' do JSON ({"email": "..."})
+    public async Task<IActionResult> ForgotPassword([FromBody] string email)
     {
-      // === NOVO LOG CRÍTICO E VERIFICAÇÃO NULA ===
-      if (request == null)
+      // Logamos a string recebida diretamente.
+      _logger.LogInformation($"Requisição de Esqueceu Senha para: {email ?? "Email NULO/VAZIO"}");
+
+      // Se o Angular não enviou nada ou o binding falhou, retornamos 400.
+      if (string.IsNullOrEmpty(email))
       {
-        _logger.LogError("Esqueceu Senha: O objeto de Requisição [FromBody] é nulo. A desserialização JSON falhou.");
-        // Retorna 400 com uma mensagem CLARA (mas você vê 'error: null' no console, então o corpo não está chegando)
-        return BadRequest(new { Message = "Dados de requisição inválidos ou ausentes." });
+        _logger.LogError("Esqueceu Senha: O valor do Email é nulo ou vazio após o binding. Falha na comunicação JSON.");
+        return BadRequest(new { Message = "O campo de email está ausente ou vazio." });
       }
-      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email ?? "Email NULO/VAZIO"}");
-      // ===========================================
 
-      // Nota: O ModelState.IsValid deve estar passando agora que removemos os atributos [Required] e [EmailAddress].
+      // NOTA: Se você precisar da validação de formato de e-mail (EmailAddress),
+      // ela deve ser adicionada manualmente aqui (ex: se o email não contiver '@' e '.').
 
-      /*
-      if (!ModelState.IsValid)
-      {
-          _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
-          return CustomValidationProblem(ModelState);
-      }
-      */
-
-      // Deixamos a lógica para rodar sem a checagem ModelState.IsValid, se for o caso.
-
-      // Chama o serviço. O serviço DEVE retornar a ApiResponse<string> contendo o link 
-      // no campo 'Data' se o mock/development estiver ativado.
+      // Chama o serviço (usando a string 'email' diretamente).
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-      request.Email,
-      HttpContext.Request.Scheme,
-      HttpContext.Request.Host.ToUriComponent()
-    );
+          email, // Usando a string
+          HttpContext.Request.Scheme,
+          HttpContext.Request.Host.ToUriComponent()
+      );
 
       if (result.Success)
       {
-        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.Email}.");
-
-        // PONTO CRÍTICO: Se estiver em Development, o serviço deve ter injetado o link 
-        // no campo 'Data'. Aqui, só retornamos o CustomResponse(200 OK)
+        _logger.LogInformation($"Instruções de redefinição de senha enviadas para {email}.");
       }
       else
       {
-        _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}.");
+        // Se a falha for na lógica do serviço (ex: usuário não existe), o log é importante.
+        _logger.LogWarning($"Falha no envio de redefinição de senha para {email}. Motivo: {result.Message}");
       }
 
-      // CORRIGIDO: Usando CustomResponse (Isso garante o 200 OK com o corpo JSON)
+      // Retorna a resposta personalizada (CustomResponse).
       return CustomResponse(result);
     }
-    // **********************************************
 
-    [AllowAnonymous]
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
