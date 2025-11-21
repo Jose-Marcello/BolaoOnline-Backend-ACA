@@ -240,12 +240,13 @@ using (var scope = app.Services.CreateScope())
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
+// 1. CORS (Deve vir logo após UseRouting)
+app.UseCors("AllowFrontend"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
 
-// 1. Configurações de Roteamento (Deve vir antes de tudo que tem rotas)
+
+// 2. Configurações de Roteamento (Deve vir antes de tudo que tem rotas)
 app.UseRouting();
 
-// 2. CORS (Deve vir logo após UseRouting)
-app.UseCors("AllowFrontend"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
 
 // 3. Autenticação e Autorização
 app.UseAuthentication();
