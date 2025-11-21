@@ -181,7 +181,7 @@ builder.Services.AddControllers()
     // 🎯 CORREÇÃO CRÍTICA FINAL: Força a descoberta de Controllers no Assembly que contém a AccountController
     .AddApplicationPart(typeof(AccountController).Assembly)
     .AddJsonOptions(options =>
-    {
+    { 
       // 🛑 CORREÇÃO FINAL 1: Força o Back-end a aceitar JSON em camelCase (padrão do Angular/Front-end)
       options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
       // options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -241,11 +241,21 @@ using (var scope = app.Services.CreateScope())
 // ===================================================================================================
 
 // 1. CORS (Deve vir logo após UseRouting)
-app.UseCors("AllowFrontend"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
+//app.UseCors("AllowFrontend"); // Certifique-se que você usou "AllowFrontend" ou "CorsPolicy" no AddCors
 
 
 // 2. Configurações de Roteamento (Deve vir antes de tudo que tem rotas)
-app.UseRouting();
+//app.UseRouting();
+
+
+// VAMOS TENTAR A OPÇÃO DEFENSIVA PARA CORRIGIR O CABEÇALHO OPTIONS:
+app.UseCors(policy =>
+    policy.AllowAnyOrigin()
+          .AllowAnyHeader()
+          .AllowAnyMethod());
+
+app.UseRouting(); // Depois do CORS defensivo
+app.UseAuthentication();
 
 
 // 3. Autenticação e Autorização
