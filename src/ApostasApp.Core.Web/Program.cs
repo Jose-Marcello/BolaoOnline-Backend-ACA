@@ -248,11 +248,7 @@ using (var scope = app.Services.CreateScope())
 //app.UseRouting();
 
 
-// VAMOS TENTAR A OPÇÃO DEFENSIVA PARA CORRIGIR O CABEÇALHO OPTIONS:
-app.UseCors(policy =>
-    policy.AllowAnyOrigin()
-          .AllowAnyHeader()
-          .AllowAnyMethod());
+app.UseCors("AllowFrontend");
 
 app.UseRouting(); // Depois do CORS defensivo
 app.UseAuthentication();
