@@ -47,36 +47,20 @@ namespace ApostasApp.Core.Web.Controllers
       _environment = environment;
     }
 
+  
     // **********************************************
-    // MÉTODO DE ESQUECEU A SENHA (COM VALIDAÇÃO MANUAL)
+    // MÉTODO DE ESQUECEU A SENHA (VERSÃO LIMPA/PADRÃO)
     // **********************************************
     [AllowAnonymous]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
-      // === VALIDAÇÃO MANUAL CRÍTICA (Contorno do Model Binding Falho no ACA) ===
-
-      // Checa se o objeto request chegou nulo OU se a propriedade Email está vazia.
-      // Isso substitui o [Required] no DTO que estava causando o 400 antes de chegar aqui.
-      if (request == null || string.IsNullOrWhiteSpace(request.Email))
+      // === Validação PADRÃO: Confia no Model State (Corrigido globalmente no Program.cs) ===
+      if (!ModelState.IsValid)
       {
-        _logger.LogError("Esqueceu Senha: O campo Email está nulo ou vazio após desserialização. Gerando 400.");
-
-        // Criamos manualmente o erro que o ModelState geraria
-        var errorNotification = new NotificationDto
-        {
-          Mensagem = "O Email é obrigatório.",
-          Tipo = "Erro",
-          Codigo = "EMAIL_REQUERIDO"
-        };
-
-        // Retorna o 400 Bad Request com o erro explícito para o frontend
-        return BadRequest(new ApiResponse<bool>
-        {
-          Success = false,
-          Message = "Dados de requisição inválidos. Verifique as notificações.",
-          Notifications = new List<NotificationDto> { errorNotification }
-        });
+        _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
+        // Se a correção global funcionar, este método irá capturar o erro de validação corretamente.
+        return CustomValidationProblem(ModelState);
       }
 
       // Logamos o e-mail (para debug)
@@ -99,10 +83,11 @@ namespace ApostasApp.Core.Web.Controllers
         _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}. Motivo: {result.Message}");
       }
 
-      // CORRIGIDO: Usando CustomResponse (Isso garante o 200 OK com o corpo JSON)
+      // Retorna o CustomResponse (200 OK)
       return CustomResponse(result);
     }
     // **********************************************
+
 
     [HttpPost("register")]
     [AllowAnonymous]
