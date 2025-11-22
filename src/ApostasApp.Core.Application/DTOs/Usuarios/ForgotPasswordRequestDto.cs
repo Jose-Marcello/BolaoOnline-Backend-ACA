@@ -7,8 +7,8 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
 {
   public class ForgotPasswordRequestDto
   {
-    [Required(ErrorMessage = "O Email é obrigatório.")]
-    [EmailAddress(ErrorMessage = "O Email está em formato inválido.")]
+    //[Required(ErrorMessage = "O Email é obrigatório.")]
+    //[EmailAddress(ErrorMessage = "O Email está em formato inválido.")]
 
     // 🎯 SOLUÇÃO DEFINITIVA: 
     // 1. Usa PascalCase (Padrão C#)
