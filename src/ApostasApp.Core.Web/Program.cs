@@ -176,8 +176,15 @@ builder.Services.AddAutoMapper(cfg =>
   cfg.AddMaps(typeof(MappingProfile).Assembly);
 });
 
+
+
+
 // Configuração de Controladores, Swagger e CORS
 builder.Services.AddControllers()
+   .AddNewtonsoftJson(options =>
+   {
+     options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
+   })
     // 🎯 CORREÇÃO CRÍTICA FINAL: Força a descoberta de Controllers no Assembly que contém a AccountController
     .AddApplicationPart(typeof(AccountController).Assembly)
     .AddJsonOptions(options =>
