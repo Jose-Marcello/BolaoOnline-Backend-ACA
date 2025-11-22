@@ -57,20 +57,39 @@ namespace ApostasApp.Core.Web.Controllers
       // === Validação FINAL: Volta a usar o ModelState.IsValid ===
       if (!ModelState.IsValid)
       {
-        _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
-        return CustomValidationProblem(ModelState);
+        _logger.LogWarning("Esqueceu Senha: ModelState é inválido. Detalhes:");
+
+        // --- INÍCIO DA CORREÇÃO DE LOG ---
+        // Extrai todos os erros de validação do ModelState
+        var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                      .Select(e => e.ErrorMessage)
+                                      .ToList();
+
+        // Loga cada erro individualmente para facilitar a visualização no ACA Log Stream
+        foreach (var error in errors)
+        {
+          _logger.LogError($"Erro de validação: {error}");
+        }
+
+        // Retorna um BadRequest com a estrutura ApiResponse para garantir que o frontend receba detalhes
+        return BadRequest(new ApiResponse<bool>
+        {
+          Success = false,
+          Message = "Dados de requisição inválidos. Verifique as notificações.",
+          Notifications = errors.Select(e => new NotificationDto { Mensagem = e, Tipo = "Erro" }).ToList()
+        });
+        // --- FIM DA CORREÇÃO DE LOG ---
       }
 
       // Logamos o e-mail (para debug)
-      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}");
-
+      _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}"); // Uso de Email (PascalCase)
 
       // Chama o serviço.
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-      request.Email,
+      request.Email, // Uso de Email (PascalCase)
       HttpContext.Request.Scheme,
       HttpContext.Request.Host.ToUriComponent()
-    );
+      );
 
       if (result.Success)
       {
@@ -81,10 +100,13 @@ namespace ApostasApp.Core.Web.Controllers
         _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}. Motivo: {result.Message}");
       }
 
-      // CORRIGIDO: Usando CustomResponse (Isso garante o 200 OK com o corpo JSON)
+      // Se for sucesso, retorna a resposta padrão (que deve ser 200 OK)
       return CustomResponse(result);
     }
+
     // **********************************************
+
+
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
