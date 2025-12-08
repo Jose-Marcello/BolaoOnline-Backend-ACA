@@ -205,7 +205,7 @@ builder.Services.AddCors(options =>
  policy => policy.WithOrigins(
    "http://localhost:4200",
    "https://lemon-plant-05b6fdb1e.3.azurestaticapps.net",
-   "https://app.palpitesbolao.com.br" // Adicione esta linha
+   "https://app.palpitesbolao.com.br" // Adicione esta linha 
        )
   .AllowAnyHeader()
   .AllowAnyMethod()
