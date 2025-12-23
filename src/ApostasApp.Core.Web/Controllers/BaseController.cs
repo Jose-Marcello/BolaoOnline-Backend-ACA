@@ -205,7 +205,17 @@ namespace ApostasApp.Core.Web.Controllers
     // Método auxiliar para obter o ID do usuário logado
     protected string ObterUsuarioIdLogado()
     {
-      return User.FindFirstValue(ClaimTypes.NameIdentifier);
+      // Primeiro, tentamos o padrão do .NET
+      var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+      // Se falhar, buscamos diretamente pela chave 'nameid' que vimos no seu token
+      if (string.IsNullOrEmpty(id))
+      {
+        id = User.FindFirst("nameid")?.Value;
+      }
+
+      return id;
+    
     }
 
     // Método auxiliar para verificar se o usuário está autenticado

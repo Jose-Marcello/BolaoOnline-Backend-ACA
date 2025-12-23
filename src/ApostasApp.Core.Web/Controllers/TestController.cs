@@ -1,9 +1,11 @@
 
+using ApostasApp.Core.Application.DTOs.Financeiro;
+using ApostasApp.Core.Domain.Models.Usuarios;
 using ApostasApp.Core.Infrastructure.Services.Email;
 using ApostasApp.Core.Infrastructure.Services.Financeiro;
-using ApostasApp.Core.Application.DTOs.Financeiro;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
+
 
 namespace ApostasApp.Core.Web.Controllers
 {
@@ -75,5 +77,26 @@ namespace ApostasApp.Core.Web.Controllers
             MockPagamentoService.LimparPagamentos();
             return Ok("Pagamentos simulados limpos com sucesso.");
         }
-    }
+
+
+   
+
+        [HttpGet("generate-temp-hash")]
+        // 🛑 ATENÇÃO: Use a classe Usuario, conforme seu projeto.
+         public ActionResult<string> GenerateTempHash()
+         {
+            // Crie o PasswordHasher usando o tipo do seu Identity (Usuario)
+            var passwordHasher = new PasswordHasher<Usuario>();
+
+            // 🛑 ESCOLHA A SENHA QUE VOCÊ VAI USAR PARA LOGAR 🛑
+            // Esta é a senha em texto plano que você usará no Front-end
+            string plainPassword = "SenhaTemp@123!";
+
+            // O Identity gera o hash e o salt (componente de segurança)
+            string hashedPassword = passwordHasher.HashPassword(null, plainPassword);
+
+            // Retorna o hash para que você possa copiá-lo
+            return Ok(hashedPassword);
+         }
+     }
 }

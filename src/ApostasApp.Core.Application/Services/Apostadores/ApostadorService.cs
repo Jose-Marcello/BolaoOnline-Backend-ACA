@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application.Services.Apostadores/ApostadorService.cs
+// Localização: ApostasApp.Core.Application.Services.Apostadores/ApostadorService.cs
 using ApostasApp.Core.Application.DTOs.Apostadores; // Para ApostadorDto
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
@@ -8,18 +8,12 @@ using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Financeiro;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostadores;
-using ApostasApp.Core.Domain.Models.Campeonatos; // Para o modelo de domínio ApostadorCampeonato
 using ApostasApp.Core.Domain.Models.Financeiro;
-using ApostasApp.Core.Domain.Models.Usuarios; // Para o modelo de domínio Usuario
 using AutoMapper; // Necessário para IMapper
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims; // Necessário para ClaimTypes
-using System.Threading.Tasks;
 
 namespace ApostasApp.Core.Application.Services.Apostadores
 {
@@ -350,7 +344,7 @@ namespace ApostasApp.Core.Application.Services.Apostadores
             // 2. Atualiza as propriedades com os dados do DTO da requisição
             apostador.Usuario.Apelido = request.Apelido;
             apostador.Usuario.Celular = request.Celular;
-            apostador.Usuario.FotoPerfil = request.FotoPerfil;
+            //apostador.Usuario.FotoPerfil = request.FotoPerfil;
 
             // 3. Notifica o Unit of Work / repositório sobre a atualização
             _apostadorRepository.Atualizar(apostador);
@@ -361,7 +355,33 @@ namespace ApostasApp.Core.Application.Services.Apostadores
                         
         }
 
+    public async Task<bool> AtualizarFotoPerfilAsync(string userId, string dbPath)
+    {
+      // 1. Busca o apostador (incluindo o Usuário, se for uma relação separada)
+      var apostador = await _apostadorRepository.ObterApostadorComUsuario(userId);
+      if (apostador == null) return false;
+
+      // 2. Atualiza apenas o campo necessário
+      // Pelo seu código, a foto fica dentro do objeto Usuario
+      apostador.Usuario.FotoPerfil = dbPath;
+
+      // 3. Persiste a alteração
+      _apostadorRepository.Atualizar(apostador);
+
+
+      // 4. EFETIVA A GRAVAÇÃO NO POSTGRES (O passo que deve estar faltando!)
+      // Se o seu repositório usa Unit of Work, chame o Commit
+      //return await _apostadorRepository.UnitOfWork.Commit();
+
+
+      // 4. Salva as alterações no banco de dados
+      //return await _uow.SaveChangesAsync(); // Retorna true se houver alterações salvas, false caso contrário
+      return await CommitAsync();
+
+
     }
+
+  }
 }
 
 

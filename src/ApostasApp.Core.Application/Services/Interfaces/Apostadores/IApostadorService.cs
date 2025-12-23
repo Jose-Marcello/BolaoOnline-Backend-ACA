@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Application.DTOs.Apostadores;
+using ApostasApp.Core.Application.DTOs.Apostadores;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Domain.Models.Apostadores; // Para a entidade Apostador
 using System;
@@ -28,8 +28,9 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Apostadores
         /// <param name="campeonatoId">ID do campeonato.</param>
         /// <returns>ApiResponse contendo o ApostadorCampeonatoId (string) ou null.</returns>
         Task<ApiResponse<string>> ObterApostadorCampeonatoIdParaUsuarioECampeonato(string userId, Guid campeonatoId);
-
+        Task<bool> AtualizarFotoPerfilAsync(string userId, string dbPath);
         Task<bool> AtualizarPerfilAsync(string userId, UpdatePerfilRequestDto request);
+        //Task<bool> AtualizarFotoPerfil(string userId, string dbPath);
     }
 
 
