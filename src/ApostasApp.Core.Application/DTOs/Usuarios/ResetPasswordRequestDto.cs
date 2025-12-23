@@ -4,8 +4,8 @@ namespace ApostasApp.Core.Application.DTOs.Usuarios
 {
   public class ResetPasswordRequestDto
   {
-    [Required(ErrorMessage = "O ID do Usuário é obrigatório.")]
-    public string UserId { get; set; }
+    //[Required(ErrorMessage = "O ID do Usuário é obrigatório.")] //NÃO É OBRIGATÓRIO
+    //public string UserId { get; set; }
 
     [Required(ErrorMessage = "O Token de redefinição é obrigatório.")]
     public string Token { get; set; }

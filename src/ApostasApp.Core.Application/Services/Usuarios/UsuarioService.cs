@@ -225,32 +225,34 @@ namespace ApostasApp.Core.Application.Services.Usuarios
     // UsuarioService.cs
 
 
+    // ARQUIVO: UsuarioService.cs
+
     public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string scheme, string host)
     {
+      // Constrói a Base URL (que é a URL do Frontend, e que será passada para o IdentityService)
       var baseUrl = $"{scheme}://{host}";
 
-      // O IdentityService agora lida com toda a lógica de token, mock e notificação.
-      // O UsuarioService apenas orquestra a chamada.
-      //var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
-      var response = await _identityService.ForgotPasswordAsync(email);
+      // O IdentityService PRECISA ser ajustado para receber este argumento 'baseUrl'.
+      // SE NÃO ESTIVER AJUSTADO, O CÓDIGO DARÁ ERRO DE COMPILAÇÃO AQUI.
+      // **Ajuste o IdentityService.ForgotPasswordAsync para aceitar o 'baseUrl'**
+      var response = await _identityService.ForgotPasswordAsync(email, baseUrl);
 
       // É crucial garantir que as notificações do IdentityService sejam transferidas
-      // para o BaseService, para que o Controller as capture via CustomResponse.
+      // ... (Seu código de notificações aqui) ...
+
       if (response.Notifications != null)
       {
         foreach (var notifDto in response.Notifications)
         {
-          // Assume que há uma forma de converter NotificationDto para Notificacao de domínio
-          // Ou o IdentityService já notificou o INotificador corretamente.
-
-          // Se você usa o INotificador do BaseService, use-o aqui:
-          // Notificar(notifDto.Tipo, notifDto.Mensagem, notifDto.NomeCampo); 
+          // Lógica para notificação, se aplicável
         }
       }
 
       // Retornamos o ApiResponse<string> completo.
+      // Se o IdentityService construiu o link corretamente, 'response.Data' agora contém a URL do token REAL.
       return response;
     }
+
     /*
     public async Task<ApiResponse<string>> EsqueciMinhaSenhaAsync(string email, string baseUrl)
     {
@@ -319,8 +321,6 @@ namespace ApostasApp.Core.Application.Services.Usuarios
     }
     */
 
-
-
     public async Task<ApiResponse<bool>> RedefinirSenhaAsync(ResetPasswordRequestDto request)
     {
       var apiResponse = new ApiResponse<bool>();
@@ -332,14 +332,8 @@ namespace ApostasApp.Core.Application.Services.Usuarios
       {
         // A validação de ModelState (NewPassword vs. ConfirmNewPassword) já ocorreu no Controller.
 
-        // 1. Busca o usuário pelo ID ou E-mail
-        // AGORA ACESSA VIA request.UserId
-        var user = await _identityService.GetUserByIdAsync(request.UserId);
-        if (user == null)
-        {
-          // Tenta buscar por e-mail, caso o userId esteja corrompido, mas o email veio do DTO
-          user = await _identityService.GetUserByEmailAsync(request.Email);
-        }
+        // 1. BUSCA O USUÁRIO PELO E-MAIL (Método mais confiável, já que o UserId não vem do Front)
+        var user = await _identityService.GetUserByEmailAsync(request.Email);
 
         if (user == null)
         {
@@ -349,12 +343,11 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         }
 
         // 2. DECODIFICAÇÃO CRÍTICA DO TOKEN (Base64 URL-Safe)
-        // AGORA ACESSA VIA request.Token
+        // O token é enviado pelo Identity na URL em formato URL-safe, deve ser decodificado antes de ser usado.
         byte[] decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
         string originalToken = Encoding.UTF8.GetString(decodedBytes);
 
         // 3. CHAMA O RESET NO IDENTITY com o token DECODIFICADO
-        // AGORA ACESSA VIA request.NewPassword
         var result = await _identityService.ResetPasswordAsync(user, originalToken, request.NewPassword);
 
         if (result)
@@ -367,6 +360,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         {
           if (!ObterNotificacoesParaResposta().Any())
           {
+            // Se o Identity falhar e não notificar (geralmente por token expirado/inválido)
             Notificar("Erro", "Falha ao redefinir senha. Verifique se o token é válido ou se a senha atende aos requisitos.");
           }
         }
@@ -376,6 +370,7 @@ namespace ApostasApp.Core.Application.Services.Usuarios
         Notificar("Erro", $"Ocorreu um erro inesperado: {ex.Message}");
         _logger.LogError(ex, $"EXCEÇÃO NA REDEFINIÇÃO DE SENHA: {ex.Message}");
       }
+
       apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
       return apiResponse;
     }

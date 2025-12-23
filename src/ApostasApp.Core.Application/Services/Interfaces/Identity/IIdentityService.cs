@@ -39,8 +39,8 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Identity
     //Task<string> ForgotPasswordAsync(string email, string baseUrl); // DEVE retornar string (o link)
     //Task<string> ForgotPasswordAsync(string email, string baseUrl); // VERSÃO ANTERIOR
 
-    //Task<ApiResponse<string>> ForgotPasswordAsync(string email, string baseUrl); // NOVA ASSINATURA
-    Task<ApiResponse<string>> ForgotPasswordAsync(string email);
+    Task<ApiResponse<string>> ForgotPasswordAsync(string email, string baseUrl); // NOVA ASSINATURA
+    //Task<ApiResponse<string>> ForgotPasswordAsync(string email);
 
     Task<bool> ResetPasswordAsync(Usuario user, string token, string newPassword);
 

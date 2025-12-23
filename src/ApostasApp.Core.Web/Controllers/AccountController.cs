@@ -47,47 +47,74 @@ namespace ApostasApp.Core.Web.Controllers
       _environment = environment;
     }
 
-  
+    [HttpPost("login")] // A rota que o Angular está chamando
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    {
+      _logger.LogInformation($"Requisição de Login para: {request.Email}");
+
+      if (!ModelState.IsValid)
+      {
+        _logger.LogWarning($"Login: ModelState inválido.");
+        return CustomValidationProblem(ModelState);
+      }
+
+      // Chama o serviço de identidade para validar as credenciais
+      // Assumindo que o IdentityService.LoginAsync retorna um ApiResponse<LoginResponse>
+      var result = await _usuarioService.LoginAsync(request);
+      //var result = await _identityService.LoginAsync(request.Email, request.Password);
+
+
+      if (result.Success)
+      {
+        _logger.LogInformation($"Login bem-sucedido para: {request.Email}.");
+      }
+      else
+      {
+        _logger.LogWarning($"Login falhou para: {request.Email}. Motivo: {result.Message}");
+      }
+
+      // Retorna a resposta (com token de sucesso ou notificações de falha)
+      return CustomResponse(result);
+    }
+
     // **********************************************
     // MÉTODO DE ESQUECEU A SENHA (VERSÃO LIMPA/PADRÃO)
     // **********************************************
+    // ARQUIVO: AccountController.cs
+
     [AllowAnonymous]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
-      // === Validação PADRÃO: Confia no Model State (Corrigido globalmente no Program.cs) ===
       if (!ModelState.IsValid)
       {
         _logger.LogWarning("Esqueceu Senha: ModelState é inválido.");
-        // Se a correção global funcionar, este método irá capturar o erro de validação corretamente.
         return CustomValidationProblem(ModelState);
       }
 
-      // Logamos o e-mail (para debug)
       _logger.LogInformation($"Requisição de Esqueceu Senha para: {request.Email}");
 
-
-      // Chama o serviço.
       var result = await _usuarioService.EsqueciMinhaSenhaAsync(
-      request.Email,
-      HttpContext.Request.Scheme,
-      HttpContext.Request.Host.ToUriComponent()
+          request.Email,
+          HttpContext.Request.Scheme,
+          HttpContext.Request.Host.ToUriComponent()
       );
 
       if (result.Success)
       {
         _logger.LogInformation($"Instruções de redefinição de senha enviadas para {request.Email}.");
+
+        // AGORA O result.Data CONTÉM O LINK REAL (Graças à correção no IdentityService)
+        return Ok(result);
       }
       else
       {
+        // Retorno em caso de falha (e-mail não encontrado, etc.)
         _logger.LogWarning($"Falha no envio de redefinição de senha para {request.Email}. Motivo: {result.Message}");
+        return CustomResponse(result);
       }
-
-      // Retorna o CustomResponse (200 OK)
-      return CustomResponse(result);
     }
-    // **********************************************
-
 
     [HttpPost("register")]
     [AllowAnonymous]
@@ -141,11 +168,11 @@ namespace ApostasApp.Core.Web.Controllers
 
       if (result.Success)
       {
-        _logger.LogInformation($"Senha redefinida com sucesso para UserId: {request.UserId}.");
+        _logger.LogInformation($"Senha redefinida com sucesso para UserId: {request.Email}.");
       }
       else
       {
-        _logger.LogWarning($"Falha na redefinição de senha para UserId: {request.UserId}.");
+        _logger.LogWarning($"Falha na redefinição de senha para UserId: {request.Email}.");
       }
 
       return CustomResponse(result);

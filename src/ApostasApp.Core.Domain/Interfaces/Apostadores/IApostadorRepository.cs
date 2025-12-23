@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Domain.Interfaces;
+using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Models.Apostadores;
 using System.Threading.Tasks;
 
@@ -8,6 +8,9 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostadores
     public interface IApostadorRepository : IRepository<Apostador>
     {
         Task<Apostador> ObterApostador(Guid id);
+
+        Task<Apostador?> ObterApostadorComUsuario(string Id);
+
         Task<Apostador> ObterApostadorPorUsuarioId(string Id);
 
         Task<Apostador> ObterPorIdComSaldo(Guid id);
