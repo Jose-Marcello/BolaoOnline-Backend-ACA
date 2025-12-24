@@ -272,10 +272,11 @@ app.MapHealthChecks("/health");
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-  // Use "./v1/swagger.json" (ponto no início) para garantir que ele ache o arquivo relativo ao diretório atual
+  // Use o caminho relativo COM ponto para o JSON
   options.SwaggerEndpoint("./v1/swagger.json", "Bolão Online V1");
 
-  // Se quiser acessar via https://sua-url.azurecontainerapps.io/swagger
+  // TESTE: Se quiser que o Swagger abra direto na URL principal, 
+  // comente a linha abaixo (RoutePrefix).
   options.RoutePrefix = "swagger";
 });
 
