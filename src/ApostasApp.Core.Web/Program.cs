@@ -233,6 +233,9 @@ builder.Services.AddCors(options =>
   .AllowCredentials());
 });
 
+// Adicione isso antes de builder.Build() para forçar rotas minúsculas
+builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+
 var app = builder.Build();
 
 // ===================================================================================================
