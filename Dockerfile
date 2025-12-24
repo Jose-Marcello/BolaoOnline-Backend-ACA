@@ -20,4 +20,6 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
+RUN mkdir -p /app/wwwroot/uploads
+
 ENTRYPOINT ["dotnet", "ApostasApp.Core.Web.dll"]

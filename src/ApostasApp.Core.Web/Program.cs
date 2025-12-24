@@ -270,13 +270,12 @@ app.MapHealthChecks("/health");
 
 // 5. Swagger (Interface)
 app.UseSwagger();
-app.UseSwaggerUI(options => 
+app.UseSwaggerUI(options =>
 {
-  // O nome aqui é apenas um rótulo, mas o caminho "/swagger/v1/swagger.json" deve ser o padrão
-  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Bolão Online V1");
+  // Use "./v1/swagger.json" (ponto no início) para garantir que ele ache o arquivo relativo ao diretório atual
+  options.SwaggerEndpoint("./v1/swagger.json", "Bolão Online V1");
 
-  // Deixe o RoutePrefix vazio se quiser que o Swagger abra na raiz da API 
-  // ou mantenha "swagger" para acessar via /swagger
+  // Se quiser acessar via https://sua-url.azurecontainerapps.io/swagger
   options.RoutePrefix = "swagger";
 });
 
