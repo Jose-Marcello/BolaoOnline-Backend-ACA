@@ -217,6 +217,7 @@ builder.Services.AddControllers()
 
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 
 // CORS: Permitir acesso APENAS do Front-end SWA
@@ -269,9 +270,13 @@ app.MapHealthChecks("/health");
 
 // 5. Swagger (Interface)
 app.UseSwagger();
-app.UseSwaggerUI(options =>
+app.UseSwaggerUI(options => 
 {
-  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Banco de Itens V1");
+  // O nome aqui é apenas um rótulo, mas o caminho "/swagger/v1/swagger.json" deve ser o padrão
+  options.SwaggerEndpoint("/swagger/v1/swagger.json", "Bolão Online V1");
+
+  // Deixe o RoutePrefix vazio se quiser que o Swagger abra na raiz da API 
+  // ou mantenha "swagger" para acessar via /swagger
   options.RoutePrefix = "swagger";
 });
 
