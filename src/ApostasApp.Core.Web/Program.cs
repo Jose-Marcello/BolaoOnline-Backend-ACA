@@ -270,7 +270,7 @@ app.MapHealthChecks("/health");
 
 // 5. Swagger (Interface)
 app.UseSwagger();
-app.UseSwaggerUI(options =>
+app.UseSwaggerUI(options => 
 {
   // Use o caminho relativo COM ponto para o JSON
   options.SwaggerEndpoint("./v1/swagger.json", "Bolão Online V1");
