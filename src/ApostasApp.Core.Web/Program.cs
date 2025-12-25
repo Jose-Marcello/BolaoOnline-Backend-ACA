@@ -220,6 +220,19 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen();
 
+
+builder.Services.AddCors(options =>
+{
+  options.AddPolicy("AllowAngular", policy =>
+  {
+    policy.WithOrigins("https://sua-url-do-swa.azurestaticapps.net") // URL do seu Frontend
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials(); // Essencial para cookies/auth do Identity
+  });
+});
+
+/*
 // CORS: Permitir acesso APENAS do Front-end SWA
 builder.Services.AddCors(options =>
 {
@@ -233,6 +246,7 @@ builder.Services.AddCors(options =>
   .AllowAnyMethod()
   .AllowCredentials());
 });
+*/
 
 // Adicione isso antes de builder.Build() para forçar rotas minúsculas
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
@@ -258,7 +272,9 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
-app.UseCors("AllowFrontend");
+//app.UseCors("AllowFrontend");
+app.UseCors("AllowAngular");
+
 
 app.UseAuthentication();
 
