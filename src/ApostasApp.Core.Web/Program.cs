@@ -257,6 +257,10 @@ var app = builder.Build();
 // Pipeline de Requisições HTTP - Middleware
 // ===================================================================================================
 
+app.UseForwardedHeaders();
+
+//app.UseCors("AllowFrontend");
+app.UseCors("AllowAngular");
 
 // 1. Primeiro habilita o uso de arquivos estáticos padrão
 app.UseStaticFiles();
@@ -272,17 +276,10 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
-//app.UseCors("AllowFrontend");
-app.UseCors("AllowAngular");
-
-
 app.UseAuthentication();
 
 // 3. Autenticação e Autorização
 app.UseAuthorization();
-
-// 4. Endpoints Personalizados (Health Checks)
-app.MapHealthChecks("/health");
 
 // 5. Swagger (Interface)
 app.UseSwagger();
@@ -298,5 +295,8 @@ app.UseSwaggerUI(options =>
 
 // 6. Controllers (O Roteamento Final - Catch All)
 app.MapControllers();
+
+// 4. Endpoints Personalizados (Health Checks)
+app.MapHealthChecks("/health");
 
 app.Run();
