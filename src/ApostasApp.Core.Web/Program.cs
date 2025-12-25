@@ -225,10 +225,10 @@ builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowAngular", policy =>
   {
-    policy.WithOrigins("https://sua-url-do-swa.azurestaticapps.net") // URL do seu Frontend
-          .AllowAnyHeader()
-          .AllowAnyMethod()
-          .AllowCredentials(); // Essencial para cookies/auth do Identity
+    policy.SetIsOriginAllowed(origin => true) // Permite qualquer origem para teste de QA
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();  // Essencial para cookies/auth do Identity
   });
 });
 
