@@ -160,7 +160,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
           .Where(j => j.RodadaId == rodadaId)
           .OrderBy(j => j.DataJogo)
           .ThenBy(j => j.HoraJogo)
-          .ToListAsync();
+          .ToListAsync(); 
     }
 
   }
