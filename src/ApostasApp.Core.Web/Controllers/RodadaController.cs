@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Api.Controllers/RodadaController.cs
+// Localização: ApostasApp.Api.Controllers/RodadaController.cs
 using ApostasApp.Core.Application.DTOs.Rodadas;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
@@ -224,5 +224,29 @@ namespace ApostasApp.Api.Controllers
             return CustomResponse(result);
         }
 
+
+    
+       [HttpGet("ListarJogosPorRodada/{rodadaId}")]
+       public async Task<IActionResult> ListarJogosPorRodada(string rodadaId)
+       {
+          try
+          {
+            if (!Guid.TryParse(rodadaId, out Guid idGuid))
+          {
+            NotificarErro("ID da rodada inválido.");
+            return CustomResponse();
+          }
+
+          // Importante: Verifique se seu IRodadaService tem o método que busca os jogos
+          var response = await _rodadaService.ObterJogosPorRodada(idGuid);
+          return CustomResponse(response);
+        }
+        catch (Exception ex)
+        {
+          _logger.LogError(ex, "Erro ao listar jogos da rodada.");
+          return CustomResponse();
+        }
     }
+
+  }
 }

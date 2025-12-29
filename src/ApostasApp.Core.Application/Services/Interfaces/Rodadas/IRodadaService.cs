@@ -1,6 +1,7 @@
-﻿// Localização: ApostasApp.Core.Application.Services.Interfaces.Rodadas/IRodadaService.cs
+// Localização: ApostasApp.Core.Application.Services.Interfaces.Rodadas/IRodadaService.cs
 
 using ApostasApp.Core.Application.DTOs.Conferencia;
+using ApostasApp.Core.Application.DTOs.Jogos;
 using ApostasApp.Core.Application.Models; // <<-- ADICIONADO: Para ApiResponse -->>
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
 using System; // Para Guid
@@ -35,8 +36,10 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
         Task<ApiResponse<IEnumerable<Rodada>>> ObterRodadasEmDestaque();
         //Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
         Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
+        Task<ApiResponse<IEnumerable<JogoDto>>> ObterJogosPorRodada(Guid rodadaId);
+  }
 
 
 
-    }
+}
 }

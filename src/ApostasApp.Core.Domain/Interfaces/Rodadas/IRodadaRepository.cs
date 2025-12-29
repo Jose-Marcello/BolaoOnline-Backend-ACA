@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Domain.Interfaces; // Para IRepository
+using ApostasApp.Core.Domain.Interfaces; // Para IRepository
 using ApostasApp.Core.Domain.Interfaces.Relatorios;
 using ApostasApp.Core.Domain.Models.Jogos; // Para Jogo (se Jogo for uma entidade separada)
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
@@ -72,6 +72,8 @@ namespace ApostasApp.Core.Domain.Models.Interfaces.Rodadas
         //Task<IEnumerable<IConferenciaPalpite>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId);
         //Task<IEnumerable<object>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId);
         Task<IEnumerable<IConferenciaPalpite>> ObterDadosPlanilhaConferenciaAsync(Guid rodadaId);
+
+        Task<IEnumerable<Jogo>> ObterJogosDaRodada(Guid rodadaId);
 
 
     }
