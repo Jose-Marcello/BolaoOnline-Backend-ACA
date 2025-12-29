@@ -510,7 +510,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
       try
       {
         // Busca os jogos no repositório
-        var jogos = await _rodadaRepositorio.ObterJogosDaRodada(rodadaId);
+        var jogos = await _rodadaRepository.ObterJogosDaRodada(rodadaId);
 
         if (jogos == null || !jogos.Any())
         {
@@ -524,17 +524,23 @@ namespace ApostasApp.Core.Application.Services.Rodadas
         // Certifique-se de incluir os dados das Equipes (Nomes e Escudos)
         response.Data = jogos.Select(j => new JogoDto
         {
-          Id = j.Id,
-          EquipeCasaId = j.EquipeCasaId,
-          EquipeVisitaId = j.EquipeVisitaId,
-          NomeEquipeCasa = j.EquipeCasa?.Nome,
-          NomeEquipeVisita = j.EquipeVisita?.Nome,
-          EscudoCasa = j.EquipeCasa?.EscudoUrl,
-          EscudoVisita = j.EquipeVisita?.EscudoUrl,
-          DataJogo = j.DataJogo,
-          HoraJogo = j.HoraJogo
-        });
+          Id = j.Id.ToString(), // Resolve CS0029: Guid para string
+          RodadaId = j.RodadaId.ToString(),
 
+          // Nomes conforme o seu JogoDto.cs
+          EquipeCasaCampeonatoId = j.EquipeCasaId.ToString(),
+          EquipeVisitanteCampeonatoId = j.EquipeVisitanteId.ToString(),
+
+          EquipeCasaNome = j.EquipeCasa.Equipe.Nome,
+          EquipeCasaEscudoUrl = j.EquipeCasa?.Equipe.Escudo,
+
+          EquipeVisitanteNome = j.EquipeVisitante?.Equipe.Nome,
+          EquipeVisitanteEscudoUrl = j.EquipeVisitante?.Equipe.Escudo,
+
+          EstadioNome = j.Estadio?.Nome,
+          DataHora = j.DataJogo.Add(j.HoraJogo), // Combina data e hora no campo DataHora
+          Status = "Agendado" // Ou j.Status.ToString() se tiver o enum
+        }).ToList();
         response.Success = true;
       }
       catch (Exception ex)

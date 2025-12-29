@@ -42,4 +42,4 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
 
 
 }
-}
+
