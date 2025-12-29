@@ -83,6 +83,8 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
                                .ThenInclude(ev => ev.Equipe)
                            .AsNoTracking()
                            .Where(j => j.RodadaId == rodadaId)
+                           .OrderBy(j => j.DataJogo)
+                              .ThenBy(j => j.HoraJogo)
                            .ToListAsync();
         }
 
@@ -159,7 +161,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
               .ThenInclude(ev => ev.Equipe)
           .Where(j => j.RodadaId == rodadaId)
           .OrderBy(j => j.DataJogo)
-          .ThenBy(j => j.HoraJogo)
+             .ThenBy(j => j.HoraJogo)
           .ToListAsync(); 
     }
 
