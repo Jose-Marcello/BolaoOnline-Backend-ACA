@@ -3,12 +3,13 @@ using ApostasApp.Core.Domain.Interfaces.Relatorios;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Para IRodadaRepository
 using ApostasApp.Core.Domain.Models.Jogos; // Para Jogo
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada, StatusRodada
+using ApostasApp.Core.Infrastructure.Data.Context; // Para MeuDbContext
 using ApostasApp.Core.Infrastructure.Data.Models;
 using ApostasApp.Core.Infrastructure.Data.Repository; // PARA HERDAR DE Repository<T>
-using ApostasApp.Core.Infrastructure.Data.Context; // Para MeuDbContext
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SendGrid.Helpers.Mail;
 
 namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
 {
@@ -143,5 +144,21 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
 
             return dados;
         }
+
+
+    public async Task<IEnumerable<Jogo>> ObterJogosDaRodada(Guid rodadaId)
+    {
+      // Otimizado: Busca apenas os jogos vinculados ao ID da rodada
+      // Inclui as Equipes para garantir que os escudos apareçam no Grid
+      return await Db.Jogos
+          .AsNoTracking() // Melhora a performance em consultas de leitura
+          .Include(j => j.EquipeCasa)
+          .Include(j => j.EquipeVisitante)
+          .Where(j => j.RodadaId == rodadaId)
+          .OrderBy(j => j.DataJogo)
+          .ThenBy(j => j.HoraJogo)
+          .ToListAsync();
     }
+
+  }
 }
