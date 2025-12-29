@@ -37,7 +37,7 @@ using System.Text.Json.Serialization;
 
 
 //ALTERAÇÃO PARA DISPARAR PIPE
-var empurraPipe = true;
+var empurraPipe = true; // (true);
 
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
