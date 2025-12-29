@@ -150,10 +150,13 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
     {
       // Otimizado: Busca apenas os jogos vinculados ao ID da rodada
       // Inclui as Equipes para garantir que os escudos apareçam no Grid
+    
       return await Db.Jogos
-          .AsNoTracking() // Melhora a performance em consultas de leitura
+          .AsNoTracking()
           .Include(j => j.EquipeCasa)
+              .ThenInclude(ec => ec.Equipe) // Busca o nome e escudo da equipe real
           .Include(j => j.EquipeVisitante)
+              .ThenInclude(ev => ev.Equipe)
           .Where(j => j.RodadaId == rodadaId)
           .OrderBy(j => j.DataJogo)
           .ThenBy(j => j.HoraJogo)
