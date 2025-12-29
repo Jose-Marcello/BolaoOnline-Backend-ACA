@@ -37,7 +37,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Rodadas
         //Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
         Task<ApiResponse<IEnumerable<ConferenciaPalpiteDto>>> GerarPlanilhaConferencia(Guid rodadaId);
         Task<ApiResponse<IEnumerable<JogoDto>>> ObterJogosPorRodada(Guid rodadaId);
-  }
+  } 
 
 
 
