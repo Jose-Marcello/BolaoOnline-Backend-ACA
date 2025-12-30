@@ -130,13 +130,21 @@ namespace ApostasApp.Core.Application.MappingProfiles
                (src.PlacarApostaCasa.HasValue && src.PlacarApostaVisita.HasValue) ? src.Pontos : 0));
 
 
-         // Mapeamento para ApostaRodadaDto
-           CreateMap<ApostaRodada, ApostaRodadaDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
-                .ForMember(dest => dest.RodadaId, opt => opt.MapFrom(src => src.RodadaId.ToString()))
-                .ForMember(dest => dest.ApostadorCampeonatoId, opt => opt.MapFrom(src => src.ApostadorCampeonatoId.ToString()))
-                .ForMember(dest => dest.DataHoraSubmissao, opt => opt.MapFrom(src => src.DataHoraSubmissao.HasValue ? src.DataHoraSubmissao.Value.ToString("o") : null))
-                .ForMember(dest => dest.Palpites, opt => opt.MapFrom(src => src.Palpites));
+      // Mapeamento para ApostaRodadaDto
+      CreateMap<ApostaRodada, ApostaRodadaDto>()
+          .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+          .ForMember(dest => dest.RodadaId, opt => opt.MapFrom(src => src.RodadaId.ToString()))
+          .ForMember(dest => dest.ApostadorCampeonatoId, opt => opt.MapFrom(src => src.ApostadorCampeonatoId.ToString()))
+          .ForMember(dest => dest.DataHoraSubmissao, opt => opt.MapFrom(src => src.DataHoraSubmissao.HasValue ? src.DataHoraSubmissao.Value.ToString("o") : null))
+          .ForMember(dest => dest.Palpites, opt => opt.MapFrom(src => src.Palpites))
+
+          // <<-- NOVOS MAPEAMENTOS PARA O ITEM 1 (DADOS DA RODADA) -->>
+          // Mapeia os dados da entidade aninhada 'Rodada' para os campos diretos do DTO
+          .ForMember(dest => dest.NumeroRodada, opt => opt.MapFrom(src => src.Rodada.NumeroRodada))
+          .ForMember(dest => dest.DataInicio, opt => opt.MapFrom(src => src.Rodada.DataInic))
+          .ForMember(dest => dest.DataFim, opt => opt.MapFrom(src => src.Rodada.DataFim))
+          .ForMember(dest => dest.DescricaoRodada, opt => opt.MapFrom(src => $"Rodada {src.Rodada.NumeroRodada}"));
+   
 
             // Mapeamento para ApostaRodadaStatusDto
             CreateMap<ApostaRodada, ApostaRodadaStatusDto>()
