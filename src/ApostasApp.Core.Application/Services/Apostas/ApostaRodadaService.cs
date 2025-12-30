@@ -34,12 +34,12 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ApostasApp.Core.Application.Services.Apostas
 {
-    /// <summary>
-    /// ApostaRodadaService é responsável pela lógica de negócio de submissão, consulta e geração de apostas de rodada.
-    /// </summary>
-    public class ApostaRodadaService : BaseService, IApostaRodadaService
-    {
-        //private readonly IApostaRodadaAppService _apostaRodadaRepository;
+  /// <summary>
+  /// ApostaRodadaService é responsável pela lógica de negócio de submissão, consulta e geração de apostas de rodada.
+  /// </summary>
+  public class ApostaRodadaService : BaseService, IApostaRodadaService, IApostaRodadaAppService
+  {
+        private readonly IApostaRodadaAppService _apostaRodadaAppRepository;
         private readonly IApostaRodadaRepository _apostaRodadaRepository;
         private readonly ICampeonatoRepository _campeonatoRepository; 
         private readonly IApostadorRepository _apostadorRepository;
@@ -53,8 +53,9 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
 
         public ApostaRodadaService(
-            IFinanceiroService financeiroService,
+            IFinanceiroService financeiroService,            
             IApostaRodadaRepository apostaRodadaRepository,
+            IApostaRodadaAppService apostaRodadaAppRepository,
             ICampeonatoRepository campeonatoRepository,
             IApostadorRepository apostadorRepository,
             IPalpiteRepository palpiteRepository,
@@ -68,7 +69,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
                              : base(notificador, uow)
         {
             _financeiroService = financeiroService;
-            _apostaRodadaRepository = apostaRodadaRepository;
+            _apostaRodadaAppRepository = apostaRodadaAppRepository;
             _campeonatoRepository = campeonatoRepository;
             _apostadorRepository = apostadorRepository;
             _palpiteRepository = palpiteRepository;
@@ -79,21 +80,33 @@ namespace ApostasApp.Core.Application.Services.Apostas
             _logger = logger;
         }
 
+        // --- MÉTODOS DE CONSULTA (IApostaRodadaAppService) ---
+
         /// <summary>
-        /// Gera uma ApostaRodada inicial com palpites vazios para todos os jogos de uma rodada específica
-        /// para um dado apostador.
+        /// Obtém jogos e palpites ordenados. Este método une a Interface de Application ao Repository de Infra.
         /// </summary>
-        /// <param name="apostadorCampeonatoIdString">ID do ApostadorCampeonato.</param>
-        /// <param name="rodadaIdString">ID da Rodada.</param>
-        /// <param name="ehApostaCampeonato">Indica se esta aposta conta para o campeonato.</param>
-        /// <param name="identificadorAposta">Um nome opcional para a aposta (ex: "Minha Aposta Principal").</param>
-        /// <returns>ApiResponse com a ApostaRodadaDto gerada ou erros.</returns>
-        // Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
+        public async Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+        {
+            // O Service atua como ponte para o Repository que contém a Query otimizada
+            return await _apostaRodadaAppRepository.ObterJogosComPalpites(apostaId, rodadaId);
+        }
 
-       
-       // Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
 
-      public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(
+    /// <summary>
+    /// Gera uma ApostaRodada inicial com palpites vazios para todos os jogos de uma rodada específica
+    /// para um dado apostador.
+    /// </summary>
+    /// <param name="apostadorCampeonatoIdString">ID do ApostadorCampeonato.</param>
+    /// <param name="rodadaIdString">ID da Rodada.</param>
+    /// <param name="ehApostaCampeonato">Indica se esta aposta conta para o campeonato.</param>
+    /// <param name="identificadorAposta">Um nome opcional para a aposta (ex: "Minha Aposta Principal").</param>
+    /// <returns>ApiResponse com a ApostaRodadaDto gerada ou erros.</returns>
+    // Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
+
+
+    // Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
+
+    public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(
                                                       string apostadorCampeonatoIdString,
                                                       string rodadaIdString,
                                                       bool ehApostaCampeonato,
@@ -907,9 +920,10 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
             return totaisDto;
         }
+               
 
-        
-    }
+
+  }
 
 }
 

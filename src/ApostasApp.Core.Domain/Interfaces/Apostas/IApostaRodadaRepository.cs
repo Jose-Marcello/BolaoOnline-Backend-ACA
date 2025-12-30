@@ -27,9 +27,8 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
         /// <param name="rodadaId">O ID da rodada.</param>
         /// <returns>Um DTO contendo o número total de apostas e o valor acumulado.</returns>
         Task<ApostasTotais> ObterTotaisApostasAvulsas(Guid rodadaId);
-     
-        //Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);
 
+        //Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);   
 
         Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId);
 
