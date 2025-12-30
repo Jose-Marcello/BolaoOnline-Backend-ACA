@@ -917,8 +917,32 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
             return totaisDto;
         }
-               
 
+    public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid apostadorCampeonatoId)
+    {
+      var apiResponse = new ApiResponse<IEnumerable<ApostaRodadaDto>>(false, null);
+      try
+      {
+        // A "mágica" agora acontece no Repository
+        var apostasRodada = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, apostadorCampeonatoId);
+
+        if (apostasRodada == null || !apostasRodada.Any())
+        {
+          Notificar("Alerta", "Nenhuma aposta encontrada.");
+          return apiResponse;
+        }
+
+        apiResponse.Data = _mapper.Map<IEnumerable<ApostaRodadaDto>>(apostasRodada);
+        apiResponse.Success = true;
+        return apiResponse;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Erro ao obter apostas.");
+        Notificar("Erro", ex.Message);
+        return apiResponse;
+      }
+    }
 
   }
 

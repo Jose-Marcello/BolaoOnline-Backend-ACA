@@ -32,7 +32,9 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
 
         Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId);
 
+        Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId);
 
-    }
+
+  }
 
 }

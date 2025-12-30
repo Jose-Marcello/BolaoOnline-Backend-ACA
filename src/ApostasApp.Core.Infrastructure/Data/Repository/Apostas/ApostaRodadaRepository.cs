@@ -237,10 +237,17 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     });
   }
 
-  Task<IEnumerable<JogoPalpiteResultado>> IApostaRodadaRepository.ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+  // No ApostaRodadaRepository
+  public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId)
   {
-    throw new NotImplementedException();
+    // Usamos AsNoTracking para performance em consultas
+    return await DbSet.AsNoTracking()
+        .Include(ar => ar.Palpites)
+            .ThenInclude(p => p.Jogo)
+        .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
+        .ToListAsync();
   }
+
 }
     
 
