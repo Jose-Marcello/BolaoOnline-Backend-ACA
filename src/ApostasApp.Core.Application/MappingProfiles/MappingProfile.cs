@@ -146,8 +146,8 @@ namespace ApostasApp.Core.Application.MappingProfiles
           .ForMember(dest => dest.DescricaoRodada, opt => opt.MapFrom(src => $"Rodada {src.Rodada.NumeroRodada}"));
    
 
-            // Mapeamento para ApostaRodadaStatusDto
-            CreateMap<ApostaRodada, ApostaRodadaStatusDto>()
+            // Mapeamento para ApostaRodadaStatusDto 
+            CreateMap<ApostaRodada, ApostaRodadaStatusDto>() 
                 .ForMember(dest => dest.StatusAposta, opt => opt.MapFrom(src => src.Enviada ? 2 : 1))
                 .ForMember(dest => dest.DataAposta, opt => opt.MapFrom(src => src.DataHoraSubmissao.HasValue ? src.DataHoraSubmissao.Value.ToString("o") : null))
                 .ForMember(dest => dest.ApostaRodadaId, opt => opt.MapFrom(src => src.Id.ToString()))
