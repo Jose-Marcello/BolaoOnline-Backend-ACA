@@ -28,7 +28,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
         /// <returns>Um DTO contendo o número total de apostas e o valor acumulado.</returns>
         Task<ApostasTotais> ObterTotaisApostasAvulsas(Guid rodadaId);
 
-        //Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);   
+        Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);
 
         Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId);
 

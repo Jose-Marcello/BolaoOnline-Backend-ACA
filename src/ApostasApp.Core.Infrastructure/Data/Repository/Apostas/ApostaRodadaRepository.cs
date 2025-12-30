@@ -197,7 +197,7 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     }
 
   // No seu ApostaRodadaRepository.cs
-  public async Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+  public async Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
   {
     var jogosQuery = await Db.Jogos
         .AsNoTracking()
@@ -218,7 +218,7 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     {
       var palpite = palpitesExistentes.FirstOrDefault(p => p.JogoId == jogo.Id);
 
-      return new JogoPalpiteDto
+      return new JogoPalpiteResultado
       {
         Id = jogo.Id.ToString(),
         EquipeCasaNome = jogo.EquipeCasa.Equipe.Nome,
@@ -237,6 +237,10 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     });
   }
 
+  Task<IEnumerable<JogoPalpiteResultado>> IApostaRodadaRepository.ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+  {
+    throw new NotImplementedException();
+  }
 }
     
 
