@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/ApostadorCampeonatoController.cs
+// Localização: ApostasApp.Core.Web/Controllers/ApostadorCampeonatoController.cs
 
 using Microsoft.AspNetCore.Mvc;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
