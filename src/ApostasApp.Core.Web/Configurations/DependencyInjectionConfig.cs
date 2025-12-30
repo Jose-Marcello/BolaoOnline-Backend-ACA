@@ -1,3 +1,4 @@
+using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Apostadores;
 using ApostasApp.Core.Application.Services.Apostas;
@@ -9,6 +10,7 @@ using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Email;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
+using ApostasApp.Core.Application.Services.Interfaces.Identity;
 using ApostasApp.Core.Application.Services.Interfaces.Palpites;
 using ApostasApp.Core.Application.Services.Interfaces.RankingRodadas;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
@@ -27,21 +29,20 @@ using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
 using ApostasApp.Core.Domain.Models.Configuracoes;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
 using ApostasApp.Core.Infrastructure.Data.Repository;
+using ApostasApp.Core.Infrastructure.Data.Repository.Apostadores;
 using ApostasApp.Core.Infrastructure.Data.Repository.Apostas;
+using ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos;
+using ApostasApp.Core.Infrastructure.Data.Repository.Financeiro;
 using ApostasApp.Core.Infrastructure.Data.Repository.Jogos;
+using ApostasApp.Core.Infrastructure.Data.Repository.Rodadas;
 using ApostasApp.Core.Infrastructure.Identity;
 using ApostasApp.Core.Infrastructure.Notificacoes;
 using ApostasApp.Core.Infrastructure.Services.Email;
-using ApostasApp.Core.Infrastructure.Data.Repository.Apostadores;
-using ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos;
-using ApostasApp.Core.Infrastructure.Data.Repository.Financeiro;
-using ApostasApp.Core.Infrastructure.Data.Repository.Rodadas;
 using ApostasApp.Infrastructure.Data.Repository;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using SendGrid;
-using ApostasApp.Core.Application.Services.Interfaces.Identity;
 
 namespace ApostasApp.Core.Web.Configurations
 {
@@ -81,6 +82,7 @@ namespace ApostasApp.Core.Web.Configurations
       services.AddScoped<IRankingService, RankingService>();
       services.AddScoped<IPalpiteService, PalpiteService>();
       services.AddScoped<IRankingRodadaService, RankingRodadaService>();
+      services.AddScoped<IApostaRodadaAppService, ApostaRodadaService>();
 
       services.AddScoped<IBolaoEmailSender, MockEmailSender>();
 
