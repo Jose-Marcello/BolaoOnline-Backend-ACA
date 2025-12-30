@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application/Services/Interfaces/Apostas/IApostaRodadaService.cs
+// Localização: ApostasApp.Core.Application/Services/Interfaces/Apostas/IApostaRodadaService.cs
 
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
@@ -29,6 +29,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Apostas
         Task<ApiResponse<ApostaRodadaDto>> ExecutarTransacaoApostaAvulsa(CriarApostaAvulsaRequestDto requestDto);
         Task<ApostasAvulsasTotaisDto> ObterTotaisApostasAvulsas(Guid rodadaId);
         Task<ApostasCampeonatoTotaisDto> ObterTotaisCampeonato(Guid campeonatoId);
+        Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);
 
     }
 }
