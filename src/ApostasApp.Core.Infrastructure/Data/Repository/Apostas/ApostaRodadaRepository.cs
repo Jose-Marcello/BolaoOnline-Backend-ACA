@@ -1,12 +1,14 @@
 using ApostasApp.Core.Application.DTOs.Apostas;
+using ApostasApp.Core.Application.DTOs.Jogos;
 using ApostasApp.Core.Application.DTOs.Ranking;
+using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Models.Apostas;
 using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.Infrastructure.Data.Context;
 using ApostasApp.Core.Infrastructure.Data.Models;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.Infrastructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -193,6 +195,48 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
 
         return totais ?? new CampeonatoTotais();
     }
+
+  // No seu ApostaRodadaRepository.cs
+  public async Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+  {
+    var jogosQuery = await Db.Jogos
+        .AsNoTracking()
+        .Include(j => j.EquipeCasa).ThenInclude(ec => ec.Equipe)
+        .Include(j => j.EquipeVisitante).ThenInclude(ev => ev.Equipe)
+        .Include(j => j.Estadio)
+        .Where(j => j.RodadaId == rodadaId)
+        .OrderBy(j => j.DataJogo)
+        .ThenBy(j => j.HoraJogo)
+        .ToListAsync();
+
+    var palpitesExistentes = await Db.Palpites
+        .AsNoTracking()
+        .Where(p => p.ApostaRodadaId == apostaId)
+        .ToListAsync();
+
+    return jogosQuery.Select(jogo =>
+    {
+      var palpite = palpitesExistentes.FirstOrDefault(p => p.JogoId == jogo.Id);
+
+      return new JogoPalpiteDto
+      {
+        Id = jogo.Id.ToString(),
+        EquipeCasaNome = jogo.EquipeCasa.Equipe.Nome,
+        EquipeCasaEscudoUrl = jogo.EquipeCasa.Equipe.Escudo,
+        EquipeVisitanteNome = jogo.EquipeVisitante.Equipe.Nome,
+        EquipeVisitanteEscudoUrl = jogo.EquipeVisitante.Equipe.Escudo,
+        EstadioNome = jogo.Estadio?.Nome,
+
+        // CORREÇÃO AQUI: Passamos os valores reais para o DTO
+        DataHoraReal = jogo.DataJogo,
+        HoraJogo = jogo.HoraJogo.ToString(), // O Angular vai exibir "16:00"
+
+        PlacarApostaCasa = palpite?.PlacarApostaCasa,
+        PlacarApostaVisita = palpite?.PlacarApostaVisita
+      };
+    });
+  }
+
 }
     
 

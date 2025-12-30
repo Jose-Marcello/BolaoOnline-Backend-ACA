@@ -1,9 +1,10 @@
-﻿// Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
+// Localização: ApostasApp.Core.Application.Services/Apostas/ApostaRodadaService.cs
 
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
 using ApostasApp.Core.Application.DTOs.Jogos; // Mantenha se necessário para outros métodos
 using ApostasApp.Core.Application.DTOs.Palpites; // Mantenha se necessário para outros métodos
+using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
@@ -38,8 +39,9 @@ namespace ApostasApp.Core.Application.Services.Apostas
     /// </summary>
     public class ApostaRodadaService : BaseService, IApostaRodadaService
     {
+        //private readonly IApostaRodadaAppService _apostaRodadaRepository;
         private readonly IApostaRodadaRepository _apostaRodadaRepository;
-        private readonly ICampeonatoRepository _campeonatoRepository;
+        private readonly ICampeonatoRepository _campeonatoRepository; 
         private readonly IApostadorRepository _apostadorRepository;
         private readonly IPalpiteRepository _palpiteRepository;
         private readonly IRodadaRepository _rodadaRepository;

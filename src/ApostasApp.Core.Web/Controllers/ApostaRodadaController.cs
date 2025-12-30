@@ -1,21 +1,22 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/ApostaRodadaController.cs
+// Localização: ApostasApp.Core.Web/Controllers/ApostaRodadaController.cs
 
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
+using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Models.Campeonatos; // Necessário para FromForm
 using ApostasApp.Core.Domain.Models.Notificacoes;
 using ApostasApp.Core.Web.Controllers; // Para BaseController
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using ApostasApp.Core.Domain.Models.Campeonatos; // Necessário para FromForm
 
 namespace ApostasApp.Core.Web.Controllers
 {
@@ -25,15 +26,18 @@ namespace ApostasApp.Core.Web.Controllers
     {
         private readonly IApostaRodadaService _apostaRodadaService;
         private readonly ILogger<ApostaRodadaController> _logger;
+        private readonly IApostaRodadaAppService _apostaRodadaAppService;
 
-        public ApostaRodadaController(INotificador notificador,
+    public ApostaRodadaController(INotificador notificador,
                                      // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
                                      IApostaRodadaService apostaRodadaService,
+                                     IApostaRodadaAppService apostaRodadaAppService,
                                      ILogger<ApostaRodadaController> logger)
             : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _apostaRodadaService = apostaRodadaService;
             _logger = logger;
+           _apostaRodadaAppService = apostaRodadaAppService;
         }
 
         /// <summary>
@@ -164,14 +168,24 @@ namespace ApostasApp.Core.Web.Controllers
             }
         }
 
+    [HttpGet("ObterJogosComPalpites/{apostaId}/{rodadaId}")]
+    public async Task<IActionResult> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+    {
+      // Chamamos o AppService que, por sua vez, usa o Repository para buscar os dados
+      var result = await _apostaRodadaAppService.ObterJogosComPalpites(apostaId, rodadaId);
 
-        // --- NOVO ENDPOINT PARA OBTER TOTAIS DE APOSTAS AVULSAS ---
-        /// <summary>
-        /// Obtém o total de apostas e o valor acumulado de apostas avulsas e mistas de uma rodada.
-        /// </summary>
-        /// <param name="rodadaId">ID da rodada.</param>
-        /// <returns>ApiResponse com o total de apostas e valor acumulado.</returns>
-        [HttpGet("totais-apostas-avulsas")]
+      // CustomResponse garante que o Angular receba o objeto no padrão { success: true, data: [...] }
+      return CustomResponse(result);
+    }
+
+
+    // --- NOVO ENDPOINT PARA OBTER TOTAIS DE APOSTAS AVULSAS ---
+    /// <summary>
+    /// Obtém o total de apostas e o valor acumulado de apostas avulsas e mistas de uma rodada.
+    /// </summary>
+    /// <param name="rodadaId">ID da rodada.</param>
+    /// <returns>ApiResponse com o total de apostas e valor acumulado.</returns>
+    [HttpGet("totais-apostas-avulsas")]
         public async Task<IActionResult> ObterTotaisApostasAvulsas([FromQuery] Guid rodadaId)
         {
             try

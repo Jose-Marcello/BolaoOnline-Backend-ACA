@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application.Services/RankingService.cs
+// Localização: ApostasApp.Core.Application.Services/RankingService.cs
 using ApostasApp.Core.Application.DTOs.Ranking;
 using ApostasApp.Core.Application.DTOs.RankingRodadas;
 using ApostasApp.Core.Application.Models;
