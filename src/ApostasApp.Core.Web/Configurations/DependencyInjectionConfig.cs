@@ -1,4 +1,3 @@
-using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Services;
 using ApostasApp.Core.Application.Services.Apostadores;
 using ApostasApp.Core.Application.Services.Apostas;

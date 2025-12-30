@@ -2,7 +2,6 @@
 
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
-using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
@@ -26,18 +25,15 @@ namespace ApostasApp.Core.Web.Controllers
     {
         private readonly IApostaRodadaService _apostaRodadaService;
         private readonly ILogger<ApostaRodadaController> _logger;
-        private readonly IApostaRodadaAppService _apostaRodadaAppService;
-
+        
     public ApostaRodadaController(INotificador notificador,
                                      // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
                                      IApostaRodadaService apostaRodadaService,
-                                     IApostaRodadaAppService apostaRodadaAppService,
                                      ILogger<ApostaRodadaController> logger)
             : base(notificador) // Passa apenas o notificador para a BaseController
         {
             _apostaRodadaService = apostaRodadaService;
-            _logger = logger;
-           _apostaRodadaAppService = apostaRodadaAppService;
+            _logger = logger;           
         }
 
         /// <summary>
@@ -172,7 +168,7 @@ namespace ApostasApp.Core.Web.Controllers
     public async Task<IActionResult> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
     {
       // Chamamos o AppService que, por sua vez, usa o Repository para buscar os dados
-      var result = await _apostaRodadaAppService.ObterJogosComPalpites(apostaId, rodadaId);
+      var result = await _apostaRodadaService.ObterJogosComPalpites(apostaId, rodadaId);
 
       // CustomResponse garante que o Angular receba o objeto no padrão { success: true, data: [...] }
       return CustomResponse(result);

@@ -4,7 +4,6 @@ using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
 using ApostasApp.Core.Application.DTOs.Jogos; // Mantenha se necessário para outros métodos
 using ApostasApp.Core.Application.DTOs.Palpites; // Mantenha se necessário para outros métodos
-using ApostasApp.Core.Application.Interfaces;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;

@@ -31,4 +31,8 @@
 		<ProjectReference Include="..\ApostasApp.Core.Domain\ApostasApp.Core.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Interfaces\" />
+	</ItemGroup>
+
 </Project>
