@@ -37,9 +37,9 @@ namespace ApostasApp.Core.Application.Services.Apostas
   /// <summary>
   /// ApostaRodadaService é responsável pela lógica de negócio de submissão, consulta e geração de apostas de rodada.
   /// </summary>
-  public class ApostaRodadaService : BaseService, IApostaRodadaService, IApostaRodadaAppService
+  public class ApostaRodadaService : BaseService, IApostaRodadaService
   {
-        private readonly IApostaRodadaAppService _apostaRodadaAppRepository;
+        
         private readonly IApostaRodadaRepository _apostaRodadaRepository;
         private readonly ICampeonatoRepository _campeonatoRepository; 
         private readonly IApostadorRepository _apostadorRepository;
@@ -54,8 +54,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
         public ApostaRodadaService(
             IFinanceiroService financeiroService,            
-            IApostaRodadaRepository apostaRodadaRepository,
-            IApostaRodadaAppService apostaRodadaAppRepository,
+            IApostaRodadaRepository apostaRodadaRepository,           
             ICampeonatoRepository campeonatoRepository,
             IApostadorRepository apostadorRepository,
             IPalpiteRepository palpiteRepository,
@@ -68,8 +67,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
             ILogger<ApostaRodadaService> logger)
                              : base(notificador, uow)
         {
-            _financeiroService = financeiroService;
-            _apostaRodadaAppRepository = apostaRodadaAppRepository;
+            _financeiroService = financeiroService;           
             _campeonatoRepository = campeonatoRepository;
             _apostadorRepository = apostadorRepository;
             _palpiteRepository = palpiteRepository;
@@ -85,10 +83,10 @@ namespace ApostasApp.Core.Application.Services.Apostas
         /// <summary>
         /// Obtém jogos e palpites ordenados. Este método une a Interface de Application ao Repository de Infra.
         /// </summary>
-        public async Task<IEnumerable<JogoPalpiteDto>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
+        public async Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
         {
             // O Service atua como ponte para o Repository que contém a Query otimizada
-            return await _apostaRodadaAppRepository.ObterJogosComPalpites(apostaId, rodadaId);
+            return await _apostaRodadaRepository.ObterJogosComPalpites(apostaId, rodadaId);
         }
 
 
