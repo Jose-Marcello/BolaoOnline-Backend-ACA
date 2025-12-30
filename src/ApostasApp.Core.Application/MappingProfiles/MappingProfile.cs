@@ -114,24 +114,24 @@ namespace ApostasApp.Core.Application.MappingProfiles
                 .ForMember(dest => dest.EquipeVisitanteEscudoUrl, opt => opt.MapFrom(src => src.EquipeVisitante.Equipe.Escudo))
                 .ForMember(dest => dest.EstadioNome, opt => opt.MapFrom(src => src.Estadio.Nome));
 
-      // Mapeamento para PalpiteDto (agora incluindo o Jogo)
-      CreateMap<Palpite, PalpiteDto>()
-        .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
-        .ForMember(dest => dest.JogoId, opt => opt.MapFrom(src => src.JogoId.ToString()))
-        .ForMember(dest => dest.ApostaRodadaId, opt => opt.MapFrom(src => src.ApostaRodadaId.ToString()))
+          // Mapeamento para PalpiteDto (agora incluindo o Jogo)
+          CreateMap<Palpite, PalpiteDto>()
+               .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
+               .ForMember(dest => dest.JogoId, opt => opt.MapFrom(src => src.JogoId.ToString()))
+               .ForMember(dest => dest.ApostaRodadaId, opt => opt.MapFrom(src => src.ApostaRodadaId.ToString()))
 
-         // 1. Aceita o nulo do banco sem "capotar" o mapeamento
-        .ForMember(dest => dest.PlacarApostaCasa, opt => opt.MapFrom(src => src.PlacarApostaCasa))
-        .ForMember(dest => dest.PlacarApostaVisita, opt => opt.MapFrom(src => src.PlacarApostaVisita))
+               // 1. Aceita o nulo do banco sem "capotar" o mapeamento
+               .ForMember(dest => dest.PlacarApostaCasa, opt => opt.MapFrom(src => src.PlacarApostaCasa))
+               .ForMember(dest => dest.PlacarApostaVisita, opt => opt.MapFrom(src => src.PlacarApostaVisita))
 
-     // 2. Proteção para o cálculo de pontos: 
-     // Se o usuário não palpitou (null), os pontos são obrigatoriamente 0
-     .ForMember(dest => dest.Pontos, opt => opt.MapFrom(src =>
-    (src.PlacarApostaCasa.HasValue && src.PlacarApostaVisita.HasValue) ? src.Pontos : 0));
+                // 2. Proteção para o cálculo de pontos: 
+                // Se o usuário não palpitou (null), os pontos são obrigatoriamente 0
+               .ForMember(dest => dest.Pontos, opt => opt.MapFrom(src =>
+               (src.PlacarApostaCasa.HasValue && src.PlacarApostaVisita.HasValue) ? src.Pontos : 0));
 
 
-      // Mapeamento para ApostaRodadaDto
-      CreateMap<ApostaRodada, ApostaRodadaDto>()
+         // Mapeamento para ApostaRodadaDto
+           CreateMap<ApostaRodada, ApostaRodadaDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()))
                 .ForMember(dest => dest.RodadaId, opt => opt.MapFrom(src => src.RodadaId.ToString()))
                 .ForMember(dest => dest.ApostadorCampeonatoId, opt => opt.MapFrom(src => src.ApostadorCampeonatoId.ToString()))
