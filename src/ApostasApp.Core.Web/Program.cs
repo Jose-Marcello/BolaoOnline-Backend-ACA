@@ -41,7 +41,7 @@ var empurraPipe = false; // (true);
 
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args); 
 
 // === CONFIGURAÇÃO DE HEADERS DE PROXY ===
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
