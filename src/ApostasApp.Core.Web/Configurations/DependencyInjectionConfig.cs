@@ -84,6 +84,8 @@ namespace ApostasApp.Core.Web.Configurations
       services.AddScoped<IRankingRodadaService, RankingRodadaService>();
       services.AddScoped<IApostaRodadaAppService, ApostaRodadaService>();
 
+      services.AddScoped<IApostaRodadaAppService, ApostaRodadaService>();
+
       services.AddScoped<IBolaoEmailSender, MockEmailSender>();
 
       //services.AddScoped<ApostasApp.Core.Infrastructure.Services.Email.EmailService>();
