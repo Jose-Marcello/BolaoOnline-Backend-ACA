@@ -1,35 +1,29 @@
-﻿// ApostasApp.Core.Application.DTOs/ApostasRodada/ApostaRodadaDto.cs
-using ApostasApp.Core.Application.DTOs.Palpites; // Para PalpiteDto
-using ApostasApp.Core.Application.DTOs.ApostadorCampeonatos; // <<-- NOVO: Para ApostadorCampeonatoDto -->>
-using System;
-using System.Collections.Generic;
+using ApostasApp.Core.Application.DTOs.Palpites;
 
 namespace ApostasApp.Core.Application.DTOs.ApostasRodada
 {
-    /// <summary>
-    /// DTO para representar uma submissão completa de apostas para uma rodada (ApostaRodada).
-    /// </summary>
-    public class ApostaRodadaDto
-    {
-        public string Id { get; set; }
-        public string ApostadorCampeonatoId { get; set; }
-        public string RodadaId { get; set; }
-        public string IdentificadorAposta { get; set; }
-        public DateTime? DataHoraSubmissao { get; set; }
-        public bool EhApostaCampeonato { get; set; }
-        public bool EhApostaIsolada { get; set; }
-        public decimal? CustoPagoApostaRodada { get; set; }
-        public int PontuacaoTotalRodada { get; set; }
-        public int StatusAposta { get; set; } // 1 = Pendente, 2 = Enviada
-        public bool Enviada { get; set; }
-        public int NumJogosApostados { get; set; }
-        
-        //public decimal? ValorAposta { get; set; }
+  public class ApostaRodadaDto
+  {
+    public string Id { get; set; }
+    public string ApostadorCampeonatoId { get; set; }
+    public string RodadaId { get; set; }
+    public string IdentificadorAposta { get; set; }
+    public DateTime? DataHoraSubmissao { get; set; }
+    public bool EhApostaCampeonato { get; set; }
+    public bool EhApostaIsolada { get; set; }
+    public decimal? CustoPagoApostaRodada { get; set; }
+    public int PontuacaoTotalRodada { get; set; }
+    public int StatusAposta { get; set; }
+    public bool Enviada { get; set; }
+    public int NumJogosApostados { get; set; }
 
-        // DTO aninhado para os detalhes do apostador no campeonato (se necessário para exibição)
-        public ApostadorCampeonatoDto ApostadorCampeonato { get; set; } // <<-- Adicionado aqui -->>
+    // <<-- NOVOS CAMPOS PARA O GRID 1 E CABEÇALHO -->>
+    public int NumeroRodada { get; set; }     // Necessário para o Item 1
+    public DateTime DataInicio { get; set; }  // Necessário para o Item 1
+    public DateTime DataFim { get; set; }     // Necessário para o Item 1
+    public string DescricaoRodada { get; set; } // "Rodada X"
 
-        // Coleção de palpites individuais para esta aposta de rodada
-        public IEnumerable<PalpiteDto> Palpites { get; set; }
-    }
+    public ApostadorCampeonatos.ApostadorCampeonatoDto ApostadorCampeonato { get; set; }
+    public IEnumerable<PalpiteDto> Palpites { get; set; }
+  }
 }
