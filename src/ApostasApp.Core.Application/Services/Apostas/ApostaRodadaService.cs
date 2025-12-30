@@ -199,43 +199,66 @@ namespace ApostasApp.Core.Application.Services.Apostas
       return await GerarApostaRodada(ac.Id.ToString(), requestDto.RodadaId, false, "Aposta Avulsa");
     }
 
+
     public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? apostadorCampeonatoId)
     {
       var apiResponse = new ApiResponse<IEnumerable<ApostaRodadaDto>>(false, null);
       try
       {
-        // Se o ID da associação não foi fornecido, retornamos uma lista vazia com sucesso
-        // Isso evita erros de "Object Reference" no Controller
-        if (!apostadorCampeonatoId.HasValue || apostadorCampeonatoId == Guid.Empty)
+        // 1. Buscamos as apostas existentes
+        var apostas = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, apostadorCampeonatoId ?? Guid.Empty);
+
+        // 2. BUSCA ESSENCIAL: Buscamos os dados da Rodada para preencher os campos Numero, DataInicio, etc.
+        // Se não buscarmos a Rodada, os campos de cabeçalho no DTO ficam zerados/vazios.
+        var rodada = await _rodadaRepository.ObterPorId(rodadaId);
+
+        var dtos = new List<ApostaRodadaDto>();
+
+        if (apostas != null && apostas.Any())
         {
-          apiResponse.Data = new List<ApostaRodadaDto>();
-          apiResponse.Success = true;
-          return apiResponse;
+          foreach (var aposta in apostas)
+          {
+            var dto = _mapper.Map<ApostaRodadaDto>(aposta);
+
+            // Garantimos que os dados da rodada pai sejam repassados para o DTO
+            if (rodada != null)
+            {
+              dto.NumeroRodada = rodada.NumeroRodada;
+              dto.DataInicio = rodada.DataInic;
+              dto.DataFim = rodada.DataFim;
+              dto.DescricaoRodada = $"Rodada {rodada.NumeroRodada}";
+            }
+            dtos.Add(dto);
+          }
+        }
+        else if (rodada != null)
+        {
+          // Se não tem aposta ainda, mandamos um DTO vazio apenas com os dados da rodada
+          // Isso permite que o Grid 1 mostre "Rodada X" mesmo sem apostas.
+          dtos.Add(new ApostaRodadaDto
+          {
+            RodadaId = rodada.Id,
+            NumeroRodada = rodada.Numero,
+            DataInicio = rodada.DataInicio,
+            DataFim = rodada.DataFim,
+            DescricaoRodada = $"Rodada {rodada.Numero}"
+          });
         }
 
-        // Busca no repositório com os Includes necessários (Palpites, Rodada, etc)
-        var apostasRodada = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, apostadorCampeonatoId.Value);
-
-        if (apostasRodada == null)
-        {
-          apiResponse.Data = new List<ApostaRodadaDto>();
-          apiResponse.Success = true;
-          return apiResponse;
-        }
-
-        // Mapeia para o DTO de exibição
-        apiResponse.Data = _mapper.Map<IEnumerable<ApostaRodadaDto>>(apostasRodada);
+        apiResponse.Data = dtos;
         apiResponse.Success = true;
         return apiResponse;
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Erro ao obter apostas da rodada para o apostador {ApostadorId}", apostadorCampeonatoId);
-        Notificar("Erro", "Não foi possível carregar suas apostas.");
-        apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
+        _logger.LogError(ex, "Erro ao obter dados da rodada para o Grid 1");
+        apiResponse.Message = "Erro ao carregar dados da rodada.";
         return apiResponse;
       }
     }
+
+
+
 
     public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string acId, string rId, bool ehCamp, string ident)
     {
