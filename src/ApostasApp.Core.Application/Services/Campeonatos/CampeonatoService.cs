@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
+// Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
 
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
