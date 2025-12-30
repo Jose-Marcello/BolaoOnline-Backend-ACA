@@ -30,6 +30,7 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Apostas
         Task<ApostasAvulsasTotaisDto> ObterTotaisApostasAvulsas(Guid rodadaId);
         Task<ApostasCampeonatoTotaisDto> ObterTotaisCampeonato(Guid campeonatoId);
         Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId);
+        Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid apostadorCampeonatoId);
 
     }
 }
