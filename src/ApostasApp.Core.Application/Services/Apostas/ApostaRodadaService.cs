@@ -237,11 +237,11 @@ namespace ApostasApp.Core.Application.Services.Apostas
           // Isso permite que o Grid 1 mostre "Rodada X" mesmo sem apostas.
           dtos.Add(new ApostaRodadaDto
           {
-            RodadaId = rodada.Id,
-            NumeroRodada = rodada.Numero,
-            DataInicio = rodada.DataInicio,
+            RodadaId = rodada.Id.ToString(),
+            NumeroRodada = rodada.NumeroRodada,
+            DataInicio = rodada.DataInic,
             DataFim = rodada.DataFim,
-            DescricaoRodada = $"Rodada {rodada.Numero}"
+            DescricaoRodada = $"Rodada {rodada.NumeroRodada}"
           });
         }
 
