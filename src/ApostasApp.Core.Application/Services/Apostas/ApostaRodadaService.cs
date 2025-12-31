@@ -64,39 +64,36 @@ namespace ApostasApp.Core.Application.Services.Apostas
       _logger = logger;
     }
 
-    // --- GRID 2: CONSULTA PARA EDICAO ---
+
     public async Task<ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>> ObterApostasDoApostadorNaRodadaParaEdicao(Guid rodadaId, Guid apostaRodadaId)
     {
       var apiResponse = new ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>(false, null);
       try
       {
-        var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
-            .Include(ar => ar.Palpites)
-            .FirstOrDefaultAsync();
+        // 1. Chamada ao método do Repositório que já faz Include de Equipes e Estádios
+        var jogosComPalpites = await _apostaRodadaRepository.ObterJogosComPalpites(apostaRodadaId, rodadaId);
 
-        var jogosDaRodada = await _jogoRepository.ObterJogosDaRodadaComPlacaresEEquipes(rodadaId);
+        // 2. Mapeamento direto para o DTO que o seu Frontend espera
+        var apostasParaEdicao = jogosComPalpites.Select(jogo => new ApostaJogoEdicaoDto
+        {
+          Id = apostaRodadaId.ToString(), // ID da cartela selecionada
+          IdJogo = jogo.Id,
+          EquipeMandante = jogo.EquipeCasaNome ?? "N/A",
+          EscudoMandante = jogo.EquipeCasaEscudoUrl, // Fim do problema de escudo null
+          EquipeVisitante = jogo.EquipeVisitanteNome ?? "N/A",
+          EscudoVisitante = jogo.EquipeVisitanteEscudoUrl,
+          EstadioNome = jogo.EstadioNome,
 
-        var apostasParaEdicao = jogosDaRodada.Select(jogo => {
-          var palpite = apostaRodada?.Palpites.FirstOrDefault(p => p.JogoId == jogo.Id);
-          return new ApostaJogoEdicaoDto
-          {
-            Id = palpite?.Id.ToString() ?? Guid.NewGuid().ToString(),
-            IdJogo = jogo.Id.ToString(),
-            EquipeMandante = jogo.EquipeCasa?.Equipe?.Nome ?? "N/A",
-            SiglaMandante = jogo.EquipeCasa?.Equipe?.Sigla ?? "??",
-            EscudoMandante = jogo.EquipeCasa?.Equipe?.Escudo,
-            EquipeVisitante = jogo.EquipeVisitante?.Equipe?.Nome ?? "N/A",
-            SiglaVisitante = jogo.EquipeVisitante?.Equipe?.Sigla ?? "??",
-            EscudoVisitante = jogo.EquipeVisitante?.Equipe?.Escudo,
-            EstadioNome = jogo.Estadio?.Nome,
-            DataJogo = jogo.DataJogo.ToString("yyyy-MM-dd"),
-            HoraJogo = jogo.HoraJogo.ToString(@"hh\:mm"),
-            StatusJogo = jogo.Status.ToString(),
-            PlacarApostaCasa = palpite?.PlacarApostaCasa,
-            PlacarApostaVisita = palpite?.PlacarApostaVisita,
-            Enviada = apostaRodada?.Enviada ?? false
-          };
-        }).OrderBy(x => x.DataJogo).ThenBy(x => x.HoraJogo).ToList();
+          // Tratamento de Data, Dia da Semana e Hora (Item 5)
+          DataJogo = jogo.DataHoraReal.ToString("dd/MM"),
+          // Formatação do Dia da Semana (Ex: "SÁB", "DOM")
+          DiaSemana = jogo.DataHoraReal.ToString("ddd", new System.Globalization.CultureInfo("pt-BR")).ToUpper().Replace(".", ""),
+          HoraJogo = jogo.HoraJogo,
+
+          PlacarApostaCasa = jogo.PlacarApostaCasa,
+          PlacarApostaVisita = jogo.PlacarApostaVisita,
+          Enviada = true
+        }).ToList();
 
         apiResponse.Data = apostasParaEdicao;
         apiResponse.Success = true;
@@ -104,10 +101,11 @@ namespace ApostasApp.Core.Application.Services.Apostas
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Erro ao carregar edição.");
+        _logger.LogError(ex, "Erro ao carregar edição com dados completos das equipes.");
         return apiResponse;
       }
     }
+
 
     // --- GRID 3: CONSULTA DE RESULTADOS ---
     public async Task<ApiResponse<ApostaRodadaResultadosDto>> ObterResultadosDaRodada(Guid rodadaId, Guid apostaRodadaId)
