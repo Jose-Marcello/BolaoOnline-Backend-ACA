@@ -103,7 +103,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
       {
         _logger.LogError(ex, "Erro ao carregar edição com dados completos das equipes.");
         return apiResponse;
-      }
+      } 
     }
 
 
