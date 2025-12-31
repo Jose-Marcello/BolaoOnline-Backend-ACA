@@ -1,4 +1,4 @@
-﻿// ApostasApp.Core.Application.DTOs/Jogos/JogoDto.cs
+// ApostasApp.Core.Application.DTOs/Jogos/JogoDto.cs
 using System;
 using ApostasApp.Core.Domain.Models.Jogos; // Para o enum StatusJogo, se aplicável
 
@@ -25,6 +25,9 @@ namespace ApostasApp.Core.Application.DTOs.Jogos
         public string EstadioId { get; set; }
         public string EstadioNome { get; set; }
         public DateTime DataHora { get; set; }
+
+        public string HoraJogo { get; set; }
+        public string DiaSemana { get; set; }
         public string Status { get; set; } // Ou public StatusJogo Status { get; set; }
         public int? PlacarCasa { get; set; }
         public int? PlacarFora { get; set; }
