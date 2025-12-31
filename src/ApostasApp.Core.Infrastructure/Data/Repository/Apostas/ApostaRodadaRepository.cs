@@ -240,10 +240,18 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
   // No ApostaRodadaRepository
   public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId)
   {
-    // Usamos AsNoTracking para performance em consultas
     return await DbSet.AsNoTracking()
         .Include(ar => ar.Palpites)
             .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.EquipeCasa) // <--- BUSCA A LIGAÇÃO
+                    .ThenInclude(ec => ec.Equipe) // <--- BUSCA O ESCUDO/NOME
+        .Include(ar => ar.Palpites)
+            .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.EquipeVisitante) // <--- BUSCA A LIGAÇÃO
+                    .ThenInclude(ev => ev.Equipe) // <--- BUSCA O ESCUDO/NOME
+        .Include(ar => ar.Palpites)
+            .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.Estadio) // <--- PARA O NOME DO ESTÁDIO
         .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
         .ToListAsync();
   }
