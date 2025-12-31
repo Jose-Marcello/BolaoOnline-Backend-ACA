@@ -142,8 +142,9 @@ namespace ApostasApp.Core.Web.Controllers
         }
 
 
-        [HttpGet("ListarPorRodadaEApostadorCampeonato")]
-        public async Task<IActionResult> ListarPorRodadaEApostadorCampeonato([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId) // Note o '?' para tornar o Guid anulável
+    //[HttpGet("ListarPorRodadaEApostadorCampeonato")]
+    [HttpGet("obter-apostas-rodada/{rodadaId}")]
+    public async Task<IActionResult> ListarPorRodadaEApostadorCampeonato([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId) // Note o '?' para tornar o Guid anulável
         {
             try
             {
