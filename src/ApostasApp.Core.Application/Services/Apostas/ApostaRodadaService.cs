@@ -218,16 +218,34 @@ namespace ApostasApp.Core.Application.Services.Apostas
           {
             var dto = _mapper.Map<ApostaRodadaDto>(aposta);
 
-            // Garantimos que os dados da rodada pai sejam repassados para o DTO
+            // Repassa dados da Rodada
             if (rodada != null)
             {
               dto.NumeroRodada = rodada.NumeroRodada;
               dto.DataInicio = rodada.DataInic;
               dto.DataFim = rodada.DataFim;
-              dto.DescricaoRodada = $"Rodada {rodada.NumeroRodada}";
+            }
+
+            // CORREÇÃO ESSENCIAL: Garante que cada palpite tenha os dados do jogo preenchidos
+            // Isso evita o 'null' que vimos no JSON
+            if (aposta.Palpites != null)
+            {
+              foreach (var p in aposta.Palpites)
+              {
+                var pDto = dto.Palpites.FirstOrDefault(x => x.Id == p.Id.ToString());
+                if (pDto != null && p.Jogo != null)
+                {
+                  pDto.Jogo.EquipeCasaNome = p.Jogo.EquipeCasa?.Equipe?.Nome;
+                  pDto.Jogo.EquipeCasaEscudoUrl = p.Jogo.EquipeCasa?.Equipe?.Escudo;
+                  pDto.Jogo.EquipeVisitanteNome = p.Jogo.EquipeVisitante?.Equipe?.Nome;
+                  pDto.Jogo.EquipeVisitanteEscudoUrl = p.Jogo.EquipeVisitante?.Equipe?.Escudo;
+                  pDto.Jogo.DataHora = p.Jogo.DataJogo; // Resolve o "ÀS" vazio
+                }
+              }
             }
             dtos.Add(dto);
           }
+        
         }
         else if (rodada != null)
         {
