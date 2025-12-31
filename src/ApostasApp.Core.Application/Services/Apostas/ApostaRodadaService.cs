@@ -240,6 +240,9 @@ namespace ApostasApp.Core.Application.Services.Apostas
                   pDto.Jogo.EquipeVisitanteNome = p.Jogo.EquipeVisitante?.Equipe?.Nome;
                   pDto.Jogo.EquipeVisitanteEscudoUrl = p.Jogo.EquipeVisitante?.Equipe?.Escudo;
                   pDto.Jogo.DataHora = p.Jogo.DataJogo; // Resolve o "ÀS" vazio
+                  pDto.Jogo.HoraJogo = p.Jogo.HoraJogo.ToString(); // Resolve o "ÀS" vazio
+                                                        // Se o seu DTO tiver o campo DiaSemana, preencha assim (Português):
+                  pDto.Jogo.DiaSemana = p.Jogo.DataJogo.ToString("dddd", new System.Globalization.CultureInfo("pt-BR"));
                 }
               }
             }
