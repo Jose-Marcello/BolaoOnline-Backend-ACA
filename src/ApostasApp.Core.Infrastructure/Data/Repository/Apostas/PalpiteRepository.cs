@@ -36,6 +36,8 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Apostas
                                       .ThenInclude(ac => ac.Apostador) // 'ac' é ApostadorCampeonato, tem Apostador (o apostador real)
                                           .ThenInclude(apostador => apostador.Usuario) // 'apostador' é do tipo Apostador, que tem a propriedade Usuario.
                               .Where(p => p.Jogo.RodadaId == rodadaId)
+                              .OrderBy(p => p.Jogo.DataJogo).
+                                 ThenBy(p => p.Jogo.HoraJogo)
                               .ToListAsync();
         }
 
