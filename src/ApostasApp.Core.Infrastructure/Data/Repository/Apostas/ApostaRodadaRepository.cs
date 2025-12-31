@@ -241,21 +241,21 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
   public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId)
   {
     return await DbSet.AsNoTracking()
-        .Include(ar => ar.Palpites)
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.EquipeCasa) // <--- BUSCA A LIGAÇÃO
-                    .ThenInclude(ec => ec.Equipe) // <--- BUSCA O ESCUDO/NOME
-        .Include(ar => ar.Palpites)
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.EquipeVisitante) // <--- BUSCA A LIGAÇÃO
-                    .ThenInclude(ev => ev.Equipe) // <--- BUSCA O ESCUDO/NOME
-        .Include(ar => ar.Palpites)
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.Estadio) // <--- PARA O NOME DO ESTÁDIO
-        .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
-        .ToListAsync();
+      // A MÁGICA ESTÁ NESTA LINHA: Ordenamos os palpites pelo Jogo
+      .Include(ar => ar.Palpites.OrderBy(p => p.Jogo.DataJogo).ThenBy(p => p.Jogo.HoraJogo))
+          .ThenInclude(p => p.Jogo)
+              .ThenInclude(j => j.EquipeCasa)
+                  .ThenInclude(ec => ec.Equipe)
+      .Include(ar => ar.Palpites)
+          .ThenInclude(p => p.Jogo)
+              .ThenInclude(j => j.EquipeVisitante)
+                  .ThenInclude(ev => ev.Equipe)
+      .Include(ar => ar.Palpites)
+          .ThenInclude(p => p.Jogo)
+              .ThenInclude(j => j.Estadio)
+      .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
+      .ToListAsync();
   }
-
 }
     
 
