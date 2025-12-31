@@ -1,4 +1,4 @@
-﻿// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoVisualizacaoDto.cs
+// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoVisualizacaoDto.cs
 using System;
 
 namespace ApostasApp.Core.Application.DTOs.Apostas
@@ -20,7 +20,8 @@ namespace ApostasApp.Core.Application.DTOs.Apostas
         public int? PlacarApostaVisita { get; set; }
         
        public string DataJogo { get; set; }
-        public string HoraJogo { get; set; }
+       public string DiaSemana { get; set; }
+       public string HoraJogo { get; set; }
         
         public string StatusJogo { get; set; } // String do enum StatusJogo
         public string EstadioNome { get; set; } 
