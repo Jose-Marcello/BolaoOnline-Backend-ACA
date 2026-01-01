@@ -283,39 +283,7 @@ namespace ApostasApp.Core.Web.Controllers
             }
         }
 
-        /*
-        [HttpPost("SalvarApostas")]  
-        public async Task<IActionResult> SalvarApostas([FromBody] SalvarApostaRequestDto salvarApostaDto)
-        {
-            _logger.LogInformation("Iniciando a ação SalvarApostas.");
-
-            if (salvarApostaDto == null || !salvarApostaDto.ApostasJogos.Any())
-            {
-                NotificarAlerta("Nenhuma aposta foi enviada para salvar.");
-                return CustomResponse<bool>();
-            }
-
-            try
-            {
-                var result = await _apostaRodadaService.SalvarApostas(salvarApostaDto);
-
-                if (!result.Success)
-                {
-                    return CustomResponse(result);
-                }
-
-                NotificarSucesso("Apostas salvas com sucesso!");
-                return CustomResponse(true);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao salvar apostas.");
-                NotificarErro($"Ocorreu um erro inesperado ao salvar as apostas: {ex.Message}");
-                return CustomResponse<bool>();
-            }
-        }
-        */
-
+        
 
         [HttpGet("GetPontuacaoTotalDoApostador")]
         public async Task<IActionResult> GetPontuacaoTotalDoApostador([FromQuery] Guid campeonatoId, [FromQuery] Guid apostadorId)
