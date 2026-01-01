@@ -283,7 +283,8 @@ namespace ApostasApp.Core.Web.Controllers
             }
         }
 
-        [HttpPost("SalvarApostas")]
+        /*
+        [HttpPost("SalvarApostas")]  
         public async Task<IActionResult> SalvarApostas([FromBody] SalvarApostaRequestDto salvarApostaDto)
         {
             _logger.LogInformation("Iniciando a ação SalvarApostas.");
@@ -313,6 +314,8 @@ namespace ApostasApp.Core.Web.Controllers
                 return CustomResponse<bool>();
             }
         }
+        */
+
 
         [HttpGet("GetPontuacaoTotalDoApostador")]
         public async Task<IActionResult> GetPontuacaoTotalDoApostador([FromQuery] Guid campeonatoId, [FromQuery] Guid apostadorId)
