@@ -14,6 +14,7 @@ namespace ApostasApp.Core.Application.DTOs.ApostasRodada
     public decimal? CustoPagoApostaRodada { get; set; }
     public int PontuacaoTotalRodada { get; set; }
     public int StatusAposta { get; set; }
+    public bool PodeEditar { get; set; }
     public bool Enviada { get; set; }
     public int NumJogosApostados { get; set; }
 

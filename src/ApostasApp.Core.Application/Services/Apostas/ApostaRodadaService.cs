@@ -206,8 +206,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         // 1. Buscamos as apostas existentes
         var apostas = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, apostadorCampeonatoId ?? Guid.Empty);
 
-        // 2. BUSCA ESSENCIAL: Buscamos os dados da Rodada para preencher os campos Numero, DataInicio, etc.
-        // Se não buscarmos a Rodada, os campos de cabeçalho no DTO ficam zerados/vazios.
+        // 2. Buscamos os dados da Rodada para o cabeçalho
         var rodada = await _rodadaRepository.ObterPorId(rodadaId);
 
         var dtos = new List<ApostaRodadaDto>();
@@ -218,7 +217,6 @@ namespace ApostasApp.Core.Application.Services.Apostas
           {
             var dto = _mapper.Map<ApostaRodadaDto>(aposta);
 
-            // Repassa dados da Rodada
             if (rodada != null)
             {
               dto.NumeroRodada = rodada.NumeroRodada;
@@ -226,8 +224,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
               dto.DataFim = rodada.DataFim;
             }
 
-            // CORREÇÃO ESSENCIAL: Garante que cada palpite tenha os dados do jogo preenchidos
-            // Isso evita o 'null' que vimos no JSON
+            // Preenchimento detalhado dos jogos em cada palpite
             if (aposta.Palpites != null)
             {
               foreach (var p in aposta.Palpites)
@@ -239,28 +236,32 @@ namespace ApostasApp.Core.Application.Services.Apostas
                   pDto.Jogo.EquipeCasaEscudoUrl = p.Jogo.EquipeCasa?.Equipe?.Escudo;
                   pDto.Jogo.EquipeVisitanteNome = p.Jogo.EquipeVisitante?.Equipe?.Nome;
                   pDto.Jogo.EquipeVisitanteEscudoUrl = p.Jogo.EquipeVisitante?.Equipe?.Escudo;
-                  pDto.Jogo.DataHora = p.Jogo.DataJogo; // Resolve o "ÀS" vazio
-                  pDto.Jogo.HoraJogo = p.Jogo.HoraJogo.ToString(); // Resolve o "ÀS" vazio
-                                                        // Se o seu DTO tiver o campo DiaSemana, preencha assim (Português):
-                  pDto.Jogo.DiaSemana = p.Jogo.DataJogo.ToString("dddd", new System.Globalization.CultureInfo("pt-BR"));
+                  pDto.Jogo.DataHora = p.Jogo.DataJogo;
+                  pDto.Jogo.HoraJogo = p.Jogo.HoraJogo.ToString();
+                  pDto.Jogo.DiaSemana = p.Jogo.DataJogo.ToString("dddd", new System.Globalization.CultureInfo("pt-BR")).ToUpper();
                 }
               }
             }
+
+            // <<-- LÓGICA DE INTERFACE: EDIÇÃO vs CONSULTA -->>
+            // A regra é: Se o ID do usuário que requisitou é o dono da cartela, permite editar.
+            dto.PodeEditar = apostadorCampeonatoId.HasValue &&
+                             aposta.ApostadorCampeonatoId == apostadorCampeonatoId.Value;           
+
             dtos.Add(dto);
           }
-        
         }
         else if (rodada != null)
         {
-          // Se não tem aposta ainda, mandamos um DTO vazio apenas com os dados da rodada
-          // Isso permite que o Grid 1 mostre "Rodada X" mesmo sem apostas.
+          // Caso não existam apostas (usuário novo ou sem palpites na rodada)
           dtos.Add(new ApostaRodadaDto
           {
             RodadaId = rodada.Id.ToString(),
             NumeroRodada = rodada.NumeroRodada,
             DataInicio = rodada.DataInic,
             DataFim = rodada.DataFim,
-            DescricaoRodada = $"Rodada {rodada.NumeroRodada}"
+            DescricaoRodada = $"Rodada {rodada.NumeroRodada}",
+            PodeEditar = apostadorCampeonatoId.HasValue, // Pode criar/editar se estiver logado            
           });
         }
 
@@ -270,7 +271,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Erro ao obter dados da rodada para o Grid 1");
+        _logger.LogError(ex, "Erro ao obter dados da rodada.");
         apiResponse.Message = "Erro ao carregar dados da rodada.";
         return apiResponse;
       }
