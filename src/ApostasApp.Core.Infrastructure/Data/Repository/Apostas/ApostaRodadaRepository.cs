@@ -201,8 +201,10 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
   {
     var jogosQuery = await Db.Jogos
         .AsNoTracking()
-        .Include(j => j.EquipeCasa).ThenInclude(ec => ec.Equipe)
-        .Include(j => j.EquipeVisitante).ThenInclude(ev => ev.Equipe)
+        .Include(j => j.EquipeCasa)
+           .ThenInclude(ec => ec.Equipe)
+        .Include(j => j.EquipeVisitante)
+           .ThenInclude(ev => ev.Equipe)
         .Include(j => j.Estadio)
         .Where(j => j.RodadaId == rodadaId)
         .OrderBy(j => j.DataJogo)
@@ -241,20 +243,20 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
   public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId)
   {
     return await DbSet.AsNoTracking()
-      // A MÁGICA ESTÁ NESTA LINHA: Ordenamos os palpites pelo Jogo
-      .Include(ar => ar.Palpites.OrderBy(p => p.Jogo.DataJogo).ThenBy(p => p.Jogo.HoraJogo))
-          .ThenInclude(p => p.Jogo)
-              .ThenInclude(j => j.EquipeCasa)
-                  .ThenInclude(ec => ec.Equipe)
-      .Include(ar => ar.Palpites)
-          .ThenInclude(p => p.Jogo)
-              .ThenInclude(j => j.EquipeVisitante)
-                  .ThenInclude(ev => ev.Equipe)
-      .Include(ar => ar.Palpites)
-          .ThenInclude(p => p.Jogo)
-              .ThenInclude(j => j.Estadio)
-      .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
-      .ToListAsync();
+        // A mágica acontece aqui: ordenamos os palpites pelo jogo antes de enviar ao Angular
+        .Include(ar => ar.Palpites.OrderBy(p => p.Jogo.DataJogo).ThenBy(p => p.Jogo.HoraJogo))
+            .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.EquipeCasa)
+                    .ThenInclude(ec => ec.Equipe)
+        .Include(ar => ar.Palpites)
+            .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.EquipeVisitante)
+                    .ThenInclude(ev => ev.Equipe)
+        .Include(ar => ar.Palpites)
+            .ThenInclude(p => p.Jogo)
+                .ThenInclude(j => j.Estadio)
+        .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
+        .ToListAsync();
   }
 }
     
