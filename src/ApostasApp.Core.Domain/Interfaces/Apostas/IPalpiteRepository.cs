@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Domain.Models.Apostas;
+using ApostasApp.Core.Domain.Models.Apostas;
 
 
 namespace ApostasApp.Core.Domain.Interfaces.Apostas
@@ -12,6 +12,9 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
         Task<bool> RemoverTodosPalpitesDaRodada(Guid rodadaId);
        
         Task AdicionarRange(IEnumerable<Palpite> entities); // <<-- ADICIONE ESTA LINHA SE NÃO TIVER -->>
-       
+
+    Task<Palpite> ObterPalpiteDaAposta(Guid apostaId, Guid jogoId);
+
+
     }
 }

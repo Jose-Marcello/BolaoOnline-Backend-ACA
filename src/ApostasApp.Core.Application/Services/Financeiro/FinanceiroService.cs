@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Application.Services.Financeiro/FinanceiroService.cs
+// Localização: ApostasApp.Core.Application.Services.Financeiro/FinanceiroService.cs
 
 using ApostasApp.Core.Application.DTOs.Financeiro;
 using ApostasApp.Core.Application.Models;
@@ -119,8 +119,15 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
                 valor,
                 descricao
             );
-            transacao.SaldoId = saldo.Id;
-            _transacaoFinanceiraRepository.Adicionar(transacao);
+
+
+           // Ela gera um ID único para a transação, satisfazendo a restrição do Postgres
+           transacao.ExternalReference = "AVULSA_" + Guid.NewGuid().ToString().Substring(0, 8);
+           transacao.Status = "Concluído";
+
+           transacao.SaldoId = saldo.Id;
+
+          _transacaoFinanceiraRepository.Adicionar(transacao);
 
             // Agora, e somente agora, a transação é persistida
             // Esta é a parte que estava faltando
@@ -199,7 +206,12 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
                 -valor,
                 descricao
             );
+
+
+
             transacao.SaldoId = saldo.Id;
+
+
             _transacaoFinanceiraRepository.Adicionar(transacao);
 
             Notificar("Sucesso", "Débito e transação preparados para persistência.");

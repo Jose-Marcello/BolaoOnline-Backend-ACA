@@ -148,38 +148,83 @@ namespace ApostasApp.Core.Application.Services.Apostas
     }
 
     // --- CORE: SALVAR E TRANSAÇÕES ---
+
     public async Task<ApiResponse<ApostaRodadaDto>> SalvarApostas(SalvarApostaRequestDto salvarApostaDto)
     {
-      var apiResponse = new ApiResponse<ApostaRodadaDto>(false, null);
+      var apiResponse = new ApiResponse<ApostaRodadaDto>();
+
       try
       {
-        var apostaRodadaId = Guid.Parse(salvarApostaDto.Id); // Correção ID
-        var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId).Include(ar => ar.Palpites).FirstOrDefaultAsync();
+        var apostaRodadaId = Guid.Parse(salvarApostaDto.Id);
 
-        if (apostaRodada != null)
+        // 1. REMOVEMOS O INCLUDE: Deixa o contexto do EF limpo para o loop buscar cada palpite
+        var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
+                                .FirstOrDefaultAsync();
+
+        if (apostaRodada == null)
         {
-          apostaRodada.Enviada = true;
-          apostaRodada.DataHoraSubmissao = DateTime.UtcNow;
+          apiResponse.Success = false;
+          apiResponse.Message = "Aposta não encontrada.";
+          return apiResponse;
+        }
 
-          foreach (var pDto in salvarApostaDto.ApostasJogos)
+        apostaRodada.Enviada = true;
+        apostaRodada.DataHoraSubmissao = DateTime.UtcNow;
+
+        // ADICIONE ISSO:
+        _apostaRodadaRepository.Atualizar(apostaRodada);
+
+        // 2. BUSCA DIRETA NO BANCO: O SQL Server fará o match dos IDs sem erros de Proxy
+        foreach (var pDto in salvarApostaDto.ApostasJogos)
+        {
+          var jogoIdGuid = Guid.Parse(pDto.JogoId);
+
+          // Buscamos o palpite individualmente. Como não houve Include, não haverá conflito de tracking.
+          var palpite = await _palpiteRepository.ObterPalpiteDaAposta(apostaRodada.Id, jogoIdGuid);
+
+          if (palpite != null)
           {
-            var palpite = apostaRodada.Palpites.FirstOrDefault(p => p.JogoId == Guid.Parse(pDto.JogoId));
-            if (palpite != null)
-            {
-              palpite.PlacarApostaCasa = pDto.PlacarCasa;
-              palpite.PlacarApostaVisita = pDto.PlacarVisitante;
-            }
+            palpite.PlacarApostaCasa = pDto.PlacarCasa;
+            palpite.PlacarApostaVisita = pDto.PlacarVisitante;
+
+            // Forçamos a atualização no rastreador do EF
+            _palpiteRepository.Atualizar(palpite);
           }
-          if (await CommitAsync())
+          else
           {
-            apiResponse.Data = _mapper.Map<ApostaRodadaDto>(apostaRodada);
-            apiResponse.Success = true;
+            _logger.LogWarning($"JogoId {jogoIdGuid} não encontrado no banco para esta aposta.");
           }
         }
-        return apiResponse;
+                
+
+        // 3. EFETIVAÇÃO: Persiste todas as alterações em uma única transação
+        if (await CommitAsync())
+        {
+          // 4. CARREGAMENTO MANUAL PARA RETORNO via Repository
+          // Buscamos a aposta novamente com Include para garantir que os palpites atualizados venham para o Mapper
+          var apostaCompleta = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
+                                  .Include(ar => ar.Palpites)
+                                  .FirstOrDefaultAsync();
+
+          apiResponse.Data = _mapper.Map<ApostaRodadaDto>(apostaCompleta);
+          apiResponse.Success = true;
+        }
+        else
+        {
+          apiResponse.Success = false;
+          apiResponse.Message = "Nenhuma alteração foi detectada ou houve falha na persistência.";
+        }
       }
-      catch (Exception) { return apiResponse; }
+      catch (Exception ex)
+      {
+        apiResponse.Success = false;
+        apiResponse.Message = $"Erro técnico: {ex.Message} {(ex.InnerException != null ? "| " + ex.InnerException.Message : "")}";
+        _logger.LogError(ex, "Falha crítica em SalvarApostas");
+      }
+
+      return apiResponse;
     }
+
 
     public async Task<ApiResponse<ApostaRodadaDto>> ExecutarTransacaoApostaAvulsa(CriarApostaAvulsaRequestDto requestDto)
     {
@@ -283,13 +328,34 @@ namespace ApostasApp.Core.Application.Services.Apostas
     public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string acId, string rId, bool ehCamp, string ident)
     {
       var jogos = await _jogoRepository.ObterJogosDaRodadaComPlacaresEEquipes(Guid.Parse(rId));
-      var novaAposta = new ApostaRodada { ApostadorCampeonatoId = Guid.Parse(acId), RodadaId = Guid.Parse(rId), EhApostaCampeonato = ehCamp, IdentificadorAposta = ident, DataCriacao = DateTime.Now };
+
+      var novaAposta = new ApostaRodada
+      {
+        ApostadorCampeonatoId = Guid.Parse(acId),
+        RodadaId = Guid.Parse(rId),
+        EhApostaCampeonato = ehCamp,
+        IdentificadorAposta = ident,
+        DataCriacao = DateTime.Now,
+        CustoPagoApostaRodada = 10.00m, // <--- GARANTA QUE ESTE CAMPO NÃO VÁ NULL
+        Enviada = false
+      };
 
       await _apostaRodadaRepository.Adicionar(novaAposta);
-      var palpites = jogos.Select(j => new Palpite { ApostaRodadaId = novaAposta.Id, JogoId = j.Id }).ToList();
+
+      var palpites = jogos.Select(j => new Palpite
+      {
+        ApostaRodadaId = novaAposta.Id,
+        JogoId = j.Id,
+        PlacarApostaCasa = null, // Permitido pelo banco
+        PlacarApostaVisita = null, // Permitido pelo banco
+        Pontos = 0 // <--- INICIALIZE COM 0 PARA SATISFAZER O NOT NULL
+      }).ToList();
+
       await _palpiteRepository.AdicionarRange(palpites);
 
-      if (await CommitAsync()) return new ApiResponse<ApostaRodadaDto> { Success = true, Data = _mapper.Map<ApostaRodadaDto>(novaAposta) };
+      if (await CommitAsync())
+        return new ApiResponse<ApostaRodadaDto> { Success = true, Data = _mapper.Map<ApostaRodadaDto>(novaAposta) };
+
       return new ApiResponse<ApostaRodadaDto>(false, null);
     }
 
