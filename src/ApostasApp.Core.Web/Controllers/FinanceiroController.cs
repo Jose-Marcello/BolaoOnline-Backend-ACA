@@ -11,87 +11,78 @@ using ApostasApp.Core.Web.Controllers;
 using System;
 using Microsoft.Extensions.Logging;
 
-// A rota deve ser exatamente a URL que o front-end está enviando
+// A rota deve ser exatamente a URL que o front-end estÃ¡ enviando
 [Route("api/TransacaoFinanceira")]
 [ApiController]
 [Authorize]
 public class FinanceiroController : BaseController
 {
-    private readonly IFinanceiroService _financeiroService;
-    private readonly ILogger<FinanceiroController> _logger;
+  private readonly IFinanceiroService _financeiroService;
+  private readonly ILogger<FinanceiroController> _logger;
 
-    public FinanceiroController(
-        IFinanceiroService financeiroService,
-        INotificador notificador,
-        ILogger<FinanceiroController> logger) : base(notificador)
+  public FinanceiroController(
+      IFinanceiroService financeiroService,
+      INotificador notificador,
+      ILogger<FinanceiroController> logger) : base(notificador)
+  {
+    _financeiroService = financeiroService;
+    _logger = logger;
+  }
+
+  // Endpoint de DepÃ³sito
+  [HttpPost("Depositar")]
+  public async Task<IActionResult> Depositar([FromBody] DepositarRequestDto request)
+  {
+    if (!ModelState.IsValid)
     {
-        _financeiroService = financeiroService;
-        _logger = logger;
+      NotificarErro("Dados de depÃ³sito invÃ¡lidos.");
+      return CustomResponse();
     }
 
-    // Endpoint de Depósito
-    [HttpPost("Depositar")]
-    public async Task<IActionResult> Depositar([FromBody] DepositarRequestDto request)
-    {
-        if (!ModelState.IsValid)
-        {
-            NotificarErro("Dados de depósito inválidos.");
-            return CustomResponse();
-        }
-
-        _logger.LogInformation("Recebida requisição de depósito para o apostador {ApostadorId} no valor de {Valor}", request.ApostadorId, request.Valor);
+    _logger.LogInformation("Recebida requisiÃ§Ã£o de depÃ³sito para o apostador {ApostadorId} no valor de {Valor}", request.ApostadorId, request.Valor);
 
 
-        // A alteração está aqui: agora chamamos o método que gera o PIX
-        var pixResponse = await _financeiroService.GerarPixParaDepositoAsync(request);
+    // A alteraÃ§Ã£o estÃ¡ aqui: agora chamamos o mÃ©todo que gera o PIX
+    var pixResponse = await _financeiroService.GerarPixParaDepositoAsync(request);
 
-        // Retornamos a resposta do serviço, que contém os dados do PIX
-        return CustomResponse(pixResponse);
-
-        /*
-        var result = await _financeiroService.CreditarSaldoAsync(
-            request.ApostadorId,
-            request.Valor,
-            TipoTransacao.CreditoManual,
-            "Depósito via API"
-        );
-
-        return CustomResponse(result);*/
-
-    }
-
-    // Opcional: Adicionar os outros endpoints aqui
-    [HttpGet("saldo/{apostadorId}")]
-    public async Task<IActionResult> GetSaldo(Guid apostadorId)
-    {
-        var response = await _financeiroService.ObterSaldoAtualAsync(apostadorId);
-        return CustomResponse(response);
-    }
+    // Retornamos a resposta do serviÃ§o, que contÃ©m os dados do PIX
+    return CustomResponse(pixResponse);
 
     /*
-    [HttpPost("SimularWebhookPix")]
-    public async Task<IActionResult> SimularWebhookPix([FromBody] SimularWebhookRequestDto request)
+    var result = await _financeiroService.CreditarSaldoAsync(
+        request.ApostadorId,
+        request.Valor,
+        TipoTransacao.CreditoManual,
+        "DepÃ³sito via API"
+    );
+
+    return CustomResponse(result);*/
+
+  }
+
+  // Opcional: Adicionar os outros endpoints aqui
+  [HttpGet("saldo/{apostadorId}")]
+  public async Task<IActionResult> GetSaldo(Guid apostadorId)
+  {
+    var response = await _financeiroService.ObterSaldoAtualAsync(apostadorId);
+    return CustomResponse(response);
+  }
+
+
+  [HttpPost("SimularWebhookPix")]
+  public async Task<IActionResult> SimularWebhookPix([FromBody] SimularWebhookRequestDto request)
+  {
+    // O log ajuda a confirmar que a chamada chegou do Angular no console do VS
+    Console.WriteLine($"[Webhook Mock] Recebido: Ref={request.ExternalReference}, Valor={request.Valor}");
+
+    var response = await _financeiroService.CreditarSaldoViaWebhookAsync(request.ExternalReference, request.Valor);
+
+    if (response.Success)
     {
-        // Crie um DTO simples para esta requisição, como:
-        // public class SimularWebhookRequestDto
-        // {
-        //    public string ExternalReference { get; set; }
-        //    public decimal Valor { get; set; }
-        // }
-
-        // Chame a lógica de negócio do seu serviço para creditar o saldo.
-        var response = await _financeiroService.CreditarSaldoViaWebhookAsync(request.ExternalReference, request.Valor);
-
-        if (response.Success)
-        {
-            return Ok(response);
-        }
-        else
-        {
-            return BadRequest(response);
-        }
+      return Ok(response);
     }
 
-    */
+    return BadRequest(response);
+  }
 
 }

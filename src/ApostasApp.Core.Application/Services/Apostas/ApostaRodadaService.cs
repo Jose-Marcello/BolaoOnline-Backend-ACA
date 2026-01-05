@@ -1,7 +1,5 @@
 using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
-using ApostasApp.Core.Application.DTOs.Jogos;
-using ApostasApp.Core.Application.DTOs.Palpites;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
 using ApostasApp.Core.Application.Services.Interfaces.Financeiro;
@@ -14,14 +12,10 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Apostas;
 using ApostasApp.Core.Domain.Models.Financeiro;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
-using ApostasApp.Core.Domain.Models.Rodadas;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // ESSENCIAL para .Include e .ToListAsync
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Linq;                   // ESSENCIAL para .Select e .FirstOrDefault
 
 namespace ApostasApp.Core.Application.Services.Apostas
 {
@@ -64,32 +58,25 @@ namespace ApostasApp.Core.Application.Services.Apostas
       _logger = logger;
     }
 
-
     public async Task<ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>> ObterApostasDoApostadorNaRodadaParaEdicao(Guid rodadaId, Guid apostaRodadaId)
     {
       var apiResponse = new ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>(false, null);
       try
       {
-        // 1. Chamada ao método do Repositório que já faz Include de Equipes e Estádios
         var jogosComPalpites = await _apostaRodadaRepository.ObterJogosComPalpites(apostaRodadaId, rodadaId);
 
-        // 2. Mapeamento direto para o DTO que o seu Frontend espera
         var apostasParaEdicao = jogosComPalpites.Select(jogo => new ApostaJogoEdicaoDto
         {
-          Id = apostaRodadaId.ToString(), // ID da cartela selecionada
+          Id = apostaRodadaId.ToString(),
           IdJogo = jogo.Id,
           EquipeMandante = jogo.EquipeCasaNome ?? "N/A",
-          EscudoMandante = jogo.EquipeCasaEscudoUrl, // Fim do problema de escudo null
+          EscudoMandante = jogo.EquipeCasaEscudoUrl,
           EquipeVisitante = jogo.EquipeVisitanteNome ?? "N/A",
           EscudoVisitante = jogo.EquipeVisitanteEscudoUrl,
           EstadioNome = jogo.EstadioNome,
-
-          // Tratamento de Data, Dia da Semana e Hora (Item 5)
           DataJogo = jogo.DataHoraReal.ToString("dd/MM"),
-          // Formatação do Dia da Semana (Ex: "SÁB", "DOM")
           DiaSemana = jogo.DataHoraReal.ToString("ddd", new System.Globalization.CultureInfo("pt-BR")).ToUpper().Replace(".", ""),
           HoraJogo = jogo.HoraJogo,
-
           PlacarApostaCasa = jogo.PlacarApostaCasa,
           PlacarApostaVisita = jogo.PlacarApostaVisita,
           Enviada = true
@@ -101,13 +88,11 @@ namespace ApostasApp.Core.Application.Services.Apostas
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Erro ao carregar edição com dados completos das equipes.");
+        _logger.LogError(ex, "Erro ao carregar edição.");
         return apiResponse;
-      } 
+      }
     }
 
-
-    // --- GRID 3: CONSULTA DE RESULTADOS ---
     public async Task<ApiResponse<ApostaRodadaResultadosDto>> ObterResultadosDaRodada(Guid rodadaId, Guid apostaRodadaId)
     {
       var apiResponse = new ApiResponse<ApostaRodadaResultadosDto>(false, null);
@@ -144,22 +129,16 @@ namespace ApostasApp.Core.Application.Services.Apostas
         apiResponse.Success = true;
         return apiResponse;
       }
-      catch (Exception ex) { return apiResponse; }
+      catch (Exception) { return apiResponse; }
     }
-
-    // --- CORE: SALVAR E TRANSAÇÕES ---
 
     public async Task<ApiResponse<ApostaRodadaDto>> SalvarApostas(SalvarApostaRequestDto salvarApostaDto)
     {
       var apiResponse = new ApiResponse<ApostaRodadaDto>();
-
       try
       {
         var apostaRodadaId = Guid.Parse(salvarApostaDto.Id);
-
-        // 1. REMOVEMOS O INCLUDE: Deixa o contexto do EF limpo para o loop buscar cada palpite
-        var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
-                                .FirstOrDefaultAsync();
+        var apostaRodada = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId).FirstOrDefaultAsync();
 
         if (apostaRodada == null)
         {
@@ -170,65 +149,46 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
         apostaRodada.Enviada = true;
         apostaRodada.DataHoraSubmissao = DateTime.UtcNow;
-
-        // ADICIONE ISSO:
         _apostaRodadaRepository.Atualizar(apostaRodada);
 
-        // 2. BUSCA DIRETA NO BANCO: O SQL Server fará o match dos IDs sem erros de Proxy
         foreach (var pDto in salvarApostaDto.ApostasJogos)
         {
           var jogoIdGuid = Guid.Parse(pDto.JogoId);
-
-          // Buscamos o palpite individualmente. Como não houve Include, não haverá conflito de tracking.
           var palpite = await _palpiteRepository.ObterPalpiteDaAposta(apostaRodada.Id, jogoIdGuid);
 
           if (palpite != null)
           {
             palpite.PlacarApostaCasa = pDto.PlacarCasa;
             palpite.PlacarApostaVisita = pDto.PlacarVisitante;
-
-            // Forçamos a atualização no rastreador do EF
             _palpiteRepository.Atualizar(palpite);
           }
-          else
-          {
-            _logger.LogWarning($"JogoId {jogoIdGuid} não encontrado no banco para esta aposta.");
-          }
         }
-                
 
-        // 3. EFETIVAÇÃO: Persiste todas as alterações em uma única transação
         if (await CommitAsync())
         {
-          // 4. CARREGAMENTO MANUAL PARA RETORNO via Repository
-          // Buscamos a aposta novamente com Include para garantir que os palpites atualizados venham para o Mapper
           var apostaCompleta = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
-                                  .Include(ar => ar.Palpites)
-                                  .FirstOrDefaultAsync();
+                                .Include(ar => ar.Palpites)
+                                .FirstOrDefaultAsync();
 
           apiResponse.Data = _mapper.Map<ApostaRodadaDto>(apostaCompleta);
           apiResponse.Success = true;
-        }
-        else
-        {
-          apiResponse.Success = false;
-          apiResponse.Message = "Nenhuma alteração foi detectada ou houve falha na persistência.";
         }
       }
       catch (Exception ex)
       {
         apiResponse.Success = false;
-        apiResponse.Message = $"Erro técnico: {ex.Message} {(ex.InnerException != null ? "| " + ex.InnerException.Message : "")}";
-        _logger.LogError(ex, "Falha crítica em SalvarApostas");
+        apiResponse.Message = $"Erro técnico: {ex.Message}";
+        _logger.LogError(ex, "Falha em SalvarApostas");
       }
-
       return apiResponse;
     }
 
-
     public async Task<ApiResponse<ApostaRodadaDto>> ExecutarTransacaoApostaAvulsa(CriarApostaAvulsaRequestDto requestDto)
     {
-      var apostador = await _apostadorRepository.ObterPorIdComSaldo(Guid.Parse(requestDto.ApostadorId));
+      var apostadorId = Guid.Parse(requestDto.ApostadorId);
+      var campeonatoId = Guid.Parse(requestDto.CampeonatoId);
+
+      var apostador = await _apostadorRepository.ObterPorIdComSaldo(apostadorId);
       if (apostador.Saldo.Valor < requestDto.CustoAposta)
       {
         Notificar("Erro", "Saldo insuficiente.");
@@ -237,23 +197,32 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
       await _financeiroService.DebitarSaldoAsync(apostador.Id, requestDto.CustoAposta, TipoTransacao.ApostaRodada, "Aposta Avulsa");
 
-      var ac = await _apostadorCampeonatoRepository.Buscar(x => x.ApostadorId == apostador.Id && x.CampeonatoId == Guid.Parse(requestDto.CampeonatoId)).FirstOrDefaultAsync();
+      var ac = await _apostadorCampeonatoRepository.Buscar(x => x.ApostadorId == apostador.Id && x.CampeonatoId == campeonatoId).FirstOrDefaultAsync();
 
-      return await GerarApostaRodada(ac.Id.ToString(), requestDto.RodadaId, false, "Aposta Avulsa");
+      var totalAvulsas = await _apostaRodadaRepository.CountAsync(a =>
+          (ac != null ? a.ApostadorCampeonatoId == ac.Id : a.ApostadorId == apostador.Id) &&
+          a.EhApostaCampeonato == false);
+
+      var identificador = $"APOSTA AVULSA #{totalAvulsas + 1}";
+
+      return await GerarApostaRodada(
+          ac?.Id.ToString(),
+          apostador.Id.ToString(),
+          requestDto.RodadaId,
+          false,
+          identificador,
+          requestDto.CustoAposta 
+     );
     }
 
-
-    public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? apostadorCampeonatoId)
+    public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? acId, Guid apId)
     {
       var apiResponse = new ApiResponse<IEnumerable<ApostaRodadaDto>>(false, null);
       try
       {
-        // 1. Buscamos as apostas existentes
-        var apostas = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, apostadorCampeonatoId ?? Guid.Empty);
-
-        // 2. Buscamos os dados da Rodada para o cabeçalho
+        // Agora passando os 3 parâmetros para o repositório ajustado
+        var apostas = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, acId, apId);
         var rodada = await _rodadaRepository.ObterPorId(rodadaId);
-
         var dtos = new List<ApostaRodadaDto>();
 
         if (apostas != null && apostas.Any())
@@ -261,7 +230,6 @@ namespace ApostasApp.Core.Application.Services.Apostas
           foreach (var aposta in apostas)
           {
             var dto = _mapper.Map<ApostaRodadaDto>(aposta);
-
             if (rodada != null)
             {
               dto.NumeroRodada = rodada.NumeroRodada;
@@ -269,44 +237,18 @@ namespace ApostasApp.Core.Application.Services.Apostas
               dto.DataFim = rodada.DataFim;
             }
 
-            // Preenchimento detalhado dos jogos em cada palpite
-            if (aposta.Palpites != null)
-            {
-              foreach (var p in aposta.Palpites)
-              {
-                var pDto = dto.Palpites.FirstOrDefault(x => x.Id == p.Id.ToString());
-                if (pDto != null && p.Jogo != null)
-                {
-                  pDto.Jogo.EquipeCasaNome = p.Jogo.EquipeCasa?.Equipe?.Nome;
-                  pDto.Jogo.EquipeCasaEscudoUrl = p.Jogo.EquipeCasa?.Equipe?.Escudo;
-                  pDto.Jogo.EquipeVisitanteNome = p.Jogo.EquipeVisitante?.Equipe?.Nome;
-                  pDto.Jogo.EquipeVisitanteEscudoUrl = p.Jogo.EquipeVisitante?.Equipe?.Escudo;
-                  pDto.Jogo.DataHora = p.Jogo.DataJogo;
-                  pDto.Jogo.HoraJogo = p.Jogo.HoraJogo.ToString();
-                  pDto.Jogo.DiaSemana = p.Jogo.DataJogo.ToString("dddd", new System.Globalization.CultureInfo("pt-BR")).ToUpper();
-                }
-              }
-            }
-
-            // <<-- LÓGICA DE INTERFACE: EDIÇÃO vs CONSULTA -->>
-            // A regra é: Se o ID do usuário que requisitou é o dono da cartela, permite editar.
-            dto.PodeEditar = apostadorCampeonatoId.HasValue &&
-                             aposta.ApostadorCampeonatoId == apostadorCampeonatoId.Value;           
-
+            // Lógica de Permissão atualizada: Dono sempre edita
+            dto.PodeEditar = aposta.ApostadorId == apId;
             dtos.Add(dto);
           }
         }
         else if (rodada != null)
         {
-          // Caso não existam apostas (usuário novo ou sem palpites na rodada)
           dtos.Add(new ApostaRodadaDto
           {
             RodadaId = rodada.Id.ToString(),
             NumeroRodada = rodada.NumeroRodada,
-            DataInicio = rodada.DataInic,
-            DataFim = rodada.DataFim,
-            DescricaoRodada = $"Rodada {rodada.NumeroRodada}",
-            PodeEditar = apostadorCampeonatoId.HasValue, // Pode criar/editar se estiver logado            
+            PodeEditar = true // Permite criar a primeira
           });
         }
 
@@ -316,39 +258,33 @@ namespace ApostasApp.Core.Application.Services.Apostas
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Erro ao obter dados da rodada.");
-        apiResponse.Message = "Erro ao carregar dados da rodada.";
+        _logger.LogError(ex, "Erro ao obter apostas.");
         return apiResponse;
       }
     }
 
 
-
-
-    public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string acId, string rId, bool ehCamp, string ident)
+    public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string acId, string apId, string rId, bool ehCamp, string ident, decimal custo)
     {
       var jogos = await _jogoRepository.ObterJogosDaRodadaComPlacaresEEquipes(Guid.Parse(rId));
-
-      var novaAposta = new ApostaRodada
+      Guid? acGuid = string.IsNullOrEmpty(acId) ? (Guid?)null : Guid.Parse(acId);
+      var apostadorId = Guid.Parse(apId);
+      var rodadaId = Guid.Parse(rId);
+      var novaAposta = new ApostaRodada(acGuid, apostadorId, rodadaId)
       {
-        ApostadorCampeonatoId = Guid.Parse(acId),
-        RodadaId = Guid.Parse(rId),
-        EhApostaCampeonato = ehCamp,
         IdentificadorAposta = ident,
-        DataCriacao = DateTime.Now,
-        CustoPagoApostaRodada = 10.00m, // <--- GARANTA QUE ESTE CAMPO NÃO VÁ NULL
+        EhApostaCampeonato = ehCamp,
+        EhApostaIsolada = !ehCamp,
+        CustoPagoApostaRodada = custo, // 2. Use o parâmetro aqui em vez do valor fixo 10
         Enviada = false
       };
 
       await _apostaRodadaRepository.Adicionar(novaAposta);
-
       var palpites = jogos.Select(j => new Palpite
       {
         ApostaRodadaId = novaAposta.Id,
         JogoId = j.Id,
-        PlacarApostaCasa = null, // Permitido pelo banco
-        PlacarApostaVisita = null, // Permitido pelo banco
-        Pontos = 0 // <--- INICIALIZE COM 0 PARA SATISFAZER O NOT NULL
+        Pontos = 0
       }).ToList();
 
       await _palpiteRepository.AdicionarRange(palpites);
@@ -359,21 +295,15 @@ namespace ApostasApp.Core.Application.Services.Apostas
       return new ApiResponse<ApostaRodadaDto>(false, null);
     }
 
-    // --- RESTANTE DOS MÉTODOS ---
-    public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rId, Guid acId)
+    public async Task<ApiResponse<ApostaRodadaStatusDto>> ObterStatusApostaRodadaParaUsuario(Guid rId, Guid? acId, Guid apId)
     {
-      var lista = await _apostaRodadaRepository.ObterApostasComDetalhes(rId, acId);
-      return new ApiResponse<IEnumerable<ApostaRodadaDto>> { Success = true, Data = _mapper.Map<IEnumerable<ApostaRodadaDto>>(lista) };
-    }
-
-    public async Task<ApiResponse<ApostaRodadaStatusDto>> ObterStatusApostaRodadaParaUsuario(Guid rId, Guid acId)
-    {
-      var aposta = await _apostaRodadaRepository.ObterStatusApostaRodada(rId, acId);
+      var aposta = await _apostaRodadaRepository.ObterStatusApostaRodada(rId, acId, apId);
       var dto = aposta != null ? _mapper.Map<ApostaRodadaStatusDto>(aposta) : new ApostaRodadaStatusDto { StatusAposta = 0 };
       if (aposta != null) dto.StatusAposta = 1;
       return new ApiResponse<ApostaRodadaStatusDto> { Success = true, Data = dto };
     }
 
+    // --- MÉTODOS DE TOTAIS ---
     public async Task<ApostasAvulsasTotaisDto> ObterTotaisApostasAvulsas(Guid rId)
     {
       var t = await _apostaRodadaRepository.ObterTotaisApostasAvulsas(rId);
@@ -390,7 +320,5 @@ namespace ApostasApp.Core.Application.Services.Apostas
     public async Task<ApiResponse> MarcarApostaRodadaComoSubmetida(ApostaRodada a) { a.Enviada = true; a.DataHoraSubmissao = DateTime.UtcNow; await _apostaRodadaRepository.Atualizar(a); return new ApiResponse(await CommitAsync(), null); }
     public async Task<ApiResponse> Adicionar(ApostaRodada a) { await _apostaRodadaRepository.Adicionar(a); return new ApiResponse(await CommitAsync(), null); }
     public async Task<ApiResponse> Atualizar(ApostaRodada a) { await _apostaRodadaRepository.Atualizar(a); return new ApiResponse(await CommitAsync(), null); }
-
-   
   }
 }

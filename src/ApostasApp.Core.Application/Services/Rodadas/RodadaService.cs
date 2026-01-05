@@ -537,7 +537,7 @@ namespace ApostasApp.Core.Application.Services.Rodadas
           EquipeVisitanteNome = j.EquipeVisitante?.Equipe.Nome,
           EquipeVisitanteEscudoUrl = j.EquipeVisitante?.Equipe.Escudo,
 
-          EstadioNome = j.Estadio?.Nome,
+          EstadioNome = j.Estadio.Nome,
           DataHora = j.DataJogo.Add(j.HoraJogo), // Combina data e hora no campo DataHora
           Status = "Agendado" // Ou j.Status.ToString() se tiver o enum
         }).ToList();

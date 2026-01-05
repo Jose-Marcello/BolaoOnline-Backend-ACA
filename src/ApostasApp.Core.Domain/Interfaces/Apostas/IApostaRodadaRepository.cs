@@ -6,12 +6,13 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
 {
     public interface IApostaRodadaRepository : IRepository<ApostaRodada>
     {
-        Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid apostadorCampeonatoId);
+        Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId);
+
         // Outros métodos específicos para ApostaRodada
 
-        Task<ApostaRodada> ObterUltimaApostaRodadaDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId);
+        Task<IEnumerable<ApostaRodada>> ObterApostasRodadaApostadorNaRodada(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId);
 
-        Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid apostadorCampeonatoId);
+        Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid? apostadorCampeonatoId,  Guid apostadorId);
 
         //Task<IEnumerable<(Guid ApostadorCampeonatoId, int TotalPontos)>> ObterRankingCampeonatoAsync(Guid campeonatoId);
 
@@ -32,7 +33,7 @@ namespace ApostasApp.Core.Domain.Interfaces.Apostas
 
         Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId);
 
-        Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId);
+        Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId);
 
 
   }

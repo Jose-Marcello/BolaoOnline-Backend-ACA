@@ -4,6 +4,7 @@ using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.ApostasRodada;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Application.Services.Interfaces.Apostas;
+using ApostasApp.Core.Application.Services.Interfaces.Usuarios;
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Campeonatos; // Necessário para FromForm
@@ -25,17 +26,18 @@ namespace ApostasApp.Core.Web.Controllers
   {
     private readonly IApostaRodadaService _apostaRodadaService;
     private readonly ILogger<ApostaRodadaController> _logger;
+    private readonly IUsuarioService _usuarioService; // <--- ADICIONADO
 
     public ApostaRodadaController(INotificador notificador,
-                                     // REMOVIDO: IUnitOfWork uow, pois BaseController não o recebe mais no construtor
-                                     IApostaRodadaService apostaRodadaService,
-                                     ILogger<ApostaRodadaController> logger)
-            : base(notificador) // Passa apenas o notificador para a BaseController
+                                   IApostaRodadaService apostaRodadaService,
+                                   IUsuarioService usuarioService, // <--- INJETADO
+                                   ILogger<ApostaRodadaController> logger)
+            : base(notificador)
     {
       _apostaRodadaService = apostaRodadaService;
+      _usuarioService = usuarioService; // <--- ATRIBUÍDO
       _logger = logger;
     }
-
     /// <summary>
     /// Busca o status da aposta de uma rodada para um apostador.
     /// </summary>
@@ -43,11 +45,11 @@ namespace ApostasApp.Core.Web.Controllers
     /// <param name="apostadorCampeonatoId">ID do apostador no campeonato.</param>
     /// <returns>ApiResponse contendo o status da aposta da rodada.</returns>
     [HttpGet("StatusAposta")]
-    public async Task<IActionResult> StatusAposta([FromQuery] Guid rodadaId, [FromQuery] Guid apostadorCampeonatoId)
+    public async Task<IActionResult> StatusAposta([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId, Guid apostadorId)
     {
       try
       {
-        var statusResponse = await _apostaRodadaService.ObterStatusApostaRodadaParaUsuario(rodadaId, apostadorCampeonatoId);
+        var statusResponse = await _apostaRodadaService.ObterStatusApostaRodadaParaUsuario(rodadaId, apostadorCampeonatoId, apostadorId);
 
         // Usa CustomResponse para retornar a ApiResponse do serviço de forma consistente
         return CustomResponse(statusResponse);
@@ -143,17 +145,26 @@ namespace ApostasApp.Core.Web.Controllers
 
 
     [HttpGet("ListarPorRodadaEApostadorCampeonato")]
-    //[HttpGet("obter-apostas-rodada/{rodadaId}")]
-    public async Task<IActionResult> ListarPorRodadaEApostadorCampeonato([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId) // Note o '?' para tornar o Guid anulável
+    public async Task<IActionResult> ListarPorRodadaEApostadorCampeonato([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId)
     {
       try
       {
-        _logger.LogInformation("Chamando ListarPorRodadaEUsuario para RodadaId: {RodadaId} e ApostadorCampeonatoId: {ApostadorCampeonatoId}", rodadaId, apostadorCampeonatoId);
+        // 1. Obtemos o usuário logado com a navegação do Apostador incluída
+        var usuario = await _usuarioService.GetLoggedInUser();
 
-        // A sua lógica aqui pode precisar de um ajuste para lidar com o apostadorCampeonatoId nulo.
-        // Exemplo:
-        // if (apostadorCampeonatoId.HasValue) { ... } else { ... }
-        var result = await _apostaRodadaService.ObterApostasRodadaPorApostador(rodadaId, apostadorCampeonatoId);
+        if (usuario?.Apostador == null)
+        {
+          NotificarErro("Não foi possível identificar o apostador logado.");
+          return CustomResponse();
+        }
+                
+        var apostadorId = usuario.Apostador.Id;
+
+        _logger.LogInformation("Buscando apostas para Rodada: {RodadaId}, Adesão: {ApostadorCampeonatoId}, Apostador: {ApostadorId}",
+                                rodadaId, apostadorCampeonatoId, apostadorId);
+
+        // 2. Chamada ao Service passando os 3 IDs necessários para a lógica de "Dono da Aposta"
+        var result = await _apostaRodadaService.ObterApostasRodadaPorApostador(rodadaId, apostadorCampeonatoId, apostadorId);
 
         return CustomResponse(result);
       }
@@ -164,7 +175,6 @@ namespace ApostasApp.Core.Web.Controllers
         return CustomResponse<ApostaRodadaDto[]>();
       }
     }
-
     [HttpGet("ObterJogosComPalpites/{apostaId}/{rodadaId}")]
     public async Task<IActionResult> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
     {

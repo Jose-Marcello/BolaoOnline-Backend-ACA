@@ -29,7 +29,21 @@ namespace ApostasApp.Core.Infrastructure.Data.Context
         {
         }
 
-        public DbSet<Campeonato> Campeonatos { get; set; }
+    // Localização sugerida: Logo abaixo do construtor public MeuDbContext(...)
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+      // Verificamos se já não está configurado para evitar conflitos em Runtime,
+      // mas em tempo de Design (Migration), ele usará este bloco:
+      if (!optionsBuilder.IsConfigured)
+      {
+        optionsBuilder.UseNpgsql("Host=bolaoonline-pg-serv-jmag.postgres.database.azure.com;Database=bolaoonline_db;Username=bolaoadmin;Password=BdPostgresAlem@01;Port=5432;SSL Mode=Require;Trust Server Certificate=true;");
+
+        // Opcional: Log para confirmar no console qual string está sendo usada
+        Console.WriteLine("[DESIGN-TIME] Forçando Conexão com Azure para Migration...");
+      }
+    }
+
+    public DbSet<Campeonato> Campeonatos { get; set; }
         public DbSet<Rodada> Rodadas { get; set; }
         public DbSet<Equipe> Equipes { get; set; }
         public DbSet<Uf> Ufs { get; set; }
