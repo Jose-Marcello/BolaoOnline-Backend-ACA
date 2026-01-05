@@ -48,11 +48,17 @@ namespace ApostasApp.Core.Infrastructure.Data.Mappings
             builder.HasOne(ar => ar.ApostadorCampeonato) // <<-- AGORA APONTA PARA ApostadorCampeonato
                 .WithMany(ac => ac.ApostasRodada) // <<-- Confere se você adicionou ICollection<ApostaRodada> ApostasRodada { get; set; } em ApostadorCampeonato.cs
                 .HasForeignKey(ar => ar.ApostadorCampeonatoId)
-                .IsRequired()
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relação 1:N entre Rodada e ApostaRodada
-            builder.HasOne(ar => ar.Rodada)
+           // Configuração do Relacionamento 1:N (Apostador -> ApostasRodada)
+           builder.HasOne(ar => ar.Apostador)
+                  .WithMany(a => a.ApostasRodadas) // Certifique-se que essa ICollection existe na classe Apostador
+                  .HasForeignKey(ar => ar.ApostadorId)
+                  .OnDelete(DeleteBehavior.Restrict); // Recomendado para evitar deleções em cascata acidentais
+
+          // Relação 1:N entre Rodada e ApostaRodada
+          builder.HasOne(ar => ar.Rodada)
                 .WithMany(r => r.ApostasRodada)
                 .HasForeignKey(ar => ar.RodadaId)
                 .IsRequired()

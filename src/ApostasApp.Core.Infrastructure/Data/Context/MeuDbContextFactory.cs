@@ -1,23 +1,18 @@
 using ApostasApp.Core.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Npgsql.EntityFrameworkCore.PostgreSQL; // NOVO: Usar o Npgsql
 
-// ESTA CLASSE É USADA PELO COMANDO 'dotnet ef' PARA SABER COMO CONSTRUIR O DbContext
-// EM TEMPO DE PROJETO (design time).
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<MeuDbContext>
 {
   public MeuDbContext CreateDbContext(string[] args)
   {
     var builder = new DbContextOptionsBuilder<MeuDbContext>();
 
-    // --- CONFIGURAÇÃO DE CONEXÃO DE DESIGN-TIME ---
-    // Usamos uma string de conexão LOCAL/MOCK. O PROVEDOR deve ser o POSTGRESQL.
+    // --- AJUSTE PARA O AZURE ---
+    // Substituímos o localhost pela string que você está usando no servidor real
+    var connectionString = "Host=bolaoonline-pg-serv-jmag.postgres.database.azure.com;Database=bolaoonline_db;Username=bolaoadmin;Password=BdPostgresAlem@01;Port=5432;SSL Mode=Require;Trust Server Certificate=true;";
 
-    // Use a mesma estrutura de Connection String que definimos no appsettings.Development.json
-    var connectionString = "Host=localhost;Port=5432;Database=bolaoonline_db;Username=postgres;Password=SeuPasswordDeDev;";
-
-    // MUDANÇA CRÍTICA: Trocando UseSqlServer por UseNpgsql
+    // Garante que o provedor Npgsql use a string do Azure
     builder.UseNpgsql(connectionString);
 
     return new MeuDbContext(builder.Options);

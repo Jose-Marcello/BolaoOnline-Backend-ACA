@@ -69,8 +69,17 @@ namespace ApostasApp.Core.Infrastructure.Identity
     {
       var userPrincipal = _httpContextAccessor.HttpContext?.User;
       if (userPrincipal == null) return null;
-      return await _userManager.GetUserAsync(userPrincipal);
+
+      // Obtém o ID do usuário logado através das Claims
+      var userId = _userManager.GetUserId(userPrincipal);
+      if (string.IsNullOrEmpty(userId)) return null;
+
+      // Busca o usuário incluindo a navegação do Apostador
+      return await _userManager.Users
+          .Include(u => u.Apostador) // <-- ESSENCIAL para o Jeff aparecer
+          .FirstOrDefaultAsync(u => u.Id == userId);
     }
+
 
     public async Task<string> GetLoggedInUserIdAsync()
     {

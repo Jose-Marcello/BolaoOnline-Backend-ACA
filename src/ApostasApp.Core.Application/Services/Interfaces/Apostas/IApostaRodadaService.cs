@@ -14,12 +14,12 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Apostas
 {
   public interface IApostaRodadaService
   {
-    Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? apostadorCampeonatoId);
-    Task<ApiResponse<ApostaRodadaStatusDto>> ObterStatusApostaRodadaParaUsuario(Guid rodadaId, Guid apostadorCampeonatoId);
+    Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId);
+    Task<ApiResponse<ApostaRodadaStatusDto>> ObterStatusApostaRodadaParaUsuario(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId);
     Task<ApiResponse<ApostaRodadaDto>> SalvarApostas(SalvarApostaRequestDto salvarApostaDto);
     Task<ApiResponse<ApostaRodadaDto>> ExecutarTransacaoApostaAvulsa(CriarApostaAvulsaRequestDto requestDto);
     // Método que estava faltando no contexto
-    Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string apostadorCampeonatoId, string rodadaId, bool ehApostaCampeonato, string identificador);
+    Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string apostadorCampeonatoId, string apostadorId, string rodadaId, bool ehApostaCampeonato, string identificador, Decimal custo);
     Task<ApostasAvulsasTotaisDto> ObterTotaisApostasAvulsas(Guid rodadaId);
     Task<ApostasCampeonatoTotaisDto> ObterTotaisCampeonato(Guid campeonatoId);
     Task<ApiResponse> MarcarApostaRodadaComoSubmetida(ApostaRodada apostaRodada);

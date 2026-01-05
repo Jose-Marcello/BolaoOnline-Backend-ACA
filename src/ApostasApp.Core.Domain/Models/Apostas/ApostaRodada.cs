@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Domain.Models.Apostas/ApostaRodada.cs
+// Localização: ApostasApp.Core.Domain.Models.Apostas/ApostaRodada.cs
 using ApostasApp.Core.Domain.Models.Apostadores; // Para Apostador
 using ApostasApp.Core.Domain.Models.Base; // Assumindo que Entity está aqui
 using ApostasApp.Core.Domain.Models.Rodadas;
@@ -18,16 +18,18 @@ namespace ApostasApp.Core.Domain.Models.Apostas
         }
 
         // <<-- NOVO CONSTRUTOR -->>
-        public ApostaRodada(Guid apostadorCampeonatoId, Guid rodadaId) : this() // Chama o construtor padrão para inicializar Palpites
+        public ApostaRodada(Guid? apostadorCampeonatoId, Guid apostadorId, Guid rodadaId) : this() // Chama o construtor padrão para inicializar Palpites
         {
             ApostadorCampeonatoId = apostadorCampeonatoId;
+            ApostadorId = apostadorId;
             RodadaId = rodadaId;
             DataCriacao = DateTime.Now; // Inicializa DataCriacao aqui
             Enviada = false; // Garante que a aposta não está enviada por padrão
         }
 
         // Chaves Estrangeiras para as entidades relacionadas
-        public Guid ApostadorCampeonatoId { get; set; } // Quem fez esta submissão de palpites
+        public Guid? ApostadorCampeonatoId { get; set; } //Para as APOSTAS VINCULADAS a CAMPEONATO
+        public Guid ApostadorId { get; set; }  //Apostador para APOSTAS AVULSAS
         public Guid RodadaId { get; set; }    // Para qual rodada esta submissão de palpites é
 
         [DisplayName("Identificador da Aposta")]
@@ -43,8 +45,12 @@ namespace ApostasApp.Core.Domain.Models.Apostas
         public bool Enviada { get; set; }                // Indica se a submissão de palpites foi finalizada/enviada
 
         /* EF Relations */
-        public ApostadorCampeonato ApostadorCampeonato { get; set; } // <<-- CORRIGIDO: Tipo para ApostadorCampeonato
-        public Rodada Rodada { get; set; }        // Navegação para a Rodada
+        public ApostadorCampeonato ApostadorCampeonato { get; set; } 
+
+        public Apostador Apostador { get; set; } 
+
+
+    public Rodada Rodada { get; set; }        // Navegação para a Rodada
 
         // Coleção de Palpites individuais
         public IEnumerable<Palpite> Palpites { get; set; }

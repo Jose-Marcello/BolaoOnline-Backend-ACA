@@ -1,5 +1,6 @@
-﻿public class SimularWebhookRequestDto
+public class SimularWebhookRequestDto
 {
-    public string ExternalReference { get; set; }
-    public decimal Valor { get; set; }
+  public string ExternalReference { get; set; }
+  public decimal Valor { get; set; }
+
 }

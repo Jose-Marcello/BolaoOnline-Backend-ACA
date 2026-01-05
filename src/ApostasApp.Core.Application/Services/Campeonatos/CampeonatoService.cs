@@ -284,7 +284,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                 }
                 else
                 {
-                    var apostaRodada = new ApostaRodada(novaAdesao.Id, rodadaParaApostaInicial.Id);
+                    var apostaRodada = new ApostaRodada(novaAdesao.Id, apostadorId, rodadaParaApostaInicial.Id);
                     _apostaRodadaRepository.Adicionar(apostaRodada);
 
                     var jogosDaRodada = await _jogoRepository.ObterJogosDaRodada(rodadaParaApostaInicial.Id);

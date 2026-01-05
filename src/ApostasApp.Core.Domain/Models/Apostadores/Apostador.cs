@@ -1,4 +1,5 @@
-﻿using ApostasApp.Core.Domain.Models.Base;
+using ApostasApp.Core.Domain.Models.Apostas;
+using ApostasApp.Core.Domain.Models.Base;
 using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Models.Financeiro;
 using ApostasApp.Core.Domain.Models.Usuarios; // Certifique-se que este using está presente
@@ -25,8 +26,9 @@ namespace ApostasApp.Core.Domain.Models.Apostadores
         public Usuario Usuario { get; set; } // Isso está correto, pois Usuario.Id também é string no Identity
 
         public ICollection<ApostadorCampeonato> ApostadoresCampeonatos { get; set; }
-        
 
-       
-    }
+       public ICollection<ApostaRodada> ApostasRodadas { get; set; }
+
+
+  }
 }

@@ -4,6 +4,7 @@ using ApostasApp.Core.Application.DTOs.Ranking;
 using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Domain.Interfaces;
 using ApostasApp.Core.Domain.Interfaces.Apostas;
+using ApostasApp.Core.Domain.Models.Apostadores;
 using ApostasApp.Core.Domain.Models.Apostas;
 using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Infrastructure.Data.Context;
@@ -16,185 +17,179 @@ using SendGrid.Helpers.Mail;
 
 public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRepository
 {
-    private readonly ILogger<ApostaRodadaRepository> _logger;
+  private readonly ILogger<ApostaRodadaRepository> _logger;
 
-    // Sobrecarga de construtor sem ILogger, se ainda usar. Idealmente, ter apenas um.
-    public ApostaRodadaRepository(MeuDbContext context, ILogger<ApostaRodadaRepository> logger) : base(context)
-    {
-        _logger = logger;
-    }
-
-
-    // Se este construtor é usado em algum lugar (ex: testes simples), mantenha.
-    // Se não, remova-o e injete o logger sempre.
-    public ApostaRodadaRepository(MeuDbContext db) : base(db)
-    {
-        // _logger = null; // Cuidado com NullReferenceException se usar _logger
-    }
+  // Sobrecarga de construtor sem ILogger, se ainda usar. Idealmente, ter apenas um.
+  public ApostaRodadaRepository(MeuDbContext context, ILogger<ApostaRodadaRepository> logger) : base(context)
+  {
+    _logger = logger;
+  }
 
 
-  public async Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
+  // Se este construtor é usado em algum lugar (ex: testes simples), mantenha.
+  // Se não, remova-o e injete o logger sempre.
+  public ApostaRodadaRepository(MeuDbContext db) : base(db)
+  {
+    // _logger = null; // Cuidado com NullReferenceException se usar _logger
+  }
+
+
+  public async Task<ApostaRodada> ObterStatusApostaRodada(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId)
   {
     return await Db.ApostasRodada
-                   .AsNoTracking() // 👈 ADICIONE ESTA LINHA
-                   .Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId && ar.RodadaId == rodadaId)
+                   .AsNoTracking()
+                   .Where(ar => ar.RodadaId == rodadaId &&
+                               (ar.ApostadorId == apostadorId || (apostadorCampeonatoId.HasValue && ar.ApostadorCampeonatoId == apostadorCampeonatoId)))
                    .FirstOrDefaultAsync();
   }
 
-  public async Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
-    {
-        return await Db.ApostasRodada // Agora busca na coleção de ApostaRodada
-                       .Include(ar => ar.Palpites) // Se precisar dos palpites para algo mais (não para o status de envio aqui)
-                       .AsNoTracking()
-                       .Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId && ar.RodadaId == rodadaId)
-                       .FirstOrDefaultAsync();
-    }
+  public async Task<ApostaRodada> ObterApostaRodadaSalvaDoApostadorNaRodada(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId)
+  {
+    return await Db.ApostasRodada
+                   .Include(ar => ar.Palpites)
+                   .AsNoTracking()
+                   .Where(ar => ar.RodadaId == rodadaId &&
+                               (ar.ApostadorId == apostadorId || (apostadorCampeonatoId.HasValue && ar.ApostadorCampeonatoId == apostadorCampeonatoId)))
+                   .FirstOrDefaultAsync();
+  }
 
 
-    public async Task<IEnumerable<ApostaRodada>> ObterApostasRodadaApostadorNaRodada(Guid rodadaId, Guid apostadorCampeonatoId)
-    {
-        return await Db.ApostasRodada // Agora busca na coleção de ApostaRodada
-                                      //.Include(ar => ar.Palpites) // Se precisar dos palpites para algo mais (não para o status de envio aqui)
-                       .AsNoTracking()
-                       .Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId && ar.RodadaId == rodadaId).ToListAsync();
+  // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
 
-    }
-    // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
-
-    public async Task<IEnumerable<IRankingResult>> ObterDadosRankingCampeonatoAsync(Guid campeonatoId)
-    {
-        var rankingQuery = await Db.ApostasRodada
-            .AsNoTracking()
-            .Include(a => a.ApostadorCampeonato)
-                .ThenInclude(ac => ac.Apostador)
-                .ThenInclude(a => a.Usuario)
-            .Where(a => a.Rodada.CampeonatoId == campeonatoId)
-            .GroupBy(a => a.ApostadorCampeonatoId)
-            .Select(g => new RankingDataModel
-            {
-                ApostadorId = g.First().ApostadorCampeonato.ApostadorId,
-                UsuarioId = g.First().ApostadorCampeonato.Apostador.Usuario.Id, // <<-- CAMPO ADICIONADO AQUI
-                Pontuacao = g.Sum(a => a.PontuacaoTotalRodada),
-                NomeApostador = g.First().ApostadorCampeonato.Apostador.NomeCompleto,
-                Apelido = g.First().ApostadorCampeonato.Apostador.Usuario.Apelido,
-                FotoPerfil = g.First().ApostadorCampeonato.Apostador.Usuario.FotoPerfil
-            })
-            .OrderByDescending(r => r.Pontuacao)
-            .ToListAsync();
-
-        return rankingQuery;
-    }
-
-    // Em ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
-
-    // ... (seus outros métodos)
-
-    /// <summary>
-    /// Obtém o ranking total do campeonato, somando a pontuação de todas as rodadas.
-    /// </summary>
-    /// <param name="campeonatoId">O ID do campeonato.</param>
-    /// <returns>Uma lista de objetos com os dados do ranking.</returns>
-    public async Task<IEnumerable<IRankingResult>> ObterRankingCampeonatoAsync(Guid campeonatoId)
-    {
-        var rankingQuery = await Db.ApostasRodada
-            .AsNoTracking()
-            // Inclui os dados do apostador e do usuário para a projeção final
-            .Include(ar => ar.ApostadorCampeonato)
-                .ThenInclude(ac => ac.Apostador)
-                    .ThenInclude(ap => ap.Usuario)
-            // Garante que estamos pegando apenas as apostas do campeonato correto
-            .Where(ar => ar.Rodada.CampeonatoId == campeonatoId)
-            // Agrupa por apostador para somar os pontos de todas as rodadas
-            .GroupBy(ar => new
-            {
-                ApostadorId = ar.ApostadorCampeonato.ApostadorId,
-                Apelido = ar.ApostadorCampeonato.Apostador.Usuario.Apelido,
-                FotoPerfil = ar.ApostadorCampeonato.Apostador.Usuario.FotoPerfil
-            })
-            // Projeta os dados para um DTO, somando a pontuação
-            .Select(g => new RankingDataModel
-            {
-                ApostadorId = g.Key.ApostadorId,
-                Apelido = g.Key.Apelido,
-                FotoPerfil = g.Key.FotoPerfil,
-                Pontuacao = g.Sum(ar => ar.PontuacaoTotalRodada)
-            })
-            .OrderByDescending(r => r.Pontuacao)
-            .ToListAsync();
-
-        // A lógica de posição pode ser adicionada aqui ou no serviço
-        //var rankingComPosicao = rankingQuery.Select((item, index) => {
-         //   item.Posicao = index + 1;
-         //   return item;
-        //}).ToList();
-
-        return rankingQuery;
-    }
-
-    // ...
+  public async Task<IEnumerable<ApostaRodada>> ObterApostasRodadaApostadorNaRodada(Guid rodadaId, Guid? apostadorCampeonatoId, Guid apostadorId)
+  {
+    return await Db.ApostasRodada
+        .AsNoTracking()
+        // MODIFICAÇÃO: Busca por Campeonato OU pelo ID Direto do Apostador
+        .Where(ar => ar.RodadaId == rodadaId &&
+                    (ar.ApostadorId == apostadorId ||
+                    (apostadorCampeonatoId.HasValue && ar.ApostadorCampeonatoId == apostadorCampeonatoId)))
+        .ToListAsync();
+  }
 
 
+  // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
 
-    // Exemplo de implementação no ApostaRodadaRepository
-    public async Task<ApostaRodada> ObterUltimaApostaRodadaDoApostadorNaRodada(Guid apostadorCampeonatoId, Guid rodadaId)
-    {
-        // Esta lógica depende de como você define "última" ou "ativa".
-        // Opção 1: A aposta que ainda está em edição (DataHoraSubmissao é null)
-        var apostaEmEdicao = await Db.ApostasRodada.Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId &&
-                                                      ar.RodadaId == rodadaId &&
-                                                      !ar.DataHoraSubmissao.HasValue)
-                                        .FirstOrDefaultAsync();
+  public async Task<IEnumerable<IRankingResult>> ObterDadosRankingCampeonatoAsync(Guid campeonatoId)
+  {
+    var rankingQuery = await Db.ApostasRodada
+        .AsNoTracking()
+        .Include(a => a.ApostadorCampeonato)
+            .ThenInclude(ac => ac.Apostador)
+            .ThenInclude(a => a.Usuario)
+        .Where(a => a.Rodada.CampeonatoId == campeonatoId)
+        .GroupBy(a => a.ApostadorCampeonatoId)
+        .Select(g => new RankingDataModel
+        {
+          ApostadorId = g.First().ApostadorCampeonato.ApostadorId,
+          UsuarioId = g.First().ApostadorCampeonato.Apostador.Usuario.Id, // <<-- CAMPO ADICIONADO AQUI
+          Pontuacao = g.Sum(a => a.PontuacaoTotalRodada),
+          NomeApostador = g.First().ApostadorCampeonato.Apostador.NomeCompleto,
+          Apelido = g.First().ApostadorCampeonato.Apostador.Usuario.Apelido,
+          FotoPerfil = g.First().ApostadorCampeonato.Apostador.Usuario.FotoPerfil
+        })
+        .OrderByDescending(r => r.Pontuacao)
+        .ToListAsync();
 
-        //if (apostaEmEdicao != null)
-        //{
-            return apostaEmEdicao;
-        //}
+    return rankingQuery;
+  }
 
-        // Opção 2: Se não há aposta em edição, pega a última submetida
-        // (Isso será relevante quando o usuário puder ter múltiplas ApostaRodadas submetidas)
-        //return await DbSet.Where(ar => ar.ApostadorCampeonatoId == apostadorCampeonatoId &&
-        //                                ar.RodadaId == rodadaId &&
-         //                               ar.DataHoraSubmissao.HasValue)
-         //                 .OrderByDescending(ar => ar.DataHoraSubmissao)
-         //                 .FirstOrDefaultAsync();
-    }
+  // Em ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
+
+  // ... (seus outros métodos)
+
+  /// <summary>
+  /// Obtém o ranking total do campeonato, somando a pontuação de todas as rodadas.
+  /// </summary>
+  /// <param name="campeonatoId">O ID do campeonato.</param>
+  /// <returns>Uma lista de objetos com os dados do ranking.</returns>
+  public async Task<IEnumerable<IRankingResult>> ObterRankingCampeonatoAsync(Guid campeonatoId)
+  {
+    var rankingQuery = await Db.ApostasRodada
+        .AsNoTracking()
+        // Inclui os dados do apostador e do usuário para a projeção final
+        .Include(ar => ar.ApostadorCampeonato)
+            .ThenInclude(ac => ac.Apostador)
+                .ThenInclude(ap => ap.Usuario)
+        // Garante que estamos pegando apenas as apostas do campeonato correto
+        .Where(ar => ar.Rodada.CampeonatoId == campeonatoId)
+        // Agrupa por apostador para somar os pontos de todas as rodadas
+        .GroupBy(ar => new
+        {
+          ApostadorId = ar.ApostadorCampeonato.ApostadorId,
+          Apelido = ar.ApostadorCampeonato.Apostador.Usuario.Apelido,
+          FotoPerfil = ar.ApostadorCampeonato.Apostador.Usuario.FotoPerfil
+        })
+        // Projeta os dados para um DTO, somando a pontuação
+        .Select(g => new RankingDataModel
+        {
+          ApostadorId = g.Key.ApostadorId,
+          Apelido = g.Key.Apelido,
+          FotoPerfil = g.Key.FotoPerfil,
+          Pontuacao = g.Sum(ar => ar.PontuacaoTotalRodada)
+        })
+        .OrderByDescending(r => r.Pontuacao)
+        .ToListAsync();
+
+    // A lógica de posição pode ser adicionada aqui ou no serviço
+    //var rankingComPosicao = rankingQuery.Select((item, index) => {
+    //   item.Posicao = index + 1;
+    //   return item;
+    //}).ToList();
+
+    return rankingQuery;
+  }
+
+  // ...
 
 
 
-    public async Task<ApostasTotais> ObterTotaisApostasAvulsas(Guid rodadaId)
-    {
-        var totais = await Db.ApostasRodada.AsNoTracking()
-            // Ajuste na condição: usar o campo booleano EhApostaIsolada
-            .Where(a => a.RodadaId == rodadaId && a.EhApostaIsolada)
-            .GroupBy(a => a.RodadaId)
-            .Select(g => new ApostasTotais
-            {
-                NumeroDeApostas = g.Count(),
-                ValorTotal = g.Sum(a => a.CustoPagoApostaRodada) ?? 0m   //Usado porque o CustoPagoApostaRodada é ?
-            })
-            .FirstOrDefaultAsync();
+  // Exemplo de implementação no ApostaRodadaRepository
+  public async Task<ApostaRodada> ObterUltimaApostaRodadaDoApostadorNaRodada(Guid? apostadorCampeonatoId, Guid apostadorId, Guid rodadaId)
+  {
+    return await Db.ApostasRodada
+                   .AsNoTracking()
+                   .Where(ar => ar.RodadaId == rodadaId &&
+                               (ar.ApostadorId == apostadorId || (apostadorCampeonatoId.HasValue && ar.ApostadorCampeonatoId == apostadorCampeonatoId)) &&
+                               !ar.DataHoraSubmissao.HasValue)
+                   .FirstOrDefaultAsync();
+  }
 
-        return totais ?? new ApostasTotais();
-    }
 
-    // A query deve somar os valores de todas as rodadas do campeonato
-    public async Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId)
-    {
-        var totais = await Db.ApostadoresCampeonatos.AsNoTracking()
-            .Where(ac => ac.CampeonatoId == campeonatoId)
-            .GroupBy(ac => ac.CampeonatoId)
-            .Select(g => new CampeonatoTotais
-            {
-                NumeroDeApostadores = g.Count(),
-                // Corrigido: Para obter o custo de adesão do campeonato, você precisa
-                // pegar o valor de um dos registros (já que é o mesmo para todos)
-                // e multiplicar pelo número de apostadores.
-                ValorTotalArrecadado = (g.FirstOrDefault().Campeonato.CustoAdesao) * g.Count() ?? 0m
-            })
-            .FirstOrDefaultAsync();
+  public async Task<ApostasTotais> ObterTotaisApostasAvulsas(Guid rodadaId)
+  {
+    var totais = await Db.ApostasRodada.AsNoTracking()
+        // Ajuste na condição: usar o campo booleano EhApostaIsolada
+        .Where(a => a.RodadaId == rodadaId && a.EhApostaIsolada)
+        .GroupBy(a => a.RodadaId)
+        .Select(g => new ApostasTotais
+        {
+          NumeroDeApostas = g.Count(),
+          ValorTotal = g.Sum(a => a.CustoPagoApostaRodada) ?? 0m   //Usado porque o CustoPagoApostaRodada é ?
+        })
+        .FirstOrDefaultAsync();
 
-        return totais ?? new CampeonatoTotais();
-    }
+    return totais ?? new ApostasTotais();
+  }
+
+  // A query deve somar os valores de todas as rodadas do campeonato
+  public async Task<CampeonatoTotais> ObterTotaisCampeonato(Guid campeonatoId)
+  {
+    var totais = await Db.ApostadoresCampeonatos.AsNoTracking()
+        .Where(ac => ac.CampeonatoId == campeonatoId)
+        .GroupBy(ac => ac.CampeonatoId)
+        .Select(g => new CampeonatoTotais
+        {
+          NumeroDeApostadores = g.Count(),
+          // Corrigido: Para obter o custo de adesão do campeonato, você precisa
+          // pegar o valor de um dos registros (já que é o mesmo para todos)
+          // e multiplicar pelo número de apostadores.
+          ValorTotalArrecadado = (g.FirstOrDefault().Campeonato.CustoAdesao) * g.Count() ?? 0m
+        })
+        .FirstOrDefaultAsync();
+
+    return totais ?? new CampeonatoTotais();
+  }
 
   // No seu ApostaRodadaRepository.cs
   public async Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
@@ -239,32 +234,25 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
     });
   }
 
-  // No ApostaRodadaRepository
-  public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid apostadorCampeonatoId)
+  public async Task<IEnumerable<ApostaRodada>> ObterApostasComDetalhes(Guid rodadaId, Guid? acId, Guid apId)
   {
+    // TRATAMENTO CRÍTICO: Transforma Guid vazio em NULL real para o C#
+    Guid? apostadorCampeonatoId = (acId == Guid.Empty || acId == null) ? (Guid?)null : acId;
+
     return await DbSet.AsNoTracking()
-        // A mágica acontece aqui: ordenamos os palpites pelo jogo antes de enviar ao Angular
-        .Include(ar => ar.Palpites.OrderBy(p => p.Jogo.DataJogo).ThenBy(p => p.Jogo.HoraJogo))
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.EquipeCasa)
-                    .ThenInclude(ec => ec.Equipe)
-        .Include(ar => ar.Palpites)
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.EquipeVisitante)
-                    .ThenInclude(ev => ev.Equipe)
-        .Include(ar => ar.Palpites)
-            .ThenInclude(p => p.Jogo)
-                .ThenInclude(j => j.Estadio)
-        .Where(ar => ar.RodadaId == rodadaId && ar.ApostadorCampeonatoId == apostadorCampeonatoId)
+        .Include(ar => ar.Palpites) // ... seus includes de jogos e equipes
+        .Where(ar => ar.RodadaId == rodadaId &&
+                    (ar.ApostadorId == apId ||
+                    (apostadorCampeonatoId != null && ar.ApostadorCampeonatoId == apostadorCampeonatoId)))
         .ToListAsync();
   }
 }
-    
 
 
 
 
 
 
-    
+
+
 
