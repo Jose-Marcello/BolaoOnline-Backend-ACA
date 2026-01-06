@@ -68,18 +68,15 @@ namespace ApostasApp.Core.Infrastructure.Identity
     public async Task<Usuario> GetLoggedInUserAsync()
     {
       var userPrincipal = _httpContextAccessor.HttpContext?.User;
-      if (userPrincipal == null) return null;
-
-      // Obtém o ID do usuário logado através das Claims
       var userId = _userManager.GetUserId(userPrincipal);
       if (string.IsNullOrEmpty(userId)) return null;
 
-      // Busca o usuário incluindo a navegação do Apostador
+      // FORÇANDO O EF A REFAZER A CONSULTA COM O JOIN NO BANCO
       return await _userManager.Users
-          .Include(u => u.Apostador) // <-- ESSENCIAL para o Jeff aparecer
+          .Include(u => u.Apostador)
+          .AsNoTracking() // <-- Isso limpa o cache e força a leitura do ApostadorId D6CD921C...
           .FirstOrDefaultAsync(u => u.Id == userId);
     }
-
 
     public async Task<string> GetLoggedInUserIdAsync()
     {
@@ -88,14 +85,14 @@ namespace ApostasApp.Core.Infrastructure.Identity
 
     // Localização: IdentityService.cs
     public async Task<AuthResult> RegisterUserAsync(
-string email,
-string password,
-string apelido,
-string cpf,
-string celular,
-string fotoPerfil,
-string nomeCompleto,
-bool termsAccepted)
+    string email,
+    string password,
+    string apelido,
+    string cpf,
+    string celular,
+    string fotoPerfil,
+    string nomeCompleto,
+    bool termsAccepted)
     {
       // Verificações de unicidade de CPF e Apelido
       if (await _userManager.Users.AnyAsync(u => u.CPF == cpf))
