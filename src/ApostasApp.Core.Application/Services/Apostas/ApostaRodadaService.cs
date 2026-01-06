@@ -98,9 +98,11 @@ namespace ApostasApp.Core.Application.Services.Apostas
       var apiResponse = new ApiResponse<ApostaRodadaResultadosDto>(false, null);
       try
       {
+        // Adicionado Include de Estadio para resolver o 'estadioNome'
         var jogos = await _jogoRepository.Buscar(j => j.RodadaId == rodadaId)
             .Include(j => j.EquipeCasa).ThenInclude(ec => ec.Equipe)
             .Include(j => j.EquipeVisitante).ThenInclude(ev => ev.Equipe)
+            .Include(j => j.Estadio) // <-- IMPORTANTE
             .ToListAsync();
 
         var aposta = await _apostaRodadaRepository.Buscar(ar => ar.Id == apostaRodadaId)
@@ -118,10 +120,23 @@ namespace ApostasApp.Core.Application.Services.Apostas
               IdJogo = j.Id.ToString(),
               EquipeMandante = j.EquipeCasa?.Equipe?.Nome,
               EquipeVisitante = j.EquipeVisitante?.Equipe?.Nome,
+
+              // RESOLVENDO OS ESCUDOS (Usando a propriedade do seu banco)
+              EscudoMandante = j.EquipeCasa?.Equipe?.Escudo,
+              EscudoVisitante = j.EquipeVisitante?.Equipe?.Escudo,
+
               PlacarRealCasa = j.PlacarCasa,
               PlacarRealVisita = j.PlacarVisita,
               PlacarApostaCasa = palpite?.PlacarApostaCasa,
               PlacarApostaVisita = palpite?.PlacarApostaVisita,
+
+              // MAPEAR OS CAMPOS QUE ESTAVAM NULL
+              EstadioNome = j.Estadio?.Nome ?? "Estádio não informado",
+              DataJogo = j.DataJogo.ToString("dd/MM"), // Formata como string para o DTO
+              // Formatação segura de TimeSpan (HoraJogo)
+              HoraJogo = j.HoraJogo != null ? j.HoraJogo.ToString(@"hh\:mm") : "00:00",
+              StatusJogo = j.Status.ToString(), // Ou uma lógica de "Finalizado/Agendado"
+
               Pontuacao = palpite?.Pontos ?? 0
             };
           }).ToList()
