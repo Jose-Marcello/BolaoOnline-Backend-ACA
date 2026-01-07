@@ -136,7 +136,8 @@ namespace ApostasApp.Core.Application.MappingProfiles
           .ForMember(dest => dest.RodadaId, opt => opt.MapFrom(src => src.RodadaId.ToString()))
           .ForMember(dest => dest.ApostadorCampeonatoId, opt => opt.MapFrom(src => src.ApostadorCampeonatoId.ToString()))
           .ForMember(dest => dest.DataHoraSubmissao, opt => opt.MapFrom(src => src.DataHoraSubmissao.HasValue ? src.DataHoraSubmissao.Value.ToString("o") : null))
-          .ForMember(dest => dest.Palpites, opt => opt.MapFrom(src => src.Palpites))
+          .ForMember(dest => dest.Palpites, opt => opt.MapFrom(src => src.Palpites))      
+          .ForMember(dest => dest.DataCriacao, opt => opt.MapFrom(src => src.DataCriacao))
 
           // <<-- NOVOS MAPEAMENTOS PARA O ITEM 1 (DADOS DA RODADA) -->>
           // Mapeia os dados da entidade aninhada 'Rodada' para os campos diretos do DTO

@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/PalpiteController.cs
+// Localização: ApostasApp.Core.Web/Controllers/PalpiteController.cs
 
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Jogos;
@@ -68,6 +68,8 @@ namespace ApostasApp.Core.Web.Controllers
         /// </summary>
         /// <param name="rodadaId">O ID da rodada para a qual consultar as apostas.</param>
         /// <returns>Um IActionResult contendo uma ApiResponse com a lista de PalpiteDto.</returns>
+
+        [AllowAnonymous]
         [HttpGet("consultar-apostas-da-rodada/{rodadaId:guid}")]
         public async Task<IActionResult> ConsultarApostas(Guid rodadaId)
         {
@@ -127,6 +129,8 @@ namespace ApostasApp.Core.Web.Controllers
         /// </summary>
         /// <param name="rodadaId">O ID da rodada.</param>
         /// <returns>Um IActionResult contendo uma ApiResponse indicando se existem palpites.</returns>
+
+        [AllowAnonymous]
         [HttpGet("existe-palpites-rodada/{rodadaId:guid}")] // Adicionado rota para verificar existência
         public async Task<IActionResult> ExistePalpitesParaRodada(Guid rodadaId)
         {

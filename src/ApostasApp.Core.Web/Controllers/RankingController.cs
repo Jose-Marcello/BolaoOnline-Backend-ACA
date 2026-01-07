@@ -1,11 +1,12 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/RankingController.cs
+// Localização: ApostasApp.Core.Web/Controllers/RankingController.cs
 
-using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.DTOs.Ranking;
 using ApostasApp.Core.Application.DTOs.RankingRodadas;
+using ApostasApp.Core.Application.Models;
 using ApostasApp.Core.Application.Services.Interfaces; // Para IRankingService
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Web.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -25,11 +26,13 @@ namespace ApostasApp.Core.Web.Controllers
             _rankingService = rankingService;
         }
 
-        /// <summary>
-        /// Obtém o ranking de apostadores para uma rodada específica.
-        /// </summary>
-        /// <param name="rodadaId">O ID da rodada.</param>
-        /// <returns>Uma lista de RankingRodadaDto com informações de ranking.</returns>
+    /// <summary>
+    /// Obtém o ranking de apostadores para uma rodada específica.
+    /// </summary>
+    /// <param name="rodadaId">O ID da rodada.</param>
+    /// <returns>Uma lista de RankingRodadaDto com informações de ranking.</returns>
+
+        [AllowAnonymous]
         [HttpGet("rodada/{rodadaId:guid}")]
         public async Task<IActionResult> ObterRankingRodada(Guid rodadaId)
         {
@@ -40,11 +43,13 @@ namespace ApostasApp.Core.Web.Controllers
             return CustomResponse(rankingResponse);
         }
 
-        /// <summary>
-        /// Obtém o ranking total do campeonato.
-        /// </summary>
-        /// <param name="campeonatoId">O ID do campeonato.</param>
-        /// <returns>Uma lista de RankingDto com o ranking total.</returns>
+    /// <summary>
+    /// Obtém o ranking total do campeonato.
+    /// </summary>
+    /// <param name="campeonatoId">O ID do campeonato.</param>
+    /// <returns>Uma lista de RankingDto com o ranking total.</returns>
+
+        [AllowAnonymous]
         [HttpGet("campeonato/{campeonatoId:guid}")]
         public async Task<IActionResult> ObterRankingCampeonato(Guid campeonatoId)
         {

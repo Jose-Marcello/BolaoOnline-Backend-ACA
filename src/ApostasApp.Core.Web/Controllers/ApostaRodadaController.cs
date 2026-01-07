@@ -10,6 +10,7 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Campeonatos; // Necessário para FromForm
 using ApostasApp.Core.Domain.Models.Notificacoes;
 using ApostasApp.Core.Web.Controllers; // Para BaseController
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,8 @@ namespace ApostasApp.Core.Web.Controllers
     /// <param name="rodadaId">ID da rodada.</param>
     /// <param name="apostadorCampeonatoId">ID do apostador no campeonato.</param>
     /// <returns>ApiResponse contendo o status da aposta da rodada.</returns>
+    ///
+    [AllowAnonymous]
     [HttpGet("StatusAposta")]
     public async Task<IActionResult> StatusAposta([FromQuery] Guid rodadaId, [FromQuery] Guid? apostadorCampeonatoId, Guid apostadorId)
     {
@@ -89,7 +92,7 @@ namespace ApostasApp.Core.Web.Controllers
       }
     }
 
-
+    [AllowAnonymous]
     [HttpGet("Resultados")]
     public async Task<IActionResult> Resultados([FromQuery] Guid rodadaId, [FromQuery] Guid apostaRodadaId)
     {
@@ -176,7 +179,7 @@ namespace ApostasApp.Core.Web.Controllers
       }
     }
 
-
+    [AllowAnonymous]
     [HttpGet("ObterJogosComPalpites/{apostaId}/{rodadaId}")]
     public async Task<IActionResult> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
     {
@@ -194,6 +197,8 @@ namespace ApostasApp.Core.Web.Controllers
     /// </summary>
     /// <param name="rodadaId">ID da rodada.</param>
     /// <returns>ApiResponse com o total de apostas e valor acumulado.</returns>
+    /// 
+    [AllowAnonymous]
     [HttpGet("totais-apostas-avulsas")]
     public async Task<IActionResult> ObterTotaisApostasAvulsas([FromQuery] Guid rodadaId)
     {
@@ -217,7 +222,7 @@ namespace ApostasApp.Core.Web.Controllers
       }
     }
 
-
+    [AllowAnonymous]
     [HttpGet("totais-campeonato/{campeonatoId}")]
     public async Task<ActionResult<ApiResponse<ApostasCampeonatoTotaisDto>>> ObterTotaisCampeonato(Guid campeonatoId)
     {

@@ -6,11 +6,12 @@ using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Adicionado para INotifi
 using ApostasApp.Core.Domain.Models.Notificacoes; // Adicionado para NotificationDto
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada (se usado em outros endpoints)
 using ApostasApp.Core.Web.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,6 +38,9 @@ namespace ApostasApp.Api.Controllers
         /// </summary>
         /// <param name="campeonatoId">ID do Campeonato.</param>
         /// <returns>Uma lista de RodadaDto.</returns>
+        /// 
+
+        [AllowAnonymous]
         [HttpGet("ListarEmApostas/{campeonatoId}")] // Endpoint para listar rodadas em apostas por campeonato
         public async Task<IActionResult> ListarRodadasEmApostas(string campeonatoId)
         {
@@ -62,12 +66,14 @@ namespace ApostasApp.Api.Controllers
         }
 
 
-        /// <summary>
-        /// Lista todas as rodadas com status 'Em Apostas' para um campeonato específico.
-        /// </summary>
-        /// <param name="campeonatoId">ID do Campeonato.</param>
-        /// <returns>Uma lista de RodadaDto.</returns>
-        [HttpGet("ListarCorrentes/{campeonatoId}")] // Endpoint para listar rodadas em apostas por campeonato
+    /// <summary>
+    /// Lista todas as rodadas com status 'Em Apostas' para um campeonato específico.
+    /// </summary>
+    /// <param name="campeonatoId">ID do Campeonato.</param>
+    /// <returns>Uma lista de RodadaDto.</returns>
+    /// 
+    [AllowAnonymous]
+    [HttpGet("ListarCorrentes/{campeonatoId}")] // Endpoint para listar rodadas em apostas por campeonato
         public async Task<IActionResult> ListarRodadasCorrentes(string campeonatoId)
         {
             try
@@ -97,6 +103,7 @@ namespace ApostasApp.Api.Controllers
         /// </summary>
         /// <param name="campeonatoId">ID do Campeonato.</param>
         /// <returns>Uma lista de RodadaDto.</returns>
+        [AllowAnonymous]
         [HttpGet("ListarFinalizadas/{campeonatoId}")] // Endpoint para listar rodadas em apostas por campeonato
         public async Task<IActionResult> ListarRodadasFinalizadas(string campeonatoId)
         {
@@ -121,6 +128,8 @@ namespace ApostasApp.Api.Controllers
             }
         }
 
+
+        [AllowAnonymous]   
         [HttpGet("ListarTodas/{campeonatoId}")] // Endpoint para listar rodadas em apostas por campeonato
         public async Task<IActionResult> ListarTodasAsRodadas(string campeonatoId)
         {
@@ -144,7 +153,6 @@ namespace ApostasApp.Api.Controllers
                 return CustomResponse<IEnumerable<RodadaDto>>(); // Retorna erro padronizado
             }
         }
-
 
 
         // Outros endpoints do RodadaController devem ser mantidos e adaptados para CustomResponse
@@ -185,6 +193,7 @@ namespace ApostasApp.Api.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> ObterRodadaPorId(string id)
         {
@@ -208,7 +217,6 @@ namespace ApostasApp.Api.Controllers
         }
 
 
-
         [HttpGet("conferencia/{rodadaId:guid}")]
         public async Task<IActionResult> ObterPlanilhaConferencia(Guid rodadaId)
         {
@@ -225,7 +233,7 @@ namespace ApostasApp.Api.Controllers
         }
 
 
-    
+       [AllowAnonymous]
        [HttpGet("ListarJogosPorRodada/{rodadaId}")]
        public async Task<IActionResult> ListarJogosPorRodada(string rodadaId)
        {

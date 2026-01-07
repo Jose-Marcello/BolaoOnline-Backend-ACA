@@ -9,6 +9,8 @@ namespace ApostasApp.Core.Application.DTOs.ApostasRodada
     public string RodadaId { get; set; }
     public string IdentificadorAposta { get; set; }
     public DateTime? DataHoraSubmissao { get; set; }
+    // NOVO CAMPO: Data em que o registro foi gerado no banco
+    public DateTime DataCriacao { get; set; }
     public bool EhApostaCampeonato { get; set; }
     public bool EhApostaIsolada { get; set; }
     public decimal? CustoPagoApostaRodada { get; set; }
