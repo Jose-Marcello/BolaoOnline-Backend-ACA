@@ -60,11 +60,36 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
     public async Task<ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>> ObterApostasDoApostadorNaRodadaParaEdicao(Guid rodadaId, Guid apostaRodadaId)
     {
+
       var apiResponse = new ApiResponse<IEnumerable<ApostaJogoEdicaoDto>>(false, null);
+
       try
       {
         var jogosComPalpites = await _apostaRodadaRepository.ObterJogosComPalpites(apostaRodadaId, rodadaId);
 
+        var apostasParaEdicao = jogosComPalpites.Select(p => new ApostaJogoEdicaoDto
+      {
+        Id = p.Id, // ID do Palpite (como string)
+        IdJogo = p.Id, // ID do Jogo
+
+        // Nomes corretos conforme o ApostaJogoEdicaoDto
+        EquipeMandante = p.EquipeCasaNome,
+        EscudoMandante = p.EquipeCasaEscudoUrl,
+
+        EquipeVisitante = p.EquipeVisitanteNome,
+        EscudoVisitante = p.EquipeVisitanteEscudoUrl,
+
+        PlacarApostaCasa = p.PlacarApostaCasa,
+        PlacarApostaVisita = p.PlacarApostaVisita,
+
+        EstadioNome = p.EstadioNome,
+        DataJogo = p.DataHoraReal.ToString("dd/MM"),
+        HoraJogo = p.HoraJogo, // Já formatado no repositório
+        DiaSemana = p.DataHoraReal.ToString("ddd").ToUpper()
+      }).ToList();
+
+            
+        /*
         var apostasParaEdicao = jogosComPalpites.Select(jogo => new ApostaJogoEdicaoDto
         {
           Id = apostaRodadaId.ToString(),
@@ -81,6 +106,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
           PlacarApostaVisita = jogo.PlacarApostaVisita,
           Enviada = true
         }).ToList();
+        */
 
         apiResponse.Data = apostasParaEdicao;
         apiResponse.Success = true;
