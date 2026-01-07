@@ -69,6 +69,41 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
 
 
   // Localização: ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
+  public async Task<IEnumerable<IRankingResult>> ObterDadosRankingCampeonatoAsync(Guid campeonatoId)
+  {
+    var rankingQuery = await Db.ApostasRodada
+        .AsNoTracking()
+        .Where(a => a.Rodada.CampeonatoId == campeonatoId
+                 && a.EhApostaCampeonato == true
+                 && a.ApostadorCampeonatoId != null)
+        .GroupBy(a => new
+        {
+          // Agrupamos pelas propriedades físicas para garantir a tradução SQL
+          a.ApostadorCampeonatoId,
+          a.ApostadorCampeonato.ApostadorId,
+          // Remova o cast (Guid?) e aponte para a FK ou para o Id do objeto de navegação
+          IdUsuario = a.ApostadorCampeonato.Apostador.Usuario.Id,
+          NomeCompleto = a.ApostadorCampeonato.Apostador.NomeCompleto,
+          Apelido = a.ApostadorCampeonato.Apostador.Usuario.Apelido,
+          Foto = a.ApostadorCampeonato.Apostador.Usuario.FotoPerfil
+        })
+        .Select(g => new RankingDataModel
+        {
+          ApostadorId = g.Key.ApostadorId,
+          UsuarioId = g.Key.IdUsuario,
+          // Tratamento de nulos na soma para evitar o erro de tempo de execução
+          Pontuacao = (int)(g.Sum(a => (int?)a.PontuacaoTotalRodada) ?? 0),
+          NomeApostador = g.Key.NomeCompleto ?? "Apostador",
+          Apelido = g.Key.Apelido ?? "Sem Apelido",
+          FotoPerfil = g.Key.Foto ?? "logobolao.png"
+        })
+        .OrderByDescending(r => r.Pontuacao)
+        .ToListAsync();
+
+    return rankingQuery;
+  }
+
+  /*
 
   public async Task<IEnumerable<IRankingResult>> ObterDadosRankingCampeonatoAsync(Guid campeonatoId)
   {
@@ -93,6 +128,8 @@ public class ApostaRodadaRepository : Repository<ApostaRodada>, IApostaRodadaRep
 
     return rankingQuery;
   }
+  */
+
 
   // Em ApostasApp.Core.Infrastructure.Data.Repositories.Apostas/ApostaRodadaRepository.cs
 
