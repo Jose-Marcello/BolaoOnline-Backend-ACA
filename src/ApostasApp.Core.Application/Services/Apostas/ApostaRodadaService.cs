@@ -261,7 +261,6 @@ namespace ApostasApp.Core.Application.Services.Apostas
       var apiResponse = new ApiResponse<IEnumerable<ApostaRodadaDto>>(false, null);
       try
       {
-        // Agora passando os 3 parâmetros para o repositório ajustado
         var apostas = await _apostaRodadaRepository.ObterApostasComDetalhes(rodadaId, acId, apId);
         var rodada = await _rodadaRepository.ObterPorId(rodadaId);
         var dtos = new List<ApostaRodadaDto>();
@@ -277,23 +276,18 @@ namespace ApostasApp.Core.Application.Services.Apostas
               dto.DataInicio = rodada.DataInic;
               dto.DataFim = rodada.DataFim;
             }
-
-            // Lógica de Permissão atualizada: Dono sempre edita
             dto.PodeEditar = aposta.ApostadorId == apId;
             dtos.Add(dto);
           }
         }
-        else if (rodada != null)
+        // REMOVA OU COMENTE ESTE BLOCO ABAIXO:
+        /* else if (rodada != null)
         {
-          dtos.Add(new ApostaRodadaDto
-          {
-            RodadaId = rodada.Id.ToString(),
-            NumeroRodada = rodada.NumeroRodada,
-            PodeEditar = true // Permite criar a primeira
-          });
-        }
+            dtos.Add(new ApostaRodadaDto { ... });
+        } 
+        */
 
-        apiResponse.Data = dtos;
+        apiResponse.Data = dtos; // Agora retornará [] se não houver apostas
         apiResponse.Success = true;
         return apiResponse;
       }
@@ -303,7 +297,6 @@ namespace ApostasApp.Core.Application.Services.Apostas
         return apiResponse;
       }
     }
-
 
     public async Task<ApiResponse<ApostaRodadaDto>> GerarApostaRodada(string acId, string apId, string rId, bool ehCamp, string ident, decimal custo)
     {

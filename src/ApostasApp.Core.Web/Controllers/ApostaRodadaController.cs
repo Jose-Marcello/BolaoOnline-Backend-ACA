@@ -175,6 +175,8 @@ namespace ApostasApp.Core.Web.Controllers
         return CustomResponse<ApostaRodadaDto[]>();
       }
     }
+
+
     [HttpGet("ObterJogosComPalpites/{apostaId}/{rodadaId}")]
     public async Task<IActionResult> ObterJogosComPalpites(Guid apostaId, Guid rodadaId)
     {
