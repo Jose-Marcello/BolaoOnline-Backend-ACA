@@ -57,6 +57,8 @@ namespace ApostasApp.Core.Web.Controllers
 
     // CORREÇÃO AQUI: A rota foi ajustada para corresponder ao que o frontend está enviando.
     // Agora a URL será: api/ApostadorCampeonato/{apostadorCampeonatoId}/RodadasEmApostas
+
+    [AllowAnonymous]
     [HttpGet("{apostadorCampeonatoId}/RodadasEmApostas")]
     public async Task<IActionResult> ExibirInterfaceDaRodadaEmApostas(Guid apostadorCampeonatoId)
     {
@@ -110,6 +112,7 @@ namespace ApostasApp.Core.Web.Controllers
     }
 
     // AJUSTE NO MÉTODO DE STATUS (Muito importante para o Jeff_Bolinha)
+    [AllowAnonymous]
     [HttpGet("StatusApostaDaRodada")]
     public async Task<IActionResult> BuscarStatusEDataHoraApostaDaRodada(
         [FromQuery] Guid? apostadorCampeonatoId, // Tornado opcional

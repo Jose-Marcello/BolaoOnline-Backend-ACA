@@ -1,20 +1,21 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/CampeonatoController.cs (Assumindo que está na mesma pasta dos outros controllers web)
+// Localização: ApostasApp.Core.Web/Controllers/CampeonatoController.cs (Assumindo que está na mesma pasta dos outros controllers web)
 
+using ApostasApp.Core.Application.DTOs.Campeonatos; // Adicionado para CampeonatoDto
 using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 using ApostasApp.Core.Application.Services.Interfaces.Campeonatos;
 using ApostasApp.Core.Application.Services.Interfaces.Rodadas;
 using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada (modelo de domínio)
 using ApostasApp.Core.Web.Controllers; // Para BaseController
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ApostasApp.Core.Application.DTOs.Campeonatos; // Adicionado para CampeonatoDto
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System;
-using Microsoft.Extensions.Logging;
-using ApostasApp.Core.Application.Services.Interfaces.Apostadores;
 
 namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp.Core.Web.Controllers
 {
@@ -43,6 +44,7 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
             _apostadorService = apostadorService;
         }
 
+        [AllowAnonymous]
         [HttpGet("{campeonatoId}/RodadaCorrente")]
         public async Task<IActionResult> GetRodadaCorrente(Guid campeonatoId)
         {
@@ -76,6 +78,7 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{campeonatoId}/RodadasEmApostas")]
         public async Task<IActionResult> GetRodadasEmApostas(Guid campeonatoId)
         {
@@ -109,6 +112,7 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
             }
         }
 
+        [AllowAnonymous]  
         [HttpGet("Detalhes/{id}")]
         public async Task<IActionResult> GetDetalhes(Guid id)
         {
@@ -142,8 +146,9 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
             }
         }
 
-        [HttpGet("Available")]
-        public async Task<IActionResult> GetAvailableCampeonatos([FromQuery] string? userId = null)
+    [AllowAnonymous]
+    [HttpGet("Available")]
+    public async Task<IActionResult> GetAvailableCampeonatos([FromQuery] string? userId = null)
         {
             try
             {
@@ -221,6 +226,7 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
             }
         }
 
+        [AllowAnonymous]      
         [HttpGet("{campeonatoId}/TodasAsRodadas")]
         public async Task<IActionResult> GetAllRodadasByCampeonatoId(Guid campeonatoId)
         {

@@ -1,18 +1,19 @@
-﻿// Localização: ApostasApp.Core.Web/Controllers/JogoController.cs
+// Localização: ApostasApp.Core.Web/Controllers/JogoController.cs
 
-using ApostasApp.Core.Application.Services.Interfaces.Jogos; // Para IJogoService
-using ApostasApp.Core.Application.Services.Interfaces.Rodadas; // Para IRodadaService
-using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Application.DTOs.Jogos; // Para JogoDetalheDto
 using ApostasApp.Core.Application.Models; // Para ApiResponse
+using ApostasApp.Core.Application.Services.Interfaces.Jogos; // Para IJogoService
+using ApostasApp.Core.Application.Services.Interfaces.Rodadas; // Para IRodadaService
+using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
+using ApostasApp.Core.Domain.Interfaces.Notificacoes; // Para INotificador
 using ApostasApp.Core.Web.Controllers; // Para BaseController
 using AutoMapper; // Apenas se houver necessidade de mapeamentos no Controller
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq; // Para Linq
 using System.Threading.Tasks;
-using ApostasApp.Core.Domain.Interfaces; // Para IUnitOfWork (se ainda for necessário para DI, mas não para BaseController)
 
 namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp.Core.Web.Controllers
 {
@@ -41,6 +42,9 @@ namespace ApostasApp.Core.Web.Controllers // Namespace CORRIGIDO para ApostasApp
         /// </summary>
         /// <param name="id">O ID do jogo.</param>
         /// <returns>Os detalhes do jogo em formato DTO (JSON).</returns>
+
+
+        [AllowAnonymous]
         [HttpGet("dados-do-jogo/{id:guid}")]
         public async Task<IActionResult> DetalheJogo(Guid id)
         {
