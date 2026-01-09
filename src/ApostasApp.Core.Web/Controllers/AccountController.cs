@@ -180,7 +180,8 @@ namespace ApostasApp.Core.Web.Controllers
 
 
     [AllowAnonymous]
-    [HttpPost("ConfirmEmail")]
+    //[HttpPost("ConfirmEmail")]
+    [HttpGet("ConfirmEmail")]
     public async Task<ApiResponse<bool>> ConfirmEmail([FromBody] ConfirmEmailDto model)
     {
       try
