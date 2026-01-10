@@ -1,5 +1,6 @@
 // Localização: ApostasApp.Core.Application.Services.Campeonatos/CampeonatoService.cs
 
+using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 // using ApostasApp.Core.Domain.Models.Interfaces.Rodadas; // Verifique se esta interface é realmente necessária ou se é um using antigo - REMOVIDO SE NÃO USADO
@@ -439,5 +440,58 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
                 return apiResponse;
             }
         }
-    }
+
+
+       public async Task<ApiResponse<ApostasCampeonatoTotaisDto>> ObterTotaisDashboard(Guid campeonatoId)
+       {
+         var apiResponse = new ApiResponse<ApostasCampeonatoTotaisDto>();
+         try
+         {
+          // 1. Obter os dados básicos do campeonato (para o valor da adesão)
+          var campeonato = await _campeonatoRepository.ObterPorId(campeonatoId);
+          if (campeonato == null)
+          {
+             NotificarErro("Campeonato não encontrado.");
+             apiResponse.Success = false;
+             return apiResponse;
+          }
+
+          // 2. Contar quantos apostadores estão vinculados (Adesões)
+          // Usamos o repositório de vínculo para contar os registros
+          var adesoes = await _apostadorCampeonatoRepository.ObterAdesoesPorCampeonatoIdAsync(campeonatoId);
+          int totalVinculados = adesoes?.Count() ?? 0;
+
+          // 3. Lógica de Negócio: Cálculo dos Totais
+          decimal custoAdesao = campeonato.CustoAdesao ?? 0;
+          decimal totalBrutoAdesoes = totalVinculados * custoAdesao;
+
+          // Exemplo: Retirando 20% de lucro/taxa para mostrar o prêmio acumulado líquido
+          decimal percentualPremio = 0.80m;
+          decimal premioAcumuladoLiquido = totalBrutoAdesoes * percentualPremio;
+
+          // 4. Montar o DTO de retorno
+          var totaisDto = new ApostasCampeonatoTotaisDto
+          {
+             QuantApostadoresVinculados = totalVinculados,
+             ValorArrecadado = premioAcumuladoLiquido, // Este alimenta o "Prêmio Acumulado"
+
+             // Aqui você pode futuramente somar as apostas avulsas da rodada atual
+             PremioAvulsoRodada = 0 // Inicialmente zerado até integrarmos o financeiro de avulsas
+          };
+
+          apiResponse.Success = true;
+          apiResponse.Data = totaisDto;
+          return apiResponse;
+        }
+        catch (Exception ex)
+        {
+           _logger.LogError(ex, "Erro ao calcular totais do dashboard para o campeonato {Id}", campeonatoId);
+           NotificarErro($"Erro interno ao processar totais: {ex.Message}");
+           apiResponse.Success = false;
+           return apiResponse;
+        }
+      }
+
+  }
 }
+

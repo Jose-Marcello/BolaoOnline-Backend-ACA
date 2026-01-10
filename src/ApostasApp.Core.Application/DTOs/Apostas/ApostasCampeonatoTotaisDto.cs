@@ -1,13 +1,21 @@
-﻿// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoDto.cs
-// DTO para enviar os dados dos jogos e palpites existentes do backend para o frontend (visualização).
+// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoDto.cs
 using System;
-using System.Text.Json.Serialization; // Necessário para JsonPropertyName
 
 namespace ApostasApp.Core.Application.DTOs.Apostas
 {
-    public class ApostasCampeonatoTotaisDto
-    {
-        public int NumeroDeApostadores { get; set; }
-        public decimal ValorTotalArrecadado { get; set; }
-    }
+  public class ApostasCampeonatoTotaisDto
+  {
+    // O que o HTML chama de 'quantApostadoresVinculados'
+    public int QuantApostadoresVinculados { get; set; }
+
+    // O que o HTML chama de 'valorArrecadado' (Prêmio Acumulado)
+    public decimal ValorArrecadado { get; set; }
+
+    // Para as apostas avulsas que discutimos (Rodapé do card)
+    public decimal PremioAvulsoRodada { get; set; }
+
+    // Mantendo os originais para compatibilidade se necessário
+    public int NumeroDeApostadores { get; set; }
+    public decimal ValorTotalArrecadado { get; set; }
+  }
 }
