@@ -8,50 +8,51 @@ using SendGrid.Helpers.Mail;
 
 namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
 {
-    public class CampeonatoRepository : Repository<Campeonato>, ICampeonatoRepository
+  public class CampeonatoRepository : Repository<Campeonato>, ICampeonatoRepository
+  {
+    private readonly ILogger<CampeonatoRepository> _logger;
+    public CampeonatoRepository(MeuDbContext context,
+                                ILogger<CampeonatoRepository> logger) : base(context)
     {
-        private readonly ILogger<CampeonatoRepository> _logger;
-        public CampeonatoRepository(MeuDbContext context,
-                                    ILogger<CampeonatoRepository> logger) : base(context)
-        {
-            _logger = logger;
-        }
+      _logger = logger;
+    }
 
-        public async Task<Campeonato> ObterCampeonato(Guid id)
-        {
-            return await Db.Campeonatos.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
-        }
+    public async Task<Campeonato> ObterCampeonato(Guid id)
+    {
+      return await Db.Campeonatos.AsNoTracking()
+          .FirstOrDefaultAsync(c => c.Id == id);
+    }
 
-        public async Task<Campeonato> ObterCampeonatoAtivo()
+    public async Task<Campeonato> ObterCampeonatoAtivo()
 
-        {
-            var query = Db.Campeonatos.AsNoTracking().Where(c => c.Ativo == true);
-            var sql = query.ToQueryString(); // Obtém a consulta SQL gerada
-            Console.WriteLine(sql); // Imprime a consulta SQL no console
-            return await query.FirstOrDefaultAsync();
+    {
+      var query = Db.Campeonatos.AsNoTracking().Where(c => c.Ativo == true);
+      var sql = query.ToQueryString(); // Obtém a consulta SQL gerada
+      Console.WriteLine(sql); // Imprime a consulta SQL no console
+      return await query.FirstOrDefaultAsync();
 
 
 
-        }
+    }
 
-        public async Task<IEnumerable<Campeonato>> ObterListaDeCampeonatosAtivos()
+    public async Task<IEnumerable<Campeonato>> ObterListaDeCampeonatosAtivos()
 
-        {
-            //throw new NotImplementedException();
+    {
+      //throw new NotImplementedException();
 
-            return await Db.Campeonatos.AsNoTracking()
-                         //.Include(c=> c.Tipo)
-                         .Where(c => c.Ativo == true)
-                         .ToListAsync();
+      return await Db.Campeonatos.AsNoTracking()
+                   //.Include(c=> c.Tipo)
+                   .Where(c => c.Ativo == true)
+                   .ToListAsync();
 
-        }
+    }
 
-        public async Task<IEnumerable<Campeonato>> ObterCampeonatosPorTipo()
-        {
-            return await Db.Campeonatos.AsNoTracking()
-                .OrderBy(c => c.Tipo).ToListAsync();
-        
+    public async Task<IEnumerable<Campeonato>> ObterCampeonatosPorTipo()
+    {
+      return await Db.Campeonatos.AsNoTracking()
+          .OrderBy(c => c.Tipo).ToListAsync();
+
+    }
+
   }
-
 }
