@@ -1,9 +1,10 @@
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Models.Campeonatos;
-using ApostasApp.Core.Infrastructure.Data.Repository;
 using ApostasApp.Core.Infrastructure.Data.Context;
+using ApostasApp.Core.Infrastructure.Data.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SendGrid.Helpers.Mail;
 
 namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
 {
@@ -50,17 +51,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
         {
             return await Db.Campeonatos.AsNoTracking()
                 .OrderBy(c => c.Tipo).ToListAsync();
-        }
-
-        /*
-        public async Task<Campeonato> ObterCampeonatoRodadas(Guid id)
-        {
-            return await Db.Campeonatos.AsNoTracking()
-                 .Include(c => c.Rodadas)
-                 .FirstOrDefaultAsync(c => c.Id == id);
-        }
-        */
-
-    }
+        
+  }
 
 }

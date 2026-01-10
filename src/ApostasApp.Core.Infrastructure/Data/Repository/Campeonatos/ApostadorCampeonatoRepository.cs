@@ -116,6 +116,15 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
             return pontuacao;
         }
 
+    
+        public async Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorCampeonatoIdAsync(Guid campeonatoId)
+        {
+           // Busca todos os vínculos de apostadores para o campeonato específico
+           return await Db.ApostadoresCampeonatos
+             .AsNoTracking()
+             .Where(ac => ac.CampeonatoId == campeonatoId)
+             .ToListAsync();
+        }
 
-    }
+  }
 }

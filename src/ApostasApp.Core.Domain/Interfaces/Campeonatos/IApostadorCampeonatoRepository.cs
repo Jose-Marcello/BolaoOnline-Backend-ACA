@@ -1,4 +1,4 @@
-﻿using ApostasApp.Core.Domain.Models.Campeonatos;
+using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces;
 
 namespace ApostasApp.Core.Domain.Interfaces.Campeonatos
@@ -16,5 +16,8 @@ namespace ApostasApp.Core.Domain.Interfaces.Campeonatos
         Task<IEnumerable<ApostadorCampeonato>> ObterApostadoresEmOrdemDescrescenteDePontuacao(Guid campeonatoId);
 
         Task<int> ObterPontuacaoTotal(Guid campeonatoId, Guid apostadorCampeonatoId);
-    }
+
+        Task<IEnumerable<ApostadorCampeonato>> ObterAdesoesPorCampeonatoIdAsync(Guid campeonatoId);
+
+  }
 }

@@ -1,4 +1,5 @@
-﻿// ApostasApp.Core.Application.Services.Interfaces.Campeonatos/ICampeonatoService.cs
+// ApostasApp.Core.Application.Services.Interfaces.Campeonatos/ICampeonatoService.cs
+using ApostasApp.Core.Application.DTOs.Apostas;
 using ApostasApp.Core.Application.DTOs.Campeonatos;
 using ApostasApp.Core.Application.Models; // Para ApiResponse
 using ApostasApp.Core.Domain.Models.Campeonatos; // Para Campeonato (se necessário para o método Remover)
@@ -21,5 +22,6 @@ namespace ApostasApp.Core.Application.Services.Interfaces.Campeonatos
         Task<ApiResponse<IEnumerable<CampeonatoDto>>> GetAvailableCampeonatos(string? userId);
         Task<ApiResponse<bool>> AderirCampeonatoAsync(Guid apostadorId, Guid campeonatoId);
         Task<ApiResponse<CampeonatoDto?>> GetDetalhesCampeonato(Guid id);
-    }
+        Task<ApiResponse<ApostasCampeonatoTotaisDto>> ObterTotaisDashboard(Guid campeonatoId);
+  }
 }
