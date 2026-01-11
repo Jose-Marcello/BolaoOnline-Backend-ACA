@@ -1,21 +1,19 @@
-// ApostasApp.Core.Application.DTOs.Apostas/ApostaJogoDto.cs
-using System;
-
-namespace ApostasApp.Core.Application.DTOs.Apostas
+public class ApostasCampeonatoTotaisDto
 {
-  public class ApostasCampeonatoTotaisDto
-  {
-    // O que o HTML chama de 'quantApostadoresVinculados'
-    public int QuantApostadoresVinculados { get; set; }
+  // SETOR 1: VINCULADAS
+  public int QuantVinculados { get; set; }
+  public decimal ArrecadacaoVinculados { get; set; }
+  public decimal PremioFinalCampeonato { get; set; }
 
-    // O que o HTML chama de 'valorArrecadado' (Prêmio Acumulado)
-    public decimal ValorArrecadado { get; set; }
+  // SETOR 2: CORRENTE (EM DISPUTA)
+  public string RodadaCorrenteId { get; set; } // Ex: "01"
+  public int QuantApostasCorrentes { get; set; }
+  public decimal ArrecadacaoCorrente { get; set; }
+  public decimal PremioCorrente { get; set; }
 
-    // Para as apostas avulsas que discutimos (Rodapé do card)
-    public decimal PremioAvulsoRodada { get; set; }
-
-    // Mantendo os originais para compatibilidade se necessário
-    public int NumeroDeApostadores { get; set; }
-    public decimal ValorTotalArrecadado { get; set; }
-  }
+  // SETOR 3: EM APOSTA (CRESCENDO)
+  public string RodadasEmApostaIds { get; set; } // Ex: "03, 04"
+  public int QuantApostasAvulsas { get; set; }
+  public decimal ArrecadacaoAvulsaRodada { get; set; }
+  public decimal PremioLiquidoRodada { get; set; }
 }

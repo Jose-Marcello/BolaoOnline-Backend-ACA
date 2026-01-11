@@ -344,11 +344,13 @@ namespace ApostasApp.Core.Application.Services.Apostas
       return new ApostasAvulsasTotaisDto { NumeroDeApostas = t.NumeroDeApostas, ValorTotal = t.ValorTotal };
     }
 
+    /*
     public async Task<ApostasCampeonatoTotaisDto> ObterTotaisCampeonato(Guid cId)
     {
       var t = await _apostaRodadaRepository.ObterTotaisCampeonato(cId);
       return new ApostasCampeonatoTotaisDto { NumeroDeApostadores = t.NumeroDeApostadores, ValorTotalArrecadado = t.ValorTotalArrecadado };
     }
+    */
 
     public async Task<IEnumerable<JogoPalpiteResultado>> ObterJogosComPalpites(Guid aId, Guid rId) => await _apostaRodadaRepository.ObterJogosComPalpites(aId, rId);
     public async Task<ApiResponse> MarcarApostaRodadaComoSubmetida(ApostaRodada a) { a.Enviada = true; a.DataHoraSubmissao = DateTime.UtcNow; await _apostaRodadaRepository.Atualizar(a); return new ApiResponse(await CommitAsync(), null); }
