@@ -36,16 +36,17 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Rodadas
                            .FirstOrDefaultAsync(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas);
         }
 
+    public async Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId)
+    {
+      // O Entity Framework traduzirá o Enum StatusRodada.EmApostas para o valor 2 no Banco
+      return await Db.Rodadas
+                     .Include(r => r.Campeonato)
+                     .AsNoTracking()
+                     .Where(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas)
+                     .ToListAsync();
+    }
 
-        public async Task<IEnumerable<Rodada>> ObterRodadasEmApostaPorCampeonato(Guid campeonatoId)
-        {
-            return await Db.Rodadas
-                           .Include(r => r.Campeonato)
-                           .AsNoTracking()
-                           .Where(r => r.CampeonatoId == campeonatoId && r.Status == StatusRodada.EmApostas).ToListAsync();
-        }
-
-        public async Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId)
+    public async Task<IEnumerable<Rodada>> ObterRodadasCorrentePorCampeonato(Guid campeonatoId)
         {
             return await Db.Rodadas
                            .Include(r => r.Campeonato)

@@ -222,6 +222,7 @@ namespace ApostasApp.Core.Web.Controllers
       }
     }
 
+    /*
     [AllowAnonymous]
     [HttpGet("totais-campeonato/{campeonatoId}")]
     public async Task<ActionResult<ApiResponse<ApostasCampeonatoTotaisDto>>> ObterTotaisCampeonato(Guid campeonatoId)
@@ -245,7 +246,7 @@ namespace ApostasApp.Core.Web.Controllers
         return CustomResponse<ApostasCampeonatoTotaisDto>();
       }
     }
-
+    */
 
 
     [HttpPost("SalvarApostas")]
