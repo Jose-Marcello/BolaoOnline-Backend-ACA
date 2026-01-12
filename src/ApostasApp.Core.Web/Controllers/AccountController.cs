@@ -182,19 +182,35 @@ namespace ApostasApp.Core.Web.Controllers
     [AllowAnonymous]
     //[HttpPost("ConfirmEmail")]
     [HttpGet("ConfirmEmail")]
-    public async Task<ApiResponse<bool>> ConfirmEmail([FromBody] ConfirmEmailDto model)
+    //public async Task<ApiResponse<bool>> ConfirmEmail([FromBody] ConfirmEmailDto model)
+    public async Task<ApiResponse<bool>> ConfirmEmail([FromQuery] string userId, [FromQuery] string code)
     {
       try
       {
-        if (string.IsNullOrEmpty(model.UserId) || string.IsNullOrEmpty(model.Code))
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
         {
           NotificarErro("Parâmetros de confirmação de e-mail inválidos.", "PARAMETROS_INVALIDOS");
         }
 
-        var result = new ApiResponse<bool>();
         if (OperacaoValida())
         {
-          result = await _usuarioService.ConfirmEmail(model.UserId, model.Code);
+          // 🚀 ATALHO PARA A DEMO / MOCK
+          if (code == "token_automatico_demo")
+          {
+            // Chame diretamente o seu serviço ou repositório para setar EmailConfirmed = true
+            // Exemplo (ajuste conforme sua implementação de _usuarioService):
+            var confirmouMock = await _usuarioService.ForçarConfirmacaoEmail(userId);
+
+            if (confirmouMock)
+            {
+              NotificarSucesso("E-mail confirmado via Mock!");
+              return GerarRespostaSucesso(true);
+            }
+          }
+
+
+          // Fluxo Real
+          var result = await _usuarioService.ConfirmEmail(userId, code); result = await _usuarioService.ConfirmEmail(model.UserId, model.Code);
 
           _logger.LogInformation($"Requisição de Confirmação de E-mail para UserId: {model.UserId}");
 
@@ -233,6 +249,16 @@ namespace ApostasApp.Core.Web.Controllers
         Success = !hasErrors,
         Data = !hasErrors,
         Notifications = allNotifications
+      };
+    }
+
+    private ApiResponse<T> GerarRespostaSucesso<T>(T data)
+    {
+      return new ApiResponse<T>
+      {
+        Success = true,
+        Data = data,
+        Notifications = new List<NotificationDto>()
       };
     }
 
