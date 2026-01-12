@@ -180,32 +180,45 @@ namespace ApostasApp.Core.Web.Controllers
 
 
     [AllowAnonymous]
-    //[HttpPost("ConfirmEmail")]
     [HttpGet("ConfirmEmail")]
-    public async Task<ApiResponse<bool>> ConfirmEmail([FromBody] ConfirmEmailDto model)
+    public async Task<ApiResponse<bool>> ConfirmEmail([FromQuery] string userId, [FromQuery] string code)
     {
       try
       {
-        if (string.IsNullOrEmpty(model.UserId) || string.IsNullOrEmpty(model.Code))
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(code))
         {
           NotificarErro("Parâmetros de confirmação de e-mail inválidos.", "PARAMETROS_INVALIDOS");
         }
 
-        var result = new ApiResponse<bool>();
         if (OperacaoValida())
         {
-          result = await _usuarioService.ConfirmEmail(model.UserId, model.Code);
+          // 🚀 ATALHO PARA A DEMO / MOCK
+          if (code == "token_automatico_demo")
+          {
+            var confirmouMock = await _usuarioService.ForçarConfirmacaoEmail(userId);
 
-          _logger.LogInformation($"Requisição de Confirmação de E-mail para UserId: {model.UserId}");
+            if (confirmouMock)
+            {
+              NotificarSucesso("E-mail confirmado via Mock!");
+              // Retorna imediatamente para evitar o processamento do fluxo real
+              return GerarRespostaSucesso(true);
+            }
+          }
+
+          // Fluxo Real - Ajustado para usar as variáveis da Query
+          _logger.LogInformation($"Requisição de Confirmação de E-mail para UserId: {userId}");
+
+          var result = await _usuarioService.ConfirmEmail(userId, code);
 
           if (result.Success)
           {
-            _logger.LogInformation($"E-mail confirmado com sucesso para UserId: {model.UserId}.");
+            _logger.LogInformation($"E-mail confirmado com sucesso para UserId: {userId}.");
             NotificarSucesso("E-mail confirmado com sucesso!");
           }
           else
           {
-            _logger.LogWarning($"Falha na confirmação de e-mail para UserId: {model.UserId}.");
+            _logger.LogWarning($"Falha na confirmação de e-mail para UserId: {userId}.");
+            // O serviço já deve ter notificado o erro dentro do result
           }
         }
       }
@@ -215,6 +228,24 @@ namespace ApostasApp.Core.Web.Controllers
         NotificarErro("Ocorreu um erro inesperado.", "ERRO_INESPERADO");
       }
 
+      // Método que você já tem para montar a resposta com as notificações acumuladas
+      return GerarRespostaFinal();
+    }
+
+    // ⬇️ ADICIONE ESTE MÉTODO SE ELE NÃO EXISTIR NO SEU CONTROLLER BASE
+    private ApiResponse<T> GerarRespostaSucesso<T>(T data)
+    {
+      return new ApiResponse<T>
+      {
+        Success = true,
+        Data = data,
+        Notifications = new List<NotificationDto>()
+      };
+    }
+
+    // ⬇️ MÉTODO AUXILIAR PARA LIMPAR E GERAR O RETORNO PADRÃO
+    private ApiResponse<bool> GerarRespostaFinal()
+    {
       var domainNotifications = _notificador.ObterNotificacoes().ToList();
       _notificador.LimparNotificacoes();
 
@@ -235,6 +266,7 @@ namespace ApostasApp.Core.Web.Controllers
         Notifications = allNotifications
       };
     }
+
 
     [HttpPost("resend-email-confirmation")]
     [AllowAnonymous]

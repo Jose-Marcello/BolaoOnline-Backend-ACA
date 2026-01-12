@@ -375,6 +375,38 @@ namespace ApostasApp.Core.Application.Services.Usuarios
       return apiResponse;
     }
 
+
+    // Localização provável: ApostasApp.Core/Services/UsuarioService.cs
+    public async Task<bool> ForçarConfirmacaoEmail(string userId)
+    {
+      try
+      {
+        // 1. Busca o usuário pelo ID
+        var usuario = await _userManager.FindByIdAsync(userId);
+
+        if (usuario == null) return false;
+
+        // 2. Força a propriedade de confirmação sem validar token
+        usuario.EmailConfirmed = true;
+
+        // 3. Persiste a alteração no banco
+        var resultado = await _userManager.UpdateAsync(usuario);
+
+        if (resultado.Succeeded)
+        {
+          _logger.LogInformation($"[DEMO MODE] E-mail confirmado manualmente para o usuário {userId}");
+          return true;
+        }
+
+        return false;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, $"Erro ao forçar confirmação de e-mail para o usuário {userId}");
+        return false;
+      }
+    }
+
     public async Task<ApiResponse<bool>> ConfirmEmail(string userId, string stringcode)
         {
             var apiResponse = new ApiResponse<bool>();
