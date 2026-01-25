@@ -41,7 +41,9 @@ var empurraPipe = false; // (true);
 
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-var builder = WebApplication.CreateBuilder(args); 
+var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseUrls("http://*:8080");
 
 // === CONFIGURAÇÃO DE HEADERS DE PROXY ===
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -243,6 +245,7 @@ builder.Services.AddCors(options =>
   options.AddPolicy("AllowFrontend",
  policy => policy.WithOrigins(
   "http://localhost:4200",
+  "http://localhost:5173",
   "https://lemon-plant-05b6fdb1e.3.azurestaticapps.net",
   "https://app.palpitesbolao.com.br"
     )

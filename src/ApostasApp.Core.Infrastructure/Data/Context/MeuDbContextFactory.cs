@@ -10,8 +10,9 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<MeuDbConte
 
     // --- AJUSTE PARA O AZURE ---
     // Substituímos o localhost pela string que você está usando no servidor real
-    var connectionString = "Host=bolaoonline-pg-serv-jmag.postgres.database.azure.com;Database=bolaoonline_db;Username=bolaoadmin;Password=BdPostgresAlem@01;Port=5432;SSL Mode=Require;Trust Server Certificate=true;";
-
+    //var connectionString = "Host=bolaoonline-pg-serv-jmag.postgres.database.azure.com;Database=bolaoonline_db;Username=bolaoadmin;Password=BdPostgresAlem@01;Port=5432;SSL Mode=Require;Trust Server Certificate=true;";
+    var connectionString = "Host=191.237.253.251;Database=bolao;Username=AlemarAdmin;" +
+      "Password=Estudos@2026!;Port=5432;SSL Mode=Require;TrustServerCertificate=true;";
     // Garante que o provedor Npgsql use a string do Azure
     builder.UseNpgsql(connectionString);
 
