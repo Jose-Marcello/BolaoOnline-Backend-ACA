@@ -104,6 +104,10 @@ TestResults/
 *.pubxml
 *.pubxml.user
 
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+
 # Generated files (often for database migrations or scaffolding)
 Generated/
 
