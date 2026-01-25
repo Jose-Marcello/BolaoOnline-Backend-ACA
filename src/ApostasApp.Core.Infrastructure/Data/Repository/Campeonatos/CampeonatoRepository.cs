@@ -43,6 +43,7 @@ namespace ApostasApp.Core.Infrastructure.Data.Repository.Campeonatos
       return await Db.Campeonatos.AsNoTracking()
                    //.Include(c=> c.Tipo)
                    .Where(c => c.Ativo == true)
+                   .OrderByDescending(c => c.DataInic)
                    .ToListAsync();
 
     }
