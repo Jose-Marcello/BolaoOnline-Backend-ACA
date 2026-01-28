@@ -17,7 +17,7 @@ namespace ApostasApp.Core.Infrastructure.Services.Financeiro
             return Task.FromResult(new ApiResponse<SaldoDto> { Data = new SaldoDto { Valor = 100.00M, DataUltimaAtualizacao = DateTime.Now }, Success = true });
         }
 
-        public Task<ApiResponse<bool>> DebitarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao)
+        public Task<ApiResponse<bool>> DebitarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao, string externalRef)
         {
             return Task.FromResult(new ApiResponse<bool> { Data = true, Success = true });
         }
