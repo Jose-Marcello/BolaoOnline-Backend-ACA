@@ -161,7 +161,7 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
         /// <param name="tipoTransacao">O tipo da transação (ex: AdesaoCampeonato).</param>
         /// <param name="descricao">A descrição da transação.</param>
         /// <returns>Um ApiResponse indicando o sucesso do débito.</returns>
-        public async Task<ApiResponse<bool>> DebitarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao)
+        public async Task<ApiResponse<bool>> DebitarSaldoAsync(Guid apostadorId, decimal valor, TipoTransacao tipoTransacao, string descricao, string externalRef)
         {
             var apiResponse = new ApiResponse<bool>(); // Instancia o ApiResponse<bool>
 
@@ -200,7 +200,7 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
             }
 
             _saldoRepository.Atualizar(saldo);
-            var transacao = new TransacaoFinanceira(
+             var transacao = new TransacaoFinanceira(
                 apostadorId,
                 tipoTransacao,
                 -valor,
@@ -208,8 +208,8 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
             );
 
 
-
             transacao.SaldoId = saldo.Id;
+            transacao.ExternalReference = "Adesão ao Campeonato ";
 
 
             _transacaoFinanceiraRepository.Adicionar(transacao);
@@ -363,10 +363,12 @@ public async Task<ApiResponse<bool>> CreditarSaldoAsync(Guid apostadorId, decima
                     deposito.ApostadorId,
                     TipoTransacao.CreditoPix,
                     deposito.Valor,
+                    
                     "Depósito via PIX - Aguardando pagamento"
                 );
 
                 // Atribui o Status diretamente, sem o método SetDataConfirmacao
+                transacao.ExternalReference = "DEPÓSITO DO APOSTADOR";      
                 transacao.Status = "Concluído";
 
                 _transacaoFinanceiraRepository.Adicionar(transacao);

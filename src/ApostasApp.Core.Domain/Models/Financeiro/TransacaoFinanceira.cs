@@ -1,4 +1,4 @@
-﻿// Localização: ApostasApp.Core.Domain.Models.Financeiro/TransacaoFinanceira.cs
+// Localização: ApostasApp.Core.Domain.Models.Financeiro/TransacaoFinanceira.cs
 using ApostasApp.Core.Domain.Models.Base;
 using System;
 using ApostasApp.Core.Domain.Models.Apostas; // Adicione este using para ApostaRodada
@@ -22,7 +22,7 @@ namespace ApostasApp.Core.Domain.Models.Financeiro
 
         // NOVO: Adicione estas duas propriedades
         public string ExternalReference { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = "Concluído";
 
         // Construtor vazio para o Entity Framework Core
         protected TransacaoFinanceira() { }

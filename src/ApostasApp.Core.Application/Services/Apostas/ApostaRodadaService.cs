@@ -236,7 +236,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         return new ApiResponse<ApostaRodadaDto>(false, null);
       }
 
-      await _financeiroService.DebitarSaldoAsync(apostador.Id, requestDto.CustoAposta, TipoTransacao.ApostaRodada, "Aposta Avulsa");
+      await _financeiroService.DebitarSaldoAsync(apostador.Id, requestDto.CustoAposta, TipoTransacao.ApostaRodada, "Aposta Avulsa", "Aposta Avulsa de : ");
 
       var ac = await _apostadorCampeonatoRepository.Buscar(x => x.ApostadorId == apostador.Id && x.CampeonatoId == campeonatoId).FirstOrDefaultAsync();
 

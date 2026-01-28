@@ -250,7 +250,8 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
               apostadorId,
               campeonato.CustoAdesao.Value,
               TipoTransacao.AdesaoCampeonato,
-              $"Adesão ao campeonato: {campeonato.Nome}");
+              $"Adesão ao campeonato: {campeonato.Nome}",   
+              campeonato.Id.ToString()); // <--- O NOVO PARÂMETRO PARA A EXTERNAL REFERENCE
 
           if (!debitoResponse.Success)
           {
@@ -269,7 +270,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
         // 5. Criar o registro de ApostadorCampeonato
         var novaAdesao = new ApostadorCampeonato(apostadorId, campeonato.Id)
         {
-          DataInscricao = DateTime.Now,
+          DataInscricao = DateTime.Now,          
           CustoAdesaoPago = campeonato.CustoAdesao.HasValue && campeonato.CustoAdesao.Value > 0
         };
         _apostadorCampeonatoRepository.Adicionar(novaAdesao);
