@@ -9,9 +9,12 @@ using ApostasApp.Core.Domain.Interfaces.Apostas;
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Jogos;
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
 using ApostasApp.Core.Domain.Models.Apostas;
+using ApostasApp.Core.Domain.Models.Campeonatos;
 using ApostasApp.Core.Domain.Models.Financeiro;
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
+using ApostasApp.Core.Domain.Models.RankingRodadas;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore; // ESSENCIAL para .Include e .ToListAsync
 using Microsoft.Extensions.Logging;
@@ -26,6 +29,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
     private readonly IApostadorRepository _apostadorRepository;
     private readonly IPalpiteRepository _palpiteRepository;
     private readonly IRodadaRepository _rodadaRepository;
+    private readonly IRankingRodadaRepository _rankingRodadaRepository;
     private readonly IJogoRepository _jogoRepository;
     private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
     private readonly IMapper _mapper;
@@ -39,6 +43,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
         IApostadorRepository apostadorRepository,
         IPalpiteRepository palpiteRepository,
         IRodadaRepository rodadaRepository,
+        IRankingRodadaRepository rankingRodadaRepository,
         IJogoRepository jogoRepository,
         IApostadorCampeonatoRepository apostadorCampeonatoRepository,
         IMapper mapper,
@@ -52,6 +57,7 @@ namespace ApostasApp.Core.Application.Services.Apostas
       _apostadorRepository = apostadorRepository;
       _palpiteRepository = palpiteRepository;
       _rodadaRepository = rodadaRepository;
+      _rankingRodadaRepository = rankingRodadaRepository;
       _jogoRepository = jogoRepository;
       _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
       _mapper = mapper;
@@ -240,12 +246,15 @@ namespace ApostasApp.Core.Application.Services.Apostas
 
       var ac = await _apostadorCampeonatoRepository.Buscar(x => x.ApostadorId == apostador.Id && x.CampeonatoId == campeonatoId).FirstOrDefaultAsync();
 
-      var totalAvulsas = await _apostaRodadaRepository.CountAsync(a =>
-          (ac != null ? a.ApostadorCampeonatoId == ac.Id : a.ApostadorId == apostador.Id) &&
-          a.EhApostaCampeonato == false);
 
-      var identificador = $"APOSTA AVULSA #{totalAvulsas + 1}";
+      var totalAvulsasNaRodada = await _apostaRodadaRepository.CountAsync(a =>
+                                    (ac != null ? a.ApostadorCampeonatoId == ac.Id : a.ApostadorId == apostador.Id) &&
+                                     a.EhApostaCampeonato == false &&
+                                     a.RodadaId == Guid.Parse(requestDto.RodadaId)); // <--- Adicione este filtro
 
+      var identificador = $"APOSTA AVULSA #{totalAvulsasNaRodada + 1}";
+
+      
       return await GerarApostaRodada(
           ac?.Id.ToString(),
           apostador.Id.ToString(),
@@ -254,6 +263,34 @@ namespace ApostasApp.Core.Application.Services.Apostas
           identificador,
           requestDto.CustoAposta 
      );
+
+
+      var responseAposta = await GerarApostaRodada(
+          ac?.Id.ToString(),
+          apostador.Id.ToString(),
+          requestDto.RodadaId,
+          false,
+          identificador,
+          requestDto.CustoAposta
+      );
+
+      // Se a aposta foi gerada com sucesso, criamos o Ranking aqui mesmo
+      if (responseAposta.Success)
+      {
+        await _rankingRodadaRepository.Adicionar(new RankingRodada
+        {
+          //ApostadorCampeonatoId = apostadorCampeonato.Id,  //responseAposta.Dados.Id, // ID da aposta que acabou de ser criada
+          ApostadorId = apostador.Id,
+          //CampeonatoId = campeonatoId,
+          RodadaId = Guid.Parse(requestDto.RodadaId),
+          Pontuacao = 0 // Inicia zerado para o fechamento futuro
+        });
+
+        await _uow.CommitAsync(); // Garante que tudo seja gravado junto
+      }
+
+      return responseAposta;
+
     }
 
     public async Task<ApiResponse<IEnumerable<ApostaRodadaDto>>> ObterApostasRodadaPorApostador(Guid rodadaId, Guid? acId, Guid apId)

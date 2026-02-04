@@ -5,7 +5,8 @@ using ApostasApp.Core.Domain.Models.Rodadas;
 using ApostasApp.Core.Domain.Models.Campeonatos; // <<-- ADICIONADO: Para ApostadorCampeonato
 using System.ComponentModel;
 using System; // Adicionado para DateTime
-using System.Collections.Generic; // Adicionado para List
+using System.Collections.Generic;
+using ApostasApp.Core.Domain.Models.RankingRodadas; // Adicionado para List
 
 namespace ApostasApp.Core.Domain.Models.Apostas
 {
@@ -47,8 +48,9 @@ namespace ApostasApp.Core.Domain.Models.Apostas
         /* EF Relations */
         public ApostadorCampeonato ApostadorCampeonato { get; set; } 
 
-        public Apostador Apostador { get; set; } 
+        public Apostador Apostador { get; set; }
 
+        public RankingRodada RankingRodada { get; set; }  
 
     public Rodada Rodada { get; set; }        // Navegação para a Rodada
 

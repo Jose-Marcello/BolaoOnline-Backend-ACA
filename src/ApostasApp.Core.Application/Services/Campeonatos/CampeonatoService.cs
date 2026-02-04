@@ -12,10 +12,12 @@ using ApostasApp.Core.Domain.Interfaces.Apostas; // Para IApostaRodadaRepository
 using ApostasApp.Core.Domain.Interfaces.Campeonatos;
 using ApostasApp.Core.Domain.Interfaces.Jogos; // Para IJogoRepository
 using ApostasApp.Core.Domain.Interfaces.Notificacoes;
+using ApostasApp.Core.Domain.Interfaces.RankingRodadas;
 using ApostasApp.Core.Domain.Models.Apostas; // Para ApostaRodada e Palpite
 using ApostasApp.Core.Domain.Models.Campeonatos; // Importado para usar o modelo de domínio Campeonato
 using ApostasApp.Core.Domain.Models.Financeiro; // Para TipoTransacao
 using ApostasApp.Core.Domain.Models.Interfaces.Rodadas;
+using ApostasApp.Core.Domain.Models.RankingRodadas;
 using ApostasApp.Core.Domain.Models.Rodadas; // Para Rodada
 using AutoMapper;
 using Microsoft.Extensions.Logging;
@@ -31,6 +33,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
     private readonly ICampeonatoRepository _campeonatoRepository;
     private readonly IApostadorRepository _apostadorRepository;
     private readonly IApostadorCampeonatoRepository _apostadorCampeonatoRepository;
+    private readonly IRankingRodadaRepository _rankingRodadaRepository;
     private readonly IFinanceiroService _financeiroService;
     private readonly IMapper _mapper;
     private readonly ILogger<CampeonatoService> _logger;
@@ -44,6 +47,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
         ICampeonatoRepository campeonatoRepository,
         IApostadorRepository apostadorRepository,
         IApostadorCampeonatoRepository apostadorCampeonatoRepository,
+        IRankingRodadaRepository rankingRodadaRepository,
         IFinanceiroService financeiroService,
         IUnitOfWork uow,
         INotificador notificador,
@@ -58,6 +62,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
       _campeonatoRepository = campeonatoRepository;
       _apostadorRepository = apostadorRepository;
       _apostadorCampeonatoRepository = apostadorCampeonatoRepository;
+      _rankingRodadaRepository  = rankingRodadaRepository;
       _financeiroService = financeiroService;
       _mapper = mapper;
       _logger = logger;
@@ -255,14 +260,17 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
 
           if (!debitoResponse.Success)
           {
-            // Se o débito falhar, propaga as notificações de erro do FinanceiroService
-            // E NÃO CONTINUA A OPERAÇÃO
-            apiResponse.Notifications = debitoResponse.Notifications.ToList();
+            // 🔥 FORÇANDO A NOTIFICAÇÃO: Se o financeiro não notificou, notificamos aqui
+            //if (!debitoResponse.Notifications.Any())
+            //{
+             NotificarErro("Saldo insuficiente para realizar a adesão.");
+            //}
+
+            apiResponse.Notifications = ObterNotificacoesParaResposta().ToList();
             apiResponse.Success = false;
-            apiResponse.Data = false;
-            // Se houver transação, faça o rollback aqui: _uow.RollbackTransaction();
             return apiResponse;
           }
+
           // Se o débito foi um sucesso, as notificações de sucesso do FinanceiroService
           // já foram adicionadas ao notificador. Elas serão coletadas no final.
         }
@@ -288,6 +296,21 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
         {
           var apostaRodada = new ApostaRodada(novaAdesao.Id, apostadorId, rodadaParaApostaInicial.Id);
           _apostaRodadaRepository.Adicionar(apostaRodada);
+
+
+          // 🔥 ADICIONE ISTO AQUI: Criação do Ranking Inicial
+          var rankingRodada = new RankingRodada
+          {
+            Id = Guid.NewGuid(),
+            ApostadorId = apostadorId,
+            RodadaId = rodadaParaApostaInicial.Id,
+            ApostadorCampeonatoId = novaAdesao.Id, // Vínculo crucial com o campeonato
+            Pontuacao = 0,
+            Posicao = 0,
+            DataAtualizacao = DateTime.Now
+          };
+
+          _rankingRodadaRepository.Adicionar(rankingRodada);
 
           var jogosDaRodada = await _jogoRepository.ObterJogosDaRodada(rodadaParaApostaInicial.Id);
 
