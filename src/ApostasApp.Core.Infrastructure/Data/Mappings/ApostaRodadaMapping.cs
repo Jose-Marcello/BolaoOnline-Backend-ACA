@@ -1,6 +1,7 @@
 // ApostasApp.Core.Infrastructure.Data.Mappings/ApostaRodadaMapping.cs
 using ApostasApp.Core.Domain.Models.Apostas; // Para ApostaRodada e Palpite
 using ApostasApp.Core.Domain.Models.Campeonatos; // <<-- ADICIONADO: Para ApostadorCampeonato
+using ApostasApp.Core.Domain.Models.RankingRodadas;
 using ApostasApp.Core.Domain.Models.Rodadas;      // Para Rodada
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -64,14 +65,22 @@ namespace ApostasApp.Core.Infrastructure.Data.Mappings
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relação 1:N entre ApostaRodada e Palpite
-            builder.HasMany(ar => ar.Palpites)
+         // Relação 1:N entre ApostaRodada e Palpite
+         builder.HasMany(ar => ar.Palpites)
                 .WithOne(p => p.ApostaRodada)
                 .HasForeignKey(p => p.ApostaRodadaId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.ToTable("ApostasRodada"); // Nome da tabela no banco de dados
+
+         // Relação 1:1 entre ApostaRodada e RankingRodada (deixando apenas do outro lado)
+         /*builder.HasOne(ar => ar.RankingRodada)
+          .WithOne(rr => rr.ApostaRodada)
+          .HasForeignKey<RankingRodada>(rr => rr.ApostaRodadaId) // Chave estrangeira fica no Ranking
+          .OnDelete(DeleteBehavior.Cascade); // Se deletar a aposta, deleta o ranking correspondente
+         */
+
+      builder.ToTable("ApostasRodada"); // Nome da tabela no banco de dados
         }
     }
 }

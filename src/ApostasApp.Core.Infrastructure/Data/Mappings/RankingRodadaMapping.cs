@@ -18,15 +18,23 @@ namespace ApostasApp.Core.Infrastructure.Data.Mappings
 
             builder.Property(r => r.DataAtualizacao)
                 .IsRequired();
-                      
 
-           /* // 1 : 1 => RankingRodada : ApostadorCampeonato
-            builder.HasOne(r => r.ApostadorCampeonato)
-                .WithOne()
-                .HasForeignKey<RankingRodada>(r => r.ApostadorCampeonatoId)
-                .IsRequired(true);
 
-            builder.ToTable("RankingRodadas");*/
-        }
+      /* // 1 : 1 => RankingRodada : ApostadorCampeonato
+       builder.HasOne(r => r.ApostadorCampeonato)
+           .WithOne()
+           .HasForeignKey<RankingRodada>(r => r.ApostadorCampeonatoId)
+           .IsRequired(true);
+
+       builder.ToTable("RankingRodadas");*/
+
+
+      // No RankingRodadaMapping.cs
+      builder.HasOne(rr => rr.ApostaRodada)
+          .WithOne(ar => ar.RankingRodada) // Aqui você referencia o "outro lado"
+          .HasForeignKey<RankingRodada>(rr => rr.ApostaRodadaId)
+          .OnDelete(DeleteBehavior.Cascade);
+
+    }
     }
 }
