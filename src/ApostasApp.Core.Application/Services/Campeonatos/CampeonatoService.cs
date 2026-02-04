@@ -304,6 +304,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
             Id = Guid.NewGuid(),
             ApostadorId = apostadorId,
             RodadaId = rodadaParaApostaInicial.Id,
+            ApostaRodadaId = apostaRodada.Id, 
             ApostadorCampeonatoId = novaAdesao.Id, // Vínculo crucial com o campeonato
             Pontuacao = 0,
             Posicao = 0,

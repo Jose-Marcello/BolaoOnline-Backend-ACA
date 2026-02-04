@@ -11,24 +11,17 @@ namespace ApostasApp.Core.Infrastructure.Migrations
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-      migrationBuilder.DropForeignKey(
-          name: "FK_ApostasRodada_Apostadores_ApostadorId",
-          table: "ApostasRodada");
+      // 1. Removemos a tentativa de criar o ApostadorId, já que o erro confirmou que ele existe
+      // migrationBuilder.AddColumn<Guid>(name: "ApostadorId", ...); <--- REMOVIDO
 
+      // 2. Adicionamos apenas a ApostaRodadaId (permitindo nulo para não quebrar o banco)
       migrationBuilder.AddColumn<Guid>(
           name: "ApostaRodadaId",
           table: "RankingRodadas",
           type: "uuid",
-          nullable: false,
-          defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+          nullable: true);
 
-      migrationBuilder.AddColumn<Guid>(
-          name: "ApostadorId",
-          table: "RankingRodadas",
-          type: "uuid",
-          nullable: false,
-          defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
+      // 3. Ajustamos a ApostadorCampeonatoId para opcional (essencial para Avulsas)
       migrationBuilder.AlterColumn<Guid>(
           name: "ApostadorCampeonatoId",
           table: "ApostasRodada",
@@ -37,33 +30,14 @@ namespace ApostasApp.Core.Infrastructure.Migrations
           oldClrType: typeof(Guid),
           oldType: "uuid");
 
-      migrationBuilder.CreateIndex(
-          name: "IX_RankingRodadas_ApostadorId",
-          table: "RankingRodadas",
-          column: "ApostadorId");
-
+      // 4. Criamos o índice para a nova coluna (sem Unique por enquanto)
       migrationBuilder.CreateIndex(
           name: "IX_RankingRodadas_ApostaRodadaId",
           table: "RankingRodadas",
           column: "ApostaRodadaId",
-          unique: true);
+          unique: false);
 
-      migrationBuilder.AddForeignKey(
-          name: "FK_ApostasRodada_Apostadores_ApostadorId",
-          table: "ApostasRodada",
-          column: "ApostadorId",
-          principalTable: "Apostadores",
-          principalColumn: "Id",
-          onDelete: ReferentialAction.Restrict);
-
-      migrationBuilder.AddForeignKey(
-          name: "FK_RankingRodadas_Apostadores_ApostadorId",
-          table: "RankingRodadas",
-          column: "ApostadorId",
-          principalTable: "Apostadores",
-          principalColumn: "Id",
-          onDelete: ReferentialAction.Cascade);
-
+      // 5. Criamos a Foreign Key para a ApostaRodada
       migrationBuilder.AddForeignKey(
           name: "FK_RankingRodadas_ApostasRodada_ApostaRodadaId",
           table: "RankingRodadas",
@@ -72,7 +46,6 @@ namespace ApostasApp.Core.Infrastructure.Migrations
           principalColumn: "Id",
           onDelete: ReferentialAction.Cascade);
     }
-
     /// <inheritdoc />
     protected override void Down(MigrationBuilder migrationBuilder)
     {
