@@ -295,6 +295,7 @@ namespace ApostasApp.Core.Application.Services.Campeonatos
         else
         {
           var apostaRodada = new ApostaRodada(novaAdesao.Id, apostadorId, rodadaParaApostaInicial.Id);
+          apostaRodada.IdentificadorAposta = "Aposta Única - Rodada : " + rodadaParaApostaInicial.NumeroRodada.ToString();
           _apostaRodadaRepository.Adicionar(apostaRodada);
 
 
